@@ -46,7 +46,7 @@ input device.
 | **1'** | Same headset via LeRobot's `XRController` | The LeRobot binding, minus actuators | headset | ⬜ todo |
 | **2a** | Script → `G1_29_ArmIK` | IK stack, no sim, no XR | **none** | ✅ done |
 | **2b** | 2a → MuJoCo | Robot interface + sim | **none** | ✅ done |
-| **3** | Join 1' + 2b | **The glue — the actual contribution** | headset | ⬜ todo |
+| **3** | Join 1' + 2b | **The glue — the actual contribution** | headset | 🟡 in progress |
 | **4** | sim → real G1-29 | Transport, FSM, arm_sdk, safety | + G1-29 | ⬜ todo |
 | **5** | 29 → 23 | The spec-as-data refactor | + G1-23 | ⬜ todo |
 | **6** | Gripper → BrainCo hand | Tactile integration | + BrainCo | ⬜ todo |
@@ -204,3 +204,12 @@ since the hardware is running anyway.
 - `isaac-teleop-install-notes.md` — rung 0 install
 - `lerobot-g1-mujoco-install-notes.md` — rung 2 install
 - `rung2a_ik_only.py`, `rung2b_ik_to_mujoco.py` — validation scripts
+
+## Production Teleop Design Note
+
+Do not copy-paste `TeleVuerWrapper` into LeRobot as the production solution. Treat it as a
+reference implementation for frame semantics: OpenXR basis to robot basis, optional
+head-yaw anchoring, head/world to waist/IK-frame rebasing, bimanual wrist targets, and
+validity fallback. The LeRobot implementation should be a small, tested retargeting layer
+behind the existing `Teleoperator`/`Robot` APIs, so Isaac Teleop CloudXR, TeleVuer/Vuer, or
+future XR inputs can feed the same wrist-target contract.

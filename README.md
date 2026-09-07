@@ -63,3 +63,39 @@ python xr_controller_cloudxr_smoke_test.py --external-cloudxr
 
 Expected result: the script connects to the existing CloudXR runtime and prints live
 controller pose/squeeze values from the headset.
+
+## Rung 3: XR Controller To G1 MuJoCo
+
+Rung 3 joins the working CloudXR controller path with the working G1 IK/MuJoCo path.
+Use the `lerobot` conda environment, not the standalone Isaac Teleop venv, because
+`G1_29_ArmIK` requires conda-forge Pinocchio with `pinocchio.casadi`.
+
+One-time dependency bridge already validated on this workstation:
+
+```bash
+conda run -n lerobot python -m pip install \
+  "isaacteleop[cloudxr,retargeters-lite]==1.3.132rc1" \
+  --extra-index-url https://pypi.nvidia.com
+```
+
+Validate the IK side without headset or MuJoCo:
+
+```bash
+conda run -n lerobot python rung3_xr_to_g1_mujoco.py --dry-run-ik
+```
+
+For the full rung 3 run, start CloudXR first:
+
+```bash
+./run_isaac_teleop.sh
+```
+
+Then, in another terminal after the headset browser is connected with the `Quest3`
+profile:
+
+```bash
+conda run -n lerobot python rung3_xr_to_g1_mujoco.py --external-cloudxr
+```
+
+Default behavior is conservative: the right controller drives the right wrist only,
+the left wrist holds home, and squeeze is a hold-to-enable clutch.
