@@ -100,9 +100,10 @@ def main() -> int:
     print()
     print("Headset browser:")
     print("  1. Open https://nvidia.github.io/IsaacTeleop/client")
-    print("  2. Enter the workstation IP, e.g. 10.9.0.149")
-    print("  3. Accept https://<workstation-ip>:48322/ if prompted")
-    print("  4. Enter XR and connect")
+    print("  2. Set/leave headset profile as Quest3")
+    print("  3. Enter the workstation IP, e.g. 10.9.0.149")
+    print("  4. Accept https://<workstation-ip>:48322/ if prompted")
+    print("  5. Enter XR and connect")
     print()
     if not args.no_wait:
         input("After the headset client is open/connected, press Enter to create the OpenXR session...")
@@ -147,7 +148,7 @@ def main() -> int:
                 "\nOpenXR returned -35 while creating the HMD system. In this setup that usually means "
                 "CloudXR does not currently have a compatible headset/form factor attached to the runtime. "
                 "Make sure the headset browser client is connected before pressing Enter. If it is connected, "
-                "restart CloudXR with a different device profile, usually Quest3 first, then auto-webrtc.",
+                "restart CloudXR with the Quest3 profile and set the headset/client profile to Quest3 as well.",
                 file=sys.stderr,
             )
         return 1
