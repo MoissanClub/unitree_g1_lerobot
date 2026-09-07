@@ -179,10 +179,11 @@ back `True` — one line that retired a whole class of hypothesis.
 | 4 | LeRobot | `G1_29_ArmIK` ships `reduced_robot.data` stale w.r.t. its own added frames |
 | 5 | LeRobot | `WeightedMovingFilter` applies weights oldest-first — 2× intended group delay |
 | 6 | LeRobot | IK failure path poisons the warm start and drops gravity compensation |
-| 7 | LeRobot Hub | `lerobot/unitree-g1-mujoco` has undeclared deps (`loguru`) |
-| 8 | **Unitree** | `<Tracing>` in the default DDS config aborts on glibc 2.39 / Ubuntu 24.04 |
+| 7 | LeRobot | `G1_29_ArmIK` requires `casadi` and `pinocchio.casadi`, but LeRobot does not declare or document that dependency |
+| 8 | LeRobot Hub | `lerobot/unitree-g1-mujoco` has undeclared deps (`loguru`) |
+| 9 | **Unitree** | `<Tracing>` in the default DDS config aborts on glibc 2.39 / Ubuntu 24.04 |
 
-Items 5, 6 and 8 also exist in `xr_teleoperate` — 5 and 6 were copied verbatim into LeRobot.
+Items 5, 6 and 9 also exist in `xr_teleoperate` — 5 and 6 were copied verbatim into LeRobot.
 
 **These were found by running the stack, not by reading it.** That is the argument for
 offering hardware validation to maintainers: a G1 EDU with a non-Unitree tactile hand in a
@@ -195,7 +196,7 @@ since the hardware is running anyway.
 
 1. Finish rung 0 — connect the headset, run the acceptance checklist, settle the Quest Pro question
 2. Rung 1' — ten lines, no purchase
-3. File findings 1–3, 7 and 8 (8 goes to Unitree, not LeRobot)
+3. File findings 1–3, 7 and 8; file 9 with Unitree
 4. Rung 3 — the glue
 
 ## Companion documents
