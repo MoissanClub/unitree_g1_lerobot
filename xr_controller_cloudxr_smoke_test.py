@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shlex
 import sys
 import time
 from pathlib import Path
@@ -34,10 +35,30 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--duration-s", type=float, default=120.0)
     parser.add_argument("--poll-hz", type=float, default=10.0)
+    parser.add_argument(
+        "--no-wait",
+        action="store_true",
+        help="Do not pause before creating the OpenXR session.",
+    )
     return parser.parse_args()
 
 
+def _load_env_file(path: Path) -> None:
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export "):].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ[key.strip()] = os.path.expandvars(os.path.expanduser(shlex.split(value, comments=False)[0] if value else ""))
+
+
 def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
     args = parse_args()
     lerobot_root = Path(args.lerobot_root).expanduser().resolve()
     if not lerobot_root.is_dir():
@@ -50,6 +71,12 @@ def main() -> int:
 
     if args.external_cloudxr:
         os.environ["LEROBOT_CLOUDXR_SKIP_AUTOLAUNCH"] = "1"
+        runtime_env = Path.home() / ".cloudxr" / "run" / "cloudxr.env"
+        if runtime_env.is_file():
+            _load_env_file(runtime_env)
+        else:
+            print(f"External CloudXR requested, but env file is missing: {runtime_env}", file=sys.stderr)
+            return 2
 
     cloudxr_env_file = args.cloudxr_env_file
     if cloudxr_env_file is None and not args.external_cloudxr:
@@ -69,6 +96,7 @@ def main() -> int:
     print(f"  hand_side:          {args.hand_side}")
     print(f"  external_cloudxr:   {args.external_cloudxr}")
     print(f"  cloudxr_env_file:   {cloudxr_env_file}")
+    print(f"  NV_CXR_RUNTIME_DIR: {os.environ.get('NV_CXR_RUNTIME_DIR', '<unset>')}")
     print()
     print("Headset browser:")
     print("  1. Open https://nvidia.github.io/IsaacTeleop/client")
@@ -76,6 +104,8 @@ def main() -> int:
     print("  3. Accept https://<workstation-ip>:48322/ if prompted")
     print("  4. Enter XR and connect")
     print()
+    if not args.no_wait:
+        input("After the headset client is open/connected, press Enter to create the OpenXR session...")
 
     period_s = 1.0 / args.poll_hz
     deadline = time.monotonic() + args.duration_s
@@ -110,6 +140,17 @@ def main() -> int:
                 )
             last_tracking = tracking
             time.sleep(period_s)
+    except RuntimeError as exc:
+        print(f"\nRuntimeError: {exc}", file=sys.stderr)
+        if "Failed to get OpenXR system: -35" in str(exc):
+            print(
+                "\nOpenXR returned -35 while creating the HMD system. In this setup that usually means "
+                "CloudXR does not currently have a compatible headset/form factor attached to the runtime. "
+                "Make sure the headset browser client is connected before pressing Enter. If it is connected, "
+                "restart CloudXR with a different device profile, usually Quest3 first, then auto-webrtc.",
+                file=sys.stderr,
+            )
+        return 1
     except KeyboardInterrupt:
         print("\nInterrupted.")
     finally:
