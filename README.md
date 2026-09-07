@@ -99,3 +99,20 @@ conda run -n lerobot python rung3_xr_to_g1_mujoco.py --external-cloudxr
 
 Default behavior is conservative: the right controller drives the right wrist only,
 the left wrist holds home, and squeeze is a hold-to-enable clutch.
+
+### Rung 3 Runtime Model
+
+`run_isaac_teleop.sh` starts CloudXR as a separate process. The rung 3 script attaches to
+that existing CloudXR/OpenXR runtime with `--external-cloudxr`.
+
+MuJoCo is different: do not start a separate MuJoCo process. `rung3_xr_to_g1_mujoco.py`
+creates `UnitreeG1(UnitreeG1Config(is_simulation=True))`, and `robot.connect()` launches
+or loads the LeRobot G1 MuJoCo simulation inside that Python process. The loop then calls
+`robot.send_action(...)` with the IK-generated G1 joint targets.
+
+Process split:
+
+```text
+Terminal 1: ./run_isaac_teleop.sh                  # CloudXR runtime
+Terminal 2: conda run -n lerobot python rung3...   # XR attach + IK + MuJoCo sim
+```

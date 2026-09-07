@@ -213,3 +213,11 @@ head-yaw anchoring, head/world to waist/IK-frame rebasing, bimanual wrist target
 validity fallback. The LeRobot implementation should be a small, tested retargeting layer
 behind the existing `Teleoperator`/`Robot` APIs, so Isaac Teleop CloudXR, TeleVuer/Vuer, or
 future XR inputs can feed the same wrist-target contract.
+
+## Rung 3 Runtime Model
+
+CloudXR is external for the current rung 3 test: `run_isaac_teleop.sh` starts the runtime,
+and `rung3_xr_to_g1_mujoco.py --external-cloudxr` attaches to the existing OpenXR runtime.
+MuJoCo is not external: the script constructs `UnitreeG1(UnitreeG1Config(is_simulation=True))`,
+and `robot.connect()` creates the LeRobot G1 MuJoCo simulation in the same Python process
+that runs XR polling, clutch retargeting, G1 IK, and `robot.send_action(...)`.
