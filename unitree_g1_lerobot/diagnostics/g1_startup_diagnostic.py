@@ -17,13 +17,13 @@ from pathlib import Path
 import numpy as np
 import pinocchio as pin
 
-from rung3_xr_to_g1_mujoco import (
+from unitree_g1_lerobot.robots.control import (
     action_from_arm_q,
-    connect_unitree_g1_external_dds,
     make_ready_targets,
-    patch_unitree_dds_config,
     solve_ready_q,
 )
+
+from unitree_g1_lerobot.simulation.dds import connect_unitree_g1_external_dds, patch_unitree_dds_config
 
 
 def parse_args() -> argparse.Namespace:

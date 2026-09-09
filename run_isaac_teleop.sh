@@ -7,7 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LEROBOT_ROOT="${LEROBOT_ROOT:-/home/dwei/lerobot-sim/lerobot}"
 VENV_DIR="${VENV_DIR:-/home/dwei/.venvs/isaacteleop}"
-CLOUDXR_ENV_FILE="${CLOUDXR_ENV_FILE:-${SCRIPT_DIR}/cloudxr_quest3.env}"
+CLOUDXR_ENV_FILE="${CLOUDXR_ENV_FILE:-${SCRIPT_DIR}/configs/cloudxr_quest3.env}"
 G1_PYTHON_BIN="${G1_PYTHON_BIN:-/home/dwei/miniforge3/envs/lerobot-g1/bin/python}"
 G1_DIAGNOSTIC_REQUEST_FILE="${G1_DIAGNOSTIC_REQUEST_FILE:-/tmp/g1_mujoco_startup_diagnostic.request}"
 G1_DIAGNOSTIC_ACK_FILE="${G1_DIAGNOSTIC_ACK_FILE:-/tmp/g1_mujoco_startup_diagnostic.ack}"
@@ -64,7 +64,7 @@ if [[ "${SKIP_G1_STARTUP_DIAGNOSTIC:-0}" != "1" ]]; then
     exit 2
   elif [[ ${diagnostic_rc} -ne 0 ]]; then
     echo "XR bridge did not acknowledge the lowering diagnostic; falling back to direct DDS diagnostic." >&2
-    "${G1_PYTHON_BIN}" "${SCRIPT_DIR}/g1_startup_diagnostic.py" lower --duration-s 3.0 --confirm
+    (cd "${SCRIPT_DIR}" && "${G1_PYTHON_BIN}" -m unitree_g1_lerobot.diagnostics.g1_startup_diagnostic lower --duration-s 3.0 --confirm)
   fi
 fi
 

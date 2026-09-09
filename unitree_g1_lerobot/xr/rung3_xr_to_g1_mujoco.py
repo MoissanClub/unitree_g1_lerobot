@@ -12,17 +12,33 @@ to move; release squeeze to freeze the commanded wrist pose while repositioning.
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import shlex
 import sys
-import threading
 import time
 from pathlib import Path
 
 import numpy as np
 import pinocchio as pin
-import unitree_sdk2py.core.channel as unitree_channel
+
+
+from unitree_g1_lerobot.robots.control import (
+    fk,
+    action_from_arm_q,
+    scale_arm_gains,
+    make_ready_targets,
+    solve_ready_q,
+    publish_ready_for,
+)
+
+from unitree_g1_lerobot.simulation.dds import (
+    patch_unitree_dds_config,
+    connect_unitree_g1_external_dds,
+)
+
+from unitree_g1_lerobot.diagnostics.requests import (
+    StartupDiagnosticRequests,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -187,141 +203,6 @@ def clamp_translation(target: np.ndarray, home: np.ndarray, max_delta_m: float) 
     return clamped
 
 
-def fk(model: pin.Model, data: pin.Data, left_frame_id: int, right_frame_id: int, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    pin.forwardKinematics(model, data, q)
-    pin.updateFramePlacements(model, data)
-    return data.oMf[left_frame_id].homogeneous.copy(), data.oMf[right_frame_id].homogeneous.copy()
-
-
-def action_from_arm_q(q_g1: np.ndarray, joint_index: type, arm_index: type) -> dict[str, float]:
-    action = {f"{joint.name}.q": 0.0 for joint in joint_index}
-    action.update({f"{joint.name}.q": float(q_g1[i]) for i, joint in enumerate(arm_index)})
-    return action
-
-
-def scale_arm_gains(robot, arm_index: type, kp_scale: float, kd_scale: float) -> None:
-    if kp_scale <= 0.0 or kd_scale <= 0.0:
-        raise ValueError("arm gain scales must be positive")
-    if kp_scale == 1.0 and kd_scale == 1.0:
-        return
-    robot.kp = np.asarray(robot.kp, dtype=np.float32).copy()
-    robot.kd = np.asarray(robot.kd, dtype=np.float32).copy()
-    for joint in arm_index:
-        robot.kp[joint.value] *= kp_scale
-        robot.kd[joint.value] *= kd_scale
-    print(f"scaled arm gains: kp x{kp_scale:.2f}, kd x{kd_scale:.2f}")
-
-
-def make_ready_targets(
-    left_home: np.ndarray,
-    right_home: np.ndarray,
-    ready_x_m: float,
-    ready_z_m: float,
-    ready_spread_m: float,
-) -> tuple[np.ndarray, np.ndarray]:
-    left_ready = left_home.copy()
-    right_ready = right_home.copy()
-    left_ready[:3, 3] += np.array([ready_x_m, ready_spread_m, ready_z_m])
-    right_ready[:3, 3] += np.array([ready_x_m, -ready_spread_m, ready_z_m])
-    return left_ready, right_ready
-
-
-def solve_ready_q(ik, left_ready: np.ndarray, right_ready: np.ndarray, q_seed: np.ndarray) -> np.ndarray:
-    q = np.asarray(q_seed, dtype=float)
-    for _ in range(12):
-        q, _ = ik.solve_ik(left_ready, right_ready, q)
-        q = np.asarray(q, dtype=float)
-    if not np.all(np.isfinite(q)):
-        raise RuntimeError("Ready pose IK produced non-finite values")
-    return q
-
-
-def publish_ready_for(robot, action: dict[str, float], duration_s: float, hz: float) -> None:
-    if robot is None:
-        time.sleep(max(0.0, duration_s))
-        return
-    period_s = 1.0 / hz
-    deadline = time.monotonic() + max(0.0, duration_s)
-    while time.monotonic() < deadline:
-        t0 = time.perf_counter()
-        robot.send_action(action)
-        time.sleep(max(0.0, period_s - (time.perf_counter() - t0)))
-
-
-
-class StartupDiagnosticRequests:
-    def __init__(
-        self,
-        request_file: Path,
-        ack_file: Path,
-        raise_action: dict[str, float],
-        lower_action: dict[str, float],
-        hz: float,
-    ) -> None:
-        self.request_file = request_file
-        self.ack_file = ack_file
-        self.raise_action = raise_action
-        self.lower_action = lower_action
-        self.hz = hz
-        self.active_id: str | None = None
-
-    def read_request(self) -> dict | None:
-        try:
-            return json.loads(self.request_file.read_text())
-        except FileNotFoundError:
-            self.active_id = None
-            return None
-        except (OSError, json.JSONDecodeError) as exc:
-            print(f"Ignoring invalid startup diagnostic request: {exc}", file=sys.stderr, flush=True)
-            return None
-
-    def write_ack(self, request_id: str) -> None:
-        try:
-            self.ack_file.write_text(json.dumps({"id": request_id, "status": "active"}) + "\n")
-        except OSError as exc:
-            print(f"Could not write startup diagnostic ack: {exc}", file=sys.stderr, flush=True)
-
-    def step(self, robot) -> bool:
-        request = self.read_request()
-        if not request or request.get("mode") != "lower_hold":
-            return False
-
-        request_id = str(request.get("id", ""))
-        if request_id != self.active_id:
-            self.active_id = request_id
-            print("Startup diagnostic request: lowering both arms until user confirmation.", flush=True)
-            publish_ready_for(robot, self.raise_action, 1.0, self.hz)
-            self.write_ack(request_id)
-
-        robot.send_action(self.lower_action)
-        return True
-
-    def publish_or_ready_for(self, robot, ready_action: dict[str, float], duration_s: float) -> None:
-        if robot is None:
-            time.sleep(max(0.0, duration_s))
-            return
-        period_s = 1.0 / self.hz
-        deadline = time.monotonic() + max(0.0, duration_s)
-        while time.monotonic() < deadline:
-            t0 = time.perf_counter()
-            if not self.step(robot):
-                robot.send_action(ready_action)
-            time.sleep(max(0.0, period_s - (time.perf_counter() - t0)))
-
-
-def patch_unitree_dds_config() -> None:
-    unitree_channel.ChannelConfigHasInterface = """<?xml version="1.0" encoding="UTF-8" ?>
-<CycloneDDS>
-    <Domain Id="any">
-        <General>
-            <Interfaces>
-                <NetworkInterface name="$__IF_NAME__$" priority="default" multicast="default"/>
-            </Interfaces>
-        </General>
-    </Domain>
-</CycloneDDS>"""
-
-
 def patch_g1_hub_env_factory() -> None:
     import lerobot.envs.factory as env_factory
 
@@ -361,48 +242,6 @@ def cloudxr_runtime_error(exc: RuntimeError) -> bool:
         or "XR_ERROR_RUNTIME_UNAVAILABLE" in message
         or "Failed to get OpenXR system" in message
     )
-
-
-def connect_unitree_g1_external_dds(robot, g1_module, joint_index: type, timeout_s: float) -> None:
-    robot._ChannelFactoryInitialize(0, "lo")
-    robot.lowcmd_publisher = robot._ChannelPublisher(g1_module.kTopicLowCommand_Debug, g1_module.hg_LowCmd)
-    robot.lowcmd_publisher.Init()
-    robot.lowstate_subscriber = robot._ChannelSubscriber(g1_module.kTopicLowState, g1_module.hg_LowState)
-    robot.lowstate_subscriber.Init()
-
-    robot.subscribe_thread = threading.Thread(target=robot._subscribe_lowstate, daemon=True)
-    robot.subscribe_thread.start()
-
-    for cam in robot._cameras.values():
-        if not cam.is_connected:
-            cam.connect()
-
-    robot.crc = g1_module.CRC()
-    robot.msg = g1_module.unitree_hg_msg_dds__LowCmd_()
-    robot.msg.mode_pr = 0
-
-    lowstate = None
-    deadline = time.time() + timeout_s
-    while lowstate is None:
-        with robot._lowstate_lock:
-            lowstate = robot._lowstate
-        if lowstate is None:
-            if time.time() > deadline:
-                robot._shutdown_event.set()
-                raise TimeoutError(
-                    f"Timed out waiting for external G1 MuJoCo DDS lowstate ({timeout_s:.1f}s). "
-                    "Start process A first with ./run_g1_mujoco_dds_sim.sh."
-                )
-            time.sleep(0.01)
-
-    robot.msg.mode_machine = lowstate.mode_machine
-    robot.kp = np.array(robot.config.kp, dtype=np.float32)
-    robot.kd = np.array(robot.config.kd, dtype=np.float32)
-    for joint in joint_index:
-        robot.msg.motor_cmd[joint].mode = 1
-        robot.msg.motor_cmd[joint].kp = robot.kp[joint.value]
-        robot.msg.motor_cmd[joint].kd = robot.kd[joint.value]
-        robot.msg.motor_cmd[joint].q = lowstate.motor_state[joint.value].q
 
 
 class MockXRController:

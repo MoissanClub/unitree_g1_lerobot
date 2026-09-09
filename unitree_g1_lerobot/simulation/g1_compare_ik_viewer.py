@@ -12,8 +12,8 @@ from pathlib import Path
 
 import numpy as np
 
-from g1_embodiments import G1_23_SPEC, active_arm_q_to_visual_29, make_arm_ik, visual_29_arm_joint_names
-from rung3_xr_to_g1_mujoco import fk, make_ready_targets, solve_ready_q
+from unitree_g1_lerobot.robots.g1_embodiments import G1_23_SPEC, active_arm_q_to_visual_29, make_arm_ik, visual_29_arm_joint_names
+from unitree_g1_lerobot.robots.control import fk, make_ready_targets, solve_ready_q
 
 
 def parse_args() -> argparse.Namespace:

@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LEROBOT_ROOT="${LEROBOT_ROOT:-/home/dwei/lerobot-sim/lerobot}"
 VENV_DIR="${VENV_DIR:-/home/dwei/.venvs/isaacteleop}"
 PYTHON_BIN="${PYTHON_BIN:-/usr/bin/python3.12}"
-CLOUDXR_ENV_FILE="${CLOUDXR_ENV_FILE:-${SCRIPT_DIR}/cloudxr_quest3.env}"
+CLOUDXR_ENV_FILE="${CLOUDXR_ENV_FILE:-${SCRIPT_DIR}/configs/cloudxr_quest3.env}"
 
 echo "== Isaac Teleop one-time setup =="
 echo "LeRobot root:       ${LEROBOT_ROOT}"
@@ -120,5 +120,5 @@ Last step: run the smoke test before moving on:
 In another terminal, after the headset browser is connected:
   source "${VENV_DIR}/bin/activate"
   cd "${SCRIPT_DIR}"
-  python xr_controller_cloudxr_smoke_test.py --external-cloudxr
+  python -m unitree_g1_lerobot.xr.xr_controller_cloudxr_smoke_test --external-cloudxr
 EOF

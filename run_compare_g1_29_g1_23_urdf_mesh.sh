@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 export MUJOCO_GL="${MUJOCO_GL:-egl}"
 
-exec /home/dwei/miniforge3/envs/lerobot-g1/bin/python g1_compare_ik_viewer.py \
+exec /home/dwei/miniforge3/envs/lerobot-g1/bin/python -m unitree_g1_lerobot.simulation.g1_compare_ik_viewer \
   --right-visual g1_23_native \
   --motion-profile static \
   "$@"

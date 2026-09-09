@@ -2,6 +2,29 @@
 
 Supporting Unitree G1 integration in LeRobot for MuJoCo simulation and real robot workflows across G1-29 and G1-23 variants.
 
+## Repository Layout
+
+```text
+unitree_g1_lerobot/
+  robots/          # Embodiment specs, IK, shared arm control
+  simulation/      # MuJoCo viewers/simulator and DDS adapters
+  xr/              # XR bridge and CloudXR controller smoke test
+  diagnostics/     # Startup checks and rung verification
+assets/g1/         # Vendored robot assets
+configs/           # CloudXR runtime configuration
+docs/              # Validation ladder and installation notes
+tests/             # Package and launcher regression checks
+run_*.sh           # Stable root launch commands
+```
+
+Run launchers as before; they enter the repository root and invoke Python modules.
+For direct Python commands, run `python -m unitree_g1_lerobot.<area>.<module>` from
+the repository root with the appropriate environment. Running nested Python files by
+filename is not supported. No package installation or environment rebuild is required.
+
+See the [validation ladder](docs/vr-teleop-g1-23-ladder.md) for remaining Rung 4 work,
+and [architecture and upstream boundaries](docs/architecture.md) for contribution scope.
+
 ## Isaac Teleop CloudXR Scripts
 
 Use these scripts for the Isaac Teleop / CloudXR part of the ladder.
@@ -19,7 +42,7 @@ The setup script:
 
 - creates a clean Isaac Teleop virtualenv at `/home/dwei/.venvs/isaacteleop`
 - installs the local LeRobot checkout with the Isaac Teleop-compatible dependencies
-- writes `cloudxr_quest3.env`
+- writes `configs/cloudxr_quest3.env`
 - verifies the CloudXR and LeRobot Isaac Teleop CLIs
 - ends by asking you to run the smoke test
 
@@ -49,7 +72,7 @@ https://nvidia.github.io/IsaacTeleop/client
 
 Set the headset-side profile to `Quest3`, then connect to the workstation IP printed by
 `run_isaac_teleop.sh`. The local CloudXR runtime also uses `Quest3` through
-`cloudxr_quest3.env`; both sides need to match.
+`configs/cloudxr_quest3.env`; both sides need to match.
 
 ### 3. Smoke Test
 
@@ -58,7 +81,7 @@ With `run_isaac_teleop.sh` still running, open another terminal and run:
 ```bash
 source /home/dwei/.venvs/isaacteleop/bin/activate
 cd ~/lerobot-sim/unitree_g1_lerobot
-python xr_controller_cloudxr_smoke_test.py --external-cloudxr
+python -m unitree_g1_lerobot.xr.xr_controller_cloudxr_smoke_test --external-cloudxr
 ```
 
 Expected result: the script connects to the existing CloudXR runtime and prints live
@@ -81,8 +104,8 @@ Validate rung 3 without headset or CloudXR:
 
 ```bash
 cd ~/lerobot-sim/unitree_g1_lerobot
-./run_xr_g1_mujoco.sh --dry-run-ik
-./run_xr_g1_mujoco.sh --mock-xr --duration-s 5 --no-wait
+SKIP_G1_STARTUP_DIAGNOSTIC=1 ./run_xr_g1_mujoco.sh --dry-run-ik
+SKIP_G1_STARTUP_DIAGNOSTIC=1 ./run_xr_g1_mujoco.sh --mock-xr --duration-s 5 --no-wait
 ```
 
 For the ergonomic real headset run, start the lightweight pieces before putting on the
@@ -158,7 +181,7 @@ ready, and the clutch defaults to max(squeeze, trigger) as a hold-to-enable inpu
 `run_isaac_teleop.sh` starts CloudXR as a separate process. The rung 3 script attaches to
 that existing CloudXR/OpenXR runtime with `--external-cloudxr`.
 
-MuJoCo has two modes. Without `--external-g1-sim`, `rung3_xr_to_g1_mujoco.py` creates
+MuJoCo has two modes. Without `--external-g1-sim`, `unitree_g1_lerobot/xr/rung3_xr_to_g1_mujoco.py` creates
 `UnitreeG1(UnitreeG1Config(is_simulation=True))`, and `robot.connect()` launches the
 LeRobot G1 MuJoCo simulation inside that Python process. With `--external-g1-sim`, the
 bridge skips simulator creation and only publishes IK-generated G1 joint targets onto DDS;
@@ -219,7 +242,7 @@ Both launchers accept camera settings. The default is the robot's left-front (ro
 ```
 
 Azimuth 180 is front, -90 is the robot's left, and +135 is its right-front.
-Negative elevation looks down from above. Change defaults in `g1_compare_ik_viewer.py`'s
+Negative elevation looks down from above. Change defaults in `unitree_g1_lerobot/simulation/g1_compare_ik_viewer.py`'s
 `parse_args()`; restart the launcher to apply camera changes to the precomputed frames.
 
 Current limitation: the native G1-23 panel is a visual/kinematic MuJoCo model compiled directly from URDF. It is not yet wrapped as a LeRobot Gym/DDS simulator.
@@ -254,3 +277,14 @@ DDS verification is the next useful device-free check.
 Implementation details, controller settings, and numerical acceptance thresholds remain
 for the next planning session. This update records scope only; no live G1-23 simulator
 or additional launcher is claimed to exist. Physical robot validation remains Rung 5.
+
+Robot-camera video in the headset is not implemented or verified. Current Tk/X windows
+are workstation views; successful XR controller input does not establish a video return
+path. The ladder now tracks this separately as **Rung 4V**, after G1-23 control acceptance
+and before hardware work. Camera capture, XR display integration, reconnect behavior,
+and latency/frame-rate verification remain to be planned.
+
+Hardware validation is split into **Rung 5a: physical G1-29 baseline**, when available,
+then **Rung 5b: physical G1-23**. Both variants are documented by LeRobot; using G1-29
+first reuses this project's tested IK/simulation embodiment while isolating hardware
+integration. Neither physical workflow has been validated here.

@@ -17,7 +17,7 @@ Requires:
   conda install -c conda-forge "pinocchio>=3.0.0,<4.0.0"
   pip install -e ".[dataset]" casadi          # NOT [kinematics] - it clobbers pinocchio
 
-Usage:  python rung2a_ik_only.py
+Usage:  python -m unitree_g1_lerobot.diagnostics.rung2a_ik_only
 """
 
 import numpy as np
