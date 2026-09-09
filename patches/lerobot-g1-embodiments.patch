@@ -1,0 +1,294 @@
+diff --git a/src/lerobot/robots/unitree_g1/config_unitree_g1.py b/src/lerobot/robots/unitree_g1/config_unitree_g1.py
+index 3fbeb37fe..b0c6dc665 100644
+--- a/src/lerobot/robots/unitree_g1/config_unitree_g1.py
++++ b/src/lerobot/robots/unitree_g1/config_unitree_g1.py
+@@ -47,11 +47,12 @@ _DEFAULT_KP, _DEFAULT_KD = _build_gains()
+ @RobotConfig.register_subclass("unitree_g1")
+ @dataclass
+ class UnitreeG1Config(RobotConfig):
+-    kp: list[float] = field(default_factory=lambda: _DEFAULT_KP.copy())
+-    kd: list[float] = field(default_factory=lambda: _DEFAULT_KD.copy())
++    embodiment: str = "g1_29"
++    kp: list[float] | None = None
++    kd: list[float] | None = None
+ 
+     # Default joint positions
+-    default_positions: list[float] = field(default_factory=lambda: [0.0] * 29)
++    default_positions: list[float] | None = None
+ 
+     # Control loop timestep
+     control_dt: float = 1.0 / 250.0  # 250Hz
+@@ -71,3 +72,23 @@ class UnitreeG1Config(RobotConfig):
+     # Controller class name, e.g. GrootLocomotionController / HolosomaLocomotionController /
+     # SonicWholeBodyController. None disables it.
+     controller: str | None = None
++
++    def __post_init__(self):
++        import math
++        from .g1_runtime import get_g1_embodiment
++        super().__post_init__()
++        spec = get_g1_embodiment(self.embodiment)
++        self.kp = list(spec.kp if self.kp is None else self.kp)
++        self.kd = list(spec.kd if self.kd is None else self.kd)
++        self.default_positions = list(spec.default_positions if self.default_positions is None else self.default_positions)
++        for name in ("kp", "kd", "default_positions"):
++            values = getattr(self, name)
++            if len(values) != 29 or not all(math.isfinite(v) for v in values):
++                raise ValueError(f"{name} requires 29 finite values indexed by DDS slot")
++        if min(self.kp + self.kd) < 0 or not math.isfinite(self.control_dt) or self.control_dt <= 0:
++            raise ValueError("Gains must be nonnegative and control_dt positive and finite")
++        active = {int(j) for j in spec.joint_index}
++        if any(self.kp[i] or self.kd[i] or self.default_positions[i] for i in set(range(29)) - active):
++            raise ValueError("Unused DDS slots must have zero gains and default positions")
++        if self.controller is not None and not spec.supports_controller:
++            raise ValueError(f"Whole-body controllers are not supported for {self.embodiment}")
+diff --git a/src/lerobot/robots/unitree_g1/unitree_g1.py b/src/lerobot/robots/unitree_g1/unitree_g1.py
+index d49aabd9d..937b4e67b 100644
+--- a/src/lerobot/robots/unitree_g1/unitree_g1.py
++++ b/src/lerobot/robots/unitree_g1/unitree_g1.py
+@@ -32,7 +32,8 @@ from lerobot.utils.import_utils import _unitree_sdk_available, require_package
+ 
+ from ..robot import Robot
+ from .config_unitree_g1 import UnitreeG1Config
+-from .g1_kinematics import G1_29_ArmIK
++from .g1_kinematics import G1_29_ArmIK  # Existing integration/test import hook.
++from .g1_runtime import get_g1_embodiment
+ from .g1_utils import (
+     NUM_MOTORS,
+     REMOTE_AXES,
+@@ -156,6 +157,9 @@ class UnitreeG1(Robot):
+         logger.info("Initialize UnitreeG1...")
+ 
+         self.config = config
++        self.embodiment = get_g1_embodiment(config.embodiment)
++        self.joint_index = self.embodiment.joint_index
++        self.arm_index = self.embodiment.arm_index
+         self.control_dt = config.control_dt
+ 
+         # Initialize cameras config (ZMQ-based) - actual connection in connect()
+@@ -191,7 +195,7 @@ class UnitreeG1(Robot):
+         self._shutdown_event = threading.Event()
+         self.subscribe_thread = None
+ 
+-        self.arm_ik = G1_29_ArmIK() if config.gravity_compensation else None
++        self.arm_ik = self.embodiment.make_ik() if config.gravity_compensation else None
+ 
+         # Controller loaded dynamically
+         self.controller: RobotController | None = make_robot_controller(config.controller)
+@@ -214,7 +218,7 @@ class UnitreeG1(Robot):
+                 lowstate = G1_29_LowState()
+ 
+                 # Capture motor states using jointindex
+-                for joint in G1_29_JointIndex:
++                for joint in self.joint_index:
+                     lowstate.motor_state[joint].q = msg.motor_state[joint].q
+                     lowstate.motor_state[joint].dq = msg.motor_state[joint].dq
+                     lowstate.motor_state[joint].tau_est = msg.motor_state[joint].tau_est
+@@ -249,7 +253,7 @@ class UnitreeG1(Robot):
+         tau: np.ndarray | list[float] | None = None,
+     ) -> None:  # writes robot command whenever requested
+         with self._lowcmd_lock:
+-            for motor in G1_29_JointIndex:
++            for motor in self.joint_index:
+                 key = f"{motor.name}.q"
+                 if key in action:
+                     self.msg.motor_cmd[motor.value].q = action[key]
+@@ -287,9 +291,9 @@ class UnitreeG1(Robot):
+ 
+     @cached_property
+     def action_features(self) -> dict[str, type]:
+-        # No controller configured at all: raw 29-DoF joint teleop.
++        # No controller configured: expose the selected embodiment's active joints.
+         if self.controller is None:
+-            return {f"{G1_29_JointIndex(motor).name}.q": float for motor in G1_29_JointIndex}
++            return {f"{self.joint_index(motor).name}.q": float for motor in self.joint_index}
+ 
+         # Whole-body controllers (SONIC): 64-D latent token.
+         controller_ft = getattr(self.controller, "action_ft", None)
+@@ -299,7 +303,7 @@ class UnitreeG1(Robot):
+         # Locomotion controllers (GR00T / Holosoma): arm joint targets + joystick axes.
+         # TODO: have GR00T/Holosoma advertise their own action_features too, so every
+         # controller declares its action space and this fallthrough can be dropped.
+-        arm_features = {f"{G1_29_JointArmIndex(motor).name}.q": float for motor in G1_29_JointArmIndex}
++        arm_features = {f"{self.arm_index(motor).name}.q": float for motor in self.arm_index}
+         remote_features = dict.fromkeys(REMOTE_AXES, float)
+         return {**arm_features, **remote_features}
+ 
+@@ -355,14 +359,14 @@ class UnitreeG1(Robot):
+         pass
+ 
+     def connect(self, calibrate: bool = True) -> None:  # connect to DDS
++        if self.config.is_simulation and self.embodiment.make_simulation is None:
++            raise NotImplementedError(f"{self.embodiment.name} live simulator backend has not been integrated")
++        if not self.config.is_simulation and not self.embodiment.hardware_supported:
++            raise NotImplementedError(f"{self.embodiment.name} hardware backend has not been validated")
+         # Initialize DDS channel and simulation environment
+         if self.config.is_simulation:
+-            from lerobot.envs import make_env
+-
+             self._ChannelFactoryInitialize(0, "lo")
+-            self._env_wrapper = make_env("lerobot/unitree-g1-mujoco", trust_remote_code=True)
+-            # Extract the actual gym env from the dict structure
+-            self.sim_env = self._env_wrapper["hub_env"][0].envs[0]
++            self._env_wrapper, self.sim_env = self.embodiment.make_simulation()
+         else:
+             self._ChannelFactoryInitialize(0, config=self.config)
+ 
+@@ -411,7 +415,7 @@ class UnitreeG1(Robot):
+             self.kp = np.array(self.config.kp, dtype=np.float32)
+             self.kd = np.array(self.config.kd, dtype=np.float32)
+ 
+-        for joint in G1_29_JointIndex:
++        for joint in self.joint_index:
+             self.msg.motor_cmd[joint].mode = 1
+             self.msg.motor_cmd[joint].kp = self.kp[joint.value]
+             self.msg.motor_cmd[joint].kd = self.kd[joint.value]
+@@ -436,7 +440,7 @@ class UnitreeG1(Robot):
+                 lowstate = self._lowstate
+             if lowstate is None:
+                 return
+-            action = {f"{motor.name}.q": lowstate.motor_state[motor.value].q for motor in G1_29_JointIndex}
++            action = {f"{motor.name}.q": lowstate.motor_state[motor.value].q for motor in self.joint_index}
+             zero_gains = np.zeros(29, dtype=np.float32)
+             self.publish_lowcmd(action, kp=zero_gains, kd=zero_gains, tau=zero_gains)
+             logger.info("Sent zero-torque command for safe shutdown")
+@@ -499,7 +503,7 @@ class UnitreeG1(Robot):
+         obs = {}
+ 
+         # Motors - q, dq, tau for all joints
+-        for motor in G1_29_JointIndex:
++        for motor in self.joint_index:
+             name = motor.name
+             idx = motor.value
+             obs[f"{name}.q"] = lowstate.motor_state[idx].q
+@@ -555,7 +559,7 @@ class UnitreeG1(Robot):
+             # Controller thread owns legs/waist. Here we only update joystick inputs
+             # and publish arm targets from the teleoperator.
+             self._update_controller_action(action)
+-            arm_prefixes = tuple(j.name for j in G1_29_JointArmIndex)
++            arm_prefixes = tuple(j.name for j in self.arm_index)
+             action_to_publish = {
+                 key: value
+                 for key, value in action.items()
+@@ -573,14 +577,12 @@ class UnitreeG1(Robot):
+             action_np = np.array(
+                 [
+                     action_to_publish.get(f"{joint.name}.q", self.msg.motor_cmd[joint.value].q)
+-                    for joint in G1_29_JointArmIndex
++                    for joint in self.arm_index
+                 ],
+                 dtype=np.float32,
+             )
+             arm_tau = self.arm_ik.solve_tau(action_np)
+-            arm_start_idx = G1_29_JointArmIndex.kLeftShoulderPitch.value
+-            for joint in G1_29_JointArmIndex:
+-                local_idx = joint.value - arm_start_idx
++            for local_idx, joint in enumerate(self.arm_index):
+                 tau[joint.value] = arm_tau[local_idx]
+ 
+         self.publish_lowcmd(action_to_publish, tau=tau)
+@@ -605,8 +607,8 @@ class UnitreeG1(Robot):
+ 
+     @property
+     def _motors_ft(self) -> dict[str, type]:
+-        """Joint positions for all 29 joints."""
+-        return {f"{G1_29_JointIndex(motor).name}.q": float for motor in G1_29_JointIndex}
++        """Joint positions for the selected embodiment's active joints."""
++        return {f"{self.joint_index(motor).name}.q": float for motor in self.joint_index}
+ 
+     @property
+     def cameras(self) -> dict:
+@@ -633,7 +635,7 @@ class UnitreeG1(Robot):
+             if self.config.is_simulation and self.sim_env is not None:
+                 self.sim_env.reset()
+                 self.publish_lowcmd(
+-                    {f"{motor.name}.q": float(default_positions[motor.value]) for motor in G1_29_JointIndex}
++                    {f"{motor.name}.q": float(default_positions[motor.value]) for motor in self.joint_index}
+                 )
+             else:
+                 total_time = 3.0
+@@ -644,7 +646,7 @@ class UnitreeG1(Robot):
+ 
+                 # record current positions
+                 init_dof_pos = np.zeros(NUM_MOTORS, dtype=np.float32)
+-                for motor in G1_29_JointIndex:
++                for motor in self.joint_index:
+                     init_dof_pos[motor.value] = obs[f"{motor.name}.q"]
+ 
+                 # Interpolate to default position
+@@ -653,7 +655,7 @@ class UnitreeG1(Robot):
+ 
+                     alpha = step / num_steps
+                     action_dict = {}
+-                    for motor in G1_29_JointIndex:
++                    for motor in self.joint_index:
+                         target_pos = default_positions[motor.value]
+                         interp_pos = init_dof_pos[motor.value] * (1 - alpha) + target_pos * alpha
+                         action_dict[f"{motor.name}.q"] = float(interp_pos)
+diff --git a/src/lerobot/robots/unitree_g1/g1_runtime.py b/src/lerobot/robots/unitree_g1/g1_runtime.py
+new file mode 100644
+index 000000000..41d7c899d
+--- /dev/null
++++ b/src/lerobot/robots/unitree_g1/g1_runtime.py
+@@ -0,0 +1,61 @@
++"""Embodiment selection for the shared Unitree G1 robot implementation."""
++from dataclasses import dataclass
++from enum import IntEnum
++from typing import Callable
++
++
++@dataclass(frozen=True)
++class G1RuntimeSpec:
++    name: str
++    joint_index: type[IntEnum]
++    arm_index: type[IntEnum]
++    kp: tuple[float, ...]
++    kd: tuple[float, ...]
++    make_ik: Callable
++    make_simulation: Callable | None = None
++    hardware_supported: bool = False
++    supports_controller: bool = False
++    model_resource: str = ""
++    default_positions: tuple[float, ...] = (0.0,) * 29
++
++
++_SPECS: dict[str, G1RuntimeSpec] = {}
++
++
++def register_g1_embodiment(spec: G1RuntimeSpec) -> None:
++    if spec.name in _SPECS:
++        raise ValueError(f"G1 embodiment already registered: {spec.name}")
++    indices = {int(j) for j in spec.joint_index}
++    if not indices or not indices <= set(range(29)):
++        raise ValueError("G1 joint indices must use the 29-slot transport layout")
++    if not {int(j) for j in spec.arm_index} <= indices:
++        raise ValueError("Arm indices must be active robot joints")
++    if len(spec.kp) != 29 or len(spec.kd) != 29:
++        raise ValueError("G1 gains must use the 29-slot transport layout")
++    _SPECS[spec.name] = spec
++
++
++def _make_g1_29_ik():
++    from .unitree_g1 import G1_29_ArmIK
++    return G1_29_ArmIK()
++
++
++def _make_g1_29_simulation():
++    from lerobot.envs import make_env
++    wrapper = make_env("lerobot/unitree-g1-mujoco", trust_remote_code=True)
++    return wrapper, wrapper["hub_env"][0].envs[0]
++
++
++def get_g1_embodiment(name: str) -> G1RuntimeSpec:
++    if name == "g1_29" and name not in _SPECS:
++        from .config_unitree_g1 import _DEFAULT_KP, _DEFAULT_KD
++        from .g1_utils import G1_29_JointArmIndex, G1_29_JointIndex
++        register_g1_embodiment(G1RuntimeSpec(
++            name, G1_29_JointIndex, G1_29_JointArmIndex, tuple(_DEFAULT_KP), tuple(_DEFAULT_KD),
++            _make_g1_29_ik, _make_g1_29_simulation, True, True,
++            model_resource="lerobot/unitree-g1-mujoco",
++        ))
++    try:
++        return _SPECS[name]
++    except KeyError as exc:
++        raise ValueError(f"Unknown/unregistered G1 embodiment: {name}") from exc

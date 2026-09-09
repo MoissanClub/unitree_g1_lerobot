@@ -248,6 +248,16 @@ class ParametricG1ArmIK:
             self.reduced_robot.model.nq,
         )
 
+    def solve_tau(self, current_lr_arm_motor_q, current_lr_arm_motor_dq=None):
+        q = np.asarray(current_lr_arm_motor_q, dtype=float)
+        if q.shape != (len(self._arm_joint_names_g1),) or not np.all(np.isfinite(q)):
+            raise ValueError(f"Expected {len(self._arm_joint_names_g1)} finite arm positions in G1 order")
+        # Keep gravity evaluation separate from the IK solver's mutable working data.
+        data = self.reduced_robot.model.createData()
+        tau = self._pin.rnea(self.reduced_robot.model, data, q[self._arm_reorder_g1_to_pin],
+                             np.zeros(self.reduced_robot.model.nv), np.zeros(self.reduced_robot.model.nv))
+        return tau[self._arm_reorder_pin_to_g1].copy()
+
     def solve_ik(self, left_wrist, right_wrist, current_lr_arm_motor_q=None, current_lr_arm_motor_dq=None):
         if current_lr_arm_motor_q is not None:
             self.init_data = np.asarray(current_lr_arm_motor_q, dtype=float)

@@ -1,9 +1,27 @@
-# VR Teleoperation of the Unitree G1-23 on LeRobot — Validation Ladder
+# Cross-Track Validation Ladder
+
+The [three-track project plan](project-plan.md) is now the primary roadmap:
+Track 1 adds G1-23 to LeRobot (`robots/`), Track 2 develops XR support (`xr/`), and
+Track 3 develops G1 simulation (`simulation/`). This document preserves rung names,
+acceptance detail, and historical bring-up observations. Rungs are integration gates,
+not separate source-code tracks.
+
+| Historical Gate | Track Ownership | Current Meaning |
+|---|---|---|
+| 0 / 1' | Track 2 | XR input bring-up |
+| 2a | Track 1 | Robot IK baseline |
+| 2b | Tracks 1 + 3 | Robot/simulator baseline |
+| 3 | Tracks 2 + 1 + 3 | G1-29 controller-to-simulation path |
+| 4 | Tracks 1 + 3, then 2 | G1-23 live backend/DDS, then headset acceptance |
+| 4V | Track 3 capture + Track 2 display | Robot-camera delivery to headset |
+| 5a / 5b | Tracks 1 + 2 | Physical G1-29 baseline, then G1-23 |
+| 6 | Track 1 hardware with Track 2 input | Future hand/tactile integration |
 
 Working method and status log. September 2026.
 
 Current checkpoint (2026-09-09): G1-29 controller-to-simulation teleoperation was
 confirmed by the user. G1-23 geometry and scripted IK have been visually reviewed;
+motor comparisons are reviewed and the configurable runtime structure is tested;
 live G1-23 physics/DDS integration is still pending. Robot camera video has not been
 streamed to or verified in the headset. The code now lives in responsibility-based
 subpackages; see [architecture](architecture.md).
@@ -11,9 +29,9 @@ subpackages; see [architecture](architecture.md).
 **Goal:** drive a Unitree **G1-23** (5-DoF arms) from a VR headset through the **LeRobot**
 stack, and contribute the result upstream.
 
-**Method:** never change more than one variable at a time. Every rung starts from a
-configuration already known to work and alters exactly one thing, so a failure has exactly
-one candidate cause.
+**Method:** isolate changes where practical, preserve known-working configurations,
+and separate contract tests from full-path acceptance. Passing one layer does not
+establish that transport, timing, and downstream behavior are correct.
 
 ---
 
@@ -21,10 +39,10 @@ one candidate cause.
 
 | Choice | Reason |
 |---|---|
-| **LeRobot** | Owns the dataset format and now has first-class G1 support (π0/π0.5, RTC, MuJoCo sim, 29 and 23 DoF robot classes). It is the gravitational centre. |
+| **LeRobot** | Provides the robot/configuration interfaces and dataset ecosystem; this project extends the existing G1 integration. |
 | **Isaac Teleop** for XR | Already an accepted, documented LeRobot dependency with an `XRController` `Teleoperator` subclass. Adding a *robot target* to an existing device beats proposing a new device abstraction. |
 | **G1-23** | Extend the tested G1-29 XR/IK workflow to five-joint arms. LeRobot documents both variants; this checkout's main IK/control path is G1-29-specific. |
-| **Not forking `xr_teleoperate`** | Vendor sample code — no tests, no CI, 200 lines duplicated seven times. Good for bug fixes, hostile to architecture. |
+| **Use `xr_teleoperate` as a reference** | Derive embodiment/control data from pinned sources while preserving LeRobot interfaces and shared implementation. |
 
 ### What already exists vs. what must be built
 
@@ -114,7 +132,8 @@ Zero devices. Seven install blockers surfaced here — see
 ### Rung 3 — the contribution
 `grip_pos`/`grip_quat` → 4×4 → `solve_ik` → 29-joint action dict → `UnitreeG1(is_simulation=True)`.
 
-Both halves proven, so any failure is in ~20 lines of glue.
+This is the historical join between robot/simulation and XR input. Integration
+failures can still involve timing, frame semantics, or dependencies in either half.
 
 **Current status:** the user confirmed right-controller engagement and movement driving
 the G1-29 simulation. The bridge uses `G1_29_ArmIK` with conda-forge Pinocchio/CasADi and
@@ -161,6 +180,18 @@ these scripts as regression artifacts. This is not yet validation of a live G1-2
 physics/DDS simulator: the comparison assigns joint positions and replays rendered poses.
 
 #### What is actually left for Rung 4
+
+**User review confirmed:** the motor-comparison verification checkpoint is reviewed.
+Resume with live native G1-23 runtime integration, not another geometry/benchmark
+review. See the [handoff note](rung4-handoff.md) for the implementation baseline,
+verification commands, caveats, and remaining acceptance work.
+
+**Structure implemented:** one configurable LeRobot `UnitreeG1` class now selects
+registered embodiment definitions for joint features, sparse DDS loops, motor/home
+defaults, and IK/gravity. G1-29 defaults remain unchanged. The local G1-23 definition
+and reproducible LeRobot patch are described in [architecture](architecture.md).
+G1-23 live simulation/hardware connection is intentionally blocked until the backend
+is supplied; the refactor does not mark the remaining runtime/DDS acceptance complete.
 
 Motor-config checkpoint: both variants now have source-derived motor profiles and a
 supported-arm physics comparison suite. `run_compare_g1_29_motor_configs_no_gravity_compensation.sh` compares
@@ -333,11 +364,12 @@ since the hardware is running anyway.
 
 ## Immediate next actions
 
-1. Plan the remaining Rung 4 physics/DDS work described above; visual review is complete.
-2. Implement and verify the device-free simulator and scripted DDS path before headset testing.
-3. Finish G1-23 XR acceptance and G1-29 regression checks.
-4. Plan and validate Rung 4V camera feedback before proceeding to Rung 5 hardware work.
-5. When available, establish a physical G1-29 baseline (5a) before physical G1-23 (5b).
+1. Tracks 3 + 1: supply the G1-23 live backend, then verify per-joint and scripted DDS paths.
+2. Track 2: select the existing embodiment control and finish G1-23 XR acceptance, retaining G1-29 regression.
+3. Tracks 3 + 2: capture and deliver robot camera frames for Rung 4V.
+4. Tracks 1 + 2: establish physical G1-29 baseline when available, then physical G1-23.
+
+Track-level completed/remaining work is maintained in the [project plan](project-plan.md).
 
 Earlier rung notes retain historical bring-up observations; they are not the current
 next-action list. Upstream issue reporting remains separate from Rung 4 acceptance.
@@ -361,6 +393,7 @@ future XR inputs can feed the same wrist-target contract.
 
 CloudXR is external for the current rung 3 test: `run_isaac_teleop.sh` starts the runtime,
 and `python -m unitree_g1_lerobot.xr.rung3_xr_to_g1_mujoco --external-cloudxr` attaches to the existing OpenXR runtime.
-MuJoCo is not external: the script constructs `UnitreeG1(UnitreeG1Config(is_simulation=True))`,
-and `robot.connect()` creates the LeRobot G1 MuJoCo simulation in the same Python process
-that runs XR polling, clutch retargeting, G1 IK, and `robot.send_action(...)`.
+MuJoCo can be embedded or external. Without `--external-g1-sim`, the script constructs
+`UnitreeG1(UnitreeG1Config(is_simulation=True))` and `robot.connect()` creates the G1-29
+simulation in the bridge process. With that flag, the standalone simulator owns physics
+and the bridge attaches to DDS. See the [operator guide](operator-guide.md).
