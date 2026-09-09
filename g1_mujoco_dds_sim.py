@@ -6,9 +6,11 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import threading
 import time
 import tkinter as tk
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 from PIL import Image, ImageTk
@@ -24,6 +26,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hz", type=float, default=250.0)
     parser.add_argument("--view-fps", type=float, default=20.0)
     parser.add_argument("--no-view", action="store_true", help="Run without the Tk/X viewer.")
+    parser.add_argument("--skip-startup-diagnostic", action="store_true", help="Skip the raise-arm startup diagnostic.")
+    parser.add_argument("--diagnostic-duration-s", type=float, default=2.0)
+    parser.add_argument("--no-diagnostic-confirm", action="store_true", help="Do not pause for visual confirmation after the startup diagnostic.")
     return parser.parse_args()
 
 
@@ -83,10 +88,52 @@ def patch_g1_hub_env_factory(enable_view: bool) -> None:
     env_factory._call_make_env = call_make_env
 
 
+def run_raise_arm_diagnostic(env, args: argparse.Namespace, *, drive_steps: bool) -> int:
+    if args.skip_startup_diagnostic or os.environ.get("SKIP_G1_STARTUP_DIAGNOSTIC", "").strip() == "1":
+        return 0
+
+    from g1_startup_diagnostic import run_diagnostic
+
+    stop_event = threading.Event()
+    thread = None
+
+    def step_loop() -> None:
+        period_s = 1.0 / args.hz
+        while not stop_event.is_set():
+            t0 = time.perf_counter()
+            env.step(None)
+            time.sleep(max(0.0, period_s - (time.perf_counter() - t0)))
+
+    if drive_steps:
+        thread = threading.Thread(target=step_loop, daemon=True)
+        thread.start()
+    try:
+        diag_args = SimpleNamespace(
+            mode="raise",
+            lerobot_root=args.lerobot_root,
+            duration_s=args.diagnostic_duration_s,
+            hz=min(args.hz, 60.0),
+            g1_state_timeout_s=10.0,
+            ready_x_m=0.03,
+            ready_z_m=0.12,
+            ready_spread_m=0.03,
+            orientation_deg=35.0,
+            optional=False,
+            confirm=not args.no_diagnostic_confirm,
+        )
+        return run_diagnostic(diag_args)
+    finally:
+        stop_event.set()
+        if thread is not None:
+            thread.join(timeout=2.0)
+
+
 class TkViewer:
-    def __init__(self, env, fps: float) -> None:
+    def __init__(self, env, fps: float, args: argparse.Namespace) -> None:
         self.env = env
+        self.args = args
         self.inner = env.simulator.sim_env
+        self.diagnostic_thread = None
         self.dt_ms = max(1, int(1000.0 / fps))
         self.steps = 0
         self.photo = None
@@ -102,6 +149,20 @@ class TkViewer:
             fill="x", padx=8, pady=6
         )
         self.root.after(self.dt_ms, self.tick)
+        self.root.after(800, self.start_startup_diagnostic)
+
+    def start_startup_diagnostic(self) -> None:
+        if self.closed or self.diagnostic_thread is not None:
+            return
+
+        def run() -> None:
+            rc = run_raise_arm_diagnostic(self.env, self.args, drive_steps=False)
+            if rc != 0:
+                print(f"Startup diagnostic failed with exit code {rc}", file=sys.stderr, flush=True)
+                self.root.after(0, self.close)
+
+        self.diagnostic_thread = threading.Thread(target=run, daemon=True)
+        self.diagnostic_thread.start()
 
     def tick(self) -> None:
         if self.closed:
@@ -150,9 +211,12 @@ def main() -> int:
 
     try:
         if not args.no_view:
-            print("Opening Tk/X viewer window")
-            TkViewer(env, args.view_fps).run()
+            print("Opening Tk/X viewer window before startup diagnostic")
+            TkViewer(env, args.view_fps, args).run()
         else:
+            diagnostic_rc = run_raise_arm_diagnostic(env, args, drive_steps=True)
+            if diagnostic_rc != 0:
+                return diagnostic_rc
             period_s = 1.0 / args.hz
             steps = 0
             while True:

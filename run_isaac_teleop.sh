@@ -8,6 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LEROBOT_ROOT="${LEROBOT_ROOT:-/home/dwei/lerobot-sim/lerobot}"
 VENV_DIR="${VENV_DIR:-/home/dwei/.venvs/isaacteleop}"
 CLOUDXR_ENV_FILE="${CLOUDXR_ENV_FILE:-${SCRIPT_DIR}/cloudxr_quest3.env}"
+G1_PYTHON_BIN="${G1_PYTHON_BIN:-/home/dwei/miniforge3/envs/lerobot-g1/bin/python}"
 
 if [[ ! -x "${VENV_DIR}/bin/python" ]]; then
   echo "Isaac Teleop venv not found: ${VENV_DIR}" >&2
@@ -26,6 +27,10 @@ if [[ ! -f "${CLOUDXR_ENV_FILE}" ]]; then
   exit 1
 fi
 
+if [[ "${SKIP_G1_STARTUP_DIAGNOSTIC:-0}" != "1" ]]; then
+  "${G1_PYTHON_BIN}" "${SCRIPT_DIR}/g1_startup_diagnostic.py" lower --confirm
+fi
+
 echo "== Starting Isaac Teleop CloudXR =="
 echo "LeRobot root:       ${LEROBOT_ROOT}"
 echo "Virtualenv:         ${VENV_DIR}"
@@ -41,5 +46,4 @@ echo "  5. Enter XR and connect"
 echo
 
 cd "${LEROBOT_ROOT}"
-exec "${VENV_DIR}/bin/python" -m isaacteleop.cloudxr --accept-eula \
-  --cloudxr-env-config "${CLOUDXR_ENV_FILE}"
+exec "${VENV_DIR}/bin/python" -m isaacteleop.cloudxr --accept-eula   --cloudxr-env-config "${CLOUDXR_ENV_FILE}"

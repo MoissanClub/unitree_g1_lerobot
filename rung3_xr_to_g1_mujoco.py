@@ -54,6 +54,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--arm-kd-scale", type=float, default=1.0, help="Scale G1 arm damping gains; raise with kp if the sim overshoots.")
     parser.add_argument("--clutch-threshold", type=float, default=0.5)
     parser.add_argument(
+        "--clutch-axis",
+        choices=("squeeze", "trigger", "max"),
+        default="max",
+        help="Controller analog input used for hold-to-enable clutch; max uses max(squeeze, trigger).",
+    )
+    parser.add_argument(
         "--max-delta-m",
         type=float,
         default=0.20,
@@ -86,6 +92,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--cloudxr-retry-s", type=float, default=2.0)
     parser.add_argument("--g1-state-timeout-s", type=float, default=10.0)
+    parser.add_argument(
+        "--tracking-timeout-s",
+        type=float,
+        default=20.0,
+        help="Reconnect OpenXR if no controller tracking arrives within this many seconds; <= 0 disables.",
+    )
     parser.add_argument("--ready-x-m", type=float, default=0.03, help="Ready pose hand offset forward from IK home.")
     parser.add_argument("--ready-z-m", type=float, default=0.12, help="Ready pose hand offset upward from IK home.")
     parser.add_argument("--ready-spread-m", type=float, default=0.03, help="Ready pose outward lateral offset for each hand.")
@@ -110,6 +122,28 @@ def make_transform(pos: np.ndarray, quat_xyzw: np.ndarray, rotation_cls: type) -
     transform[:3, :3] = rotation_cls.from_quat(np.asarray(quat_xyzw, dtype=float)).as_matrix()
     transform[:3, 3] = np.asarray(pos, dtype=float)
     return transform
+
+
+def valid_pose_frame(pos: np.ndarray, quat: np.ndarray) -> bool:
+    pos = np.asarray(pos, dtype=float)
+    quat = np.asarray(quat, dtype=float)
+    return (
+        pos.shape == (3,)
+        and quat.shape == (4,)
+        and np.all(np.isfinite(pos))
+        and np.all(np.isfinite(quat))
+        and float(np.linalg.norm(quat)) > 1e-6
+    )
+
+
+def clutch_value(action: dict, axis: str) -> float:
+    squeeze = float(action.get("squeeze", 0.0))
+    trigger = float(action.get("trigger", 0.0))
+    if axis == "squeeze":
+        return squeeze
+    if axis == "trigger":
+        return trigger
+    return max(squeeze, trigger)
 
 
 def clamp_translation(target: np.ndarray, home: np.ndarray, max_delta_m: float) -> np.ndarray:
@@ -427,22 +461,28 @@ def main() -> int:
         if not args.no_wait:
             input("After the headset client is connected, press Enter to create the OpenXR session...")
 
-    while True:
-        try:
-            teleop.connect()
-            break
-        except RuntimeError as exc:
-            if not cloudxr_runtime_error(exc):
-                raise
-            print("\nOpenXR/CloudXR is not available yet.", file=sys.stderr)
-            print("Start CloudXR in another terminal with: cd ~/lerobot-sim/G1Arm23LeRobot && ./run_isaac_teleop.sh", file=sys.stderr)
-            print("Then connect the headset browser client.", file=sys.stderr)
-            if not args.wait_for_cloudxr:
-                return 2
-            if robot is not None:
-                print("Holding G1 ready pose while waiting for XR attach.", file=sys.stderr)
-            print(f"Waiting {args.cloudxr_retry_s:.1f}s before retrying XR attach...", file=sys.stderr)
-            publish_ready_for(robot, ready_action, args.cloudxr_retry_s, args.control_hz)
+    def connect_teleop_with_retry() -> None:
+        while True:
+            try:
+                teleop.connect()
+                return
+            except RuntimeError as exc:
+                if not cloudxr_runtime_error(exc):
+                    raise
+                print("\nOpenXR/CloudXR is not available yet.", file=sys.stderr)
+                print("Start CloudXR in another terminal with: cd ~/lerobot-sim/G1Arm23LeRobot && ./run_isaac_teleop.sh", file=sys.stderr)
+                print("Then connect the headset browser client.", file=sys.stderr)
+                if not args.wait_for_cloudxr:
+                    raise
+                if robot is not None:
+                    print("Holding G1 ready pose while waiting for XR attach.", file=sys.stderr)
+                print(f"Waiting {args.cloudxr_retry_s:.1f}s before retrying XR attach...", file=sys.stderr)
+                publish_ready_for(robot, ready_action, args.cloudxr_retry_s, args.control_hz)
+
+    try:
+        connect_teleop_with_retry()
+    except RuntimeError:
+        return 2
     print("XR teleop connected. Waiting for tracked controller frames...")
 
     if robot is None:
@@ -458,6 +498,7 @@ def main() -> int:
     deadline = float("inf") if args.duration_s <= 0.0 else time.monotonic() + args.duration_s
     was_engaged = False
     last_tracking: bool | None = None
+    last_tracking_time = time.monotonic()
     step = 0
 
     try:
@@ -465,8 +506,44 @@ def main() -> int:
             t0 = time.perf_counter()
             xr_action = teleop.get_action()
             tracking = bool(teleop.is_tracking)
+            now = time.monotonic()
+            if tracking:
+                last_tracking_time = now
+            elif (
+                args.wait_for_cloudxr
+                and args.tracking_timeout_s > 0.0
+                and now - last_tracking_time >= args.tracking_timeout_s
+            ):
+                print(
+                    f"No tracked controller frames for {args.tracking_timeout_s:.1f}s; "
+                    "recreating OpenXR session and holding ready pose.",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                teleop.disconnect()
+                publish_ready_for(robot, ready_action, args.cloudxr_retry_s, args.control_hz)
+                connect_teleop_with_retry()
+                print("XR teleop reconnected. Waiting for tracked controller frames...", flush=True)
+                last_tracking_time = time.monotonic()
+                was_engaged = False
+                last_tracking = None
+                continue
+            pose_valid = tracking and valid_pose_frame(xr_action["grip_pos"], xr_action["grip_quat"])
             squeeze = float(xr_action["squeeze"])
-            engaged = tracking and squeeze >= args.clutch_threshold
+            trigger = float(xr_action.get("trigger", 0.0))
+            clutch_level = clutch_value(xr_action, args.clutch_axis)
+            if tracking and not pose_valid:
+                tracking = False
+                engaged = False
+                if step % max(1, int(args.control_hz)) == 0:
+                    print(
+                        "tracked controller has invalid grip pose; holding previous target "
+                        f"pos={np.asarray(xr_action['grip_pos']).tolist()} quat={np.asarray(xr_action['grip_quat']).tolist()}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
+            else:
+                engaged = pose_valid and clutch_level >= args.clutch_threshold
 
             if engaged and not was_engaged:
                 measured_left, measured_right = fk(model, data, ik.L_hand_id, ik.R_hand_id, q)
@@ -497,12 +574,15 @@ def main() -> int:
             if tracking or tracking != last_tracking or step % max(1, int(args.control_hz)) == 0:
                 active_target = right_target if args.hand_side == "right" else left_target
                 print(
-                    "step={step:04d} tracking={tracking} engaged={engaged} squeeze={squeeze:.3f} "
+                    "step={step:04d} tracking={tracking} engaged={engaged} "
+                    "squeeze={squeeze:.3f} trigger={trigger:.3f} clutch={clutch:.3f} "
                     "target=({x:+.3f},{y:+.3f},{z:+.3f}) q0={q0:+.3f} |q|={qnorm:.3f}".format(
                         step=step,
                         tracking=tracking,
                         engaged=engaged,
                         squeeze=squeeze,
+                        trigger=trigger,
+                        clutch=clutch_level,
                         x=float(active_target[0, 3]),
                         y=float(active_target[1, 3]),
                         z=float(active_target[2, 3]),

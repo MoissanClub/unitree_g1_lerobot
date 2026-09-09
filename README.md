@@ -88,15 +88,19 @@ cd ~/lerobot-sim/G1Arm23LeRobot
 For the ergonomic real headset run, start the lightweight pieces before putting on the
 headset.
 
-Terminal A, start G1 MuJoCo as a standalone DDS simulator:
+Terminal A, start G1 MuJoCo as a standalone DDS simulator. It first prints
+`raising robot arm` and pauses after the motion so you can verify the viewer before
+steady-state simulation starts:
 
 ```bash
 cd ~/lerobot-sim/G1Arm23LeRobot
 ./run_g1_mujoco_dds_sim.sh
 ```
 
-Terminal C, start the XR-to-G1 bridge before CloudXR exists. It attaches to DDS, sends the
-G1 to the raised-arm ready pose, and keeps holding that pose while it retries XR attach:
+Terminal C, start the XR-to-G1 bridge before CloudXR exists. It first simulates a
+CloudXR/controller orientation change and pauses so you can verify the right arm changes
+orientation. Then it attaches to DDS, sends the G1 to the raised-arm ready pose, and keeps
+holding that pose while it retries XR attach:
 
 ```bash
 cd ~/lerobot-sim/G1Arm23LeRobot
@@ -114,20 +118,29 @@ If the MuJoCo arms feel too slow, tune only the bridge command gains first:
 Raise `--arm-kp-scale` for faster response. If the arm overshoots or shakes, raise
 `--arm-kd-scale` or reduce `--arm-kp-scale`.
 
-Terminal B, start CloudXR:
+Terminal B, start CloudXR. It first simulates an XR device input that lowers both arms and
+pauses for confirmation before CloudXR starts:
 
 ```bash
 cd ~/lerobot-sim/G1Arm23LeRobot
 ./run_isaac_teleop.sh
 ```
 
+For non-interactive smoke tests, prefix any launcher with
+`SKIP_G1_STARTUP_DIAGNOSTIC=1` to skip these confirmation pauses.
+
 Then put on the headset. In the headset browser, open
 `https://nvidia.github.io/IsaacTeleop/client`, use the `Quest3` profile, enter the
 workstation IP printed by `run_isaac_teleop.sh`, enter XR, and connect.
 
+This rung uses the headset for controller input only. The MuJoCo robot view is the Tk/X
+window opened by `run_g1_mujoco_dds_sim.sh`; the headset client may stay on its CloudXR
+control/status screen because `run_xr_g1_mujoco.sh` creates a headless OpenXR session and
+does not submit MuJoCo camera frames to VR yet.
+
 Default behavior is conservative: before XR attaches, both arms hold the raised ready pose.
 After XR attaches, the right controller drives the right wrist only, the left wrist holds
-ready, and squeeze is a hold-to-enable clutch.
+ready, and the clutch defaults to max(squeeze, trigger) as a hold-to-enable input.
 
 ### Rung 3 Runtime Model
 
