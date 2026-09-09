@@ -22,8 +22,9 @@ def mesh_directory() -> Path:
 
 
 class MotorPlant:
-    def __init__(self, profile: dict, meshes: Path, payload_kg: float = 0):
+    def __init__(self, profile: dict, meshes: Path, payload_kg: float = 0, gravity_compensation: bool = False):
         self.profile = profile
+        self.gravity_compensation = gravity_compensation
         self.motors = [m for m in profile["motors"] if m["arm"]]
         self.joints = [m["joint"] for m in self.motors]
         root = ET.parse(SOURCES / f"{profile['variant']}dof.xml").getroot()
@@ -64,6 +65,8 @@ class MotorPlant:
         self.model = mujoco.MjModel.from_xml_string(ET.tostring(root, encoding="unicode"))
         self.data = mujoco.MjData(self.model)
         self.reference = mujoco.MjData(self.model)
+        self.gravity_data = mujoco.MjData(self.model)
+        self.last_feedforward = np.zeros(self.model.nu)
         joint_ids = [mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, j) for j in self.joints]
         self.qadr = self.model.jnt_qposadr[joint_ids]
         self.vadr = self.model.jnt_dofadr[joint_ids]
@@ -81,13 +84,22 @@ class MotorPlant:
             assert np.isclose(self.model.dof_frictionloss[did], motor["frictionloss"])
         self.reset()
 
-    def reset(self):
+    def reset(self, command=None):
         mujoco.mj_resetData(self.model, self.data)
-        self.data.qpos[self.qadr] = ready(self.joints)
+        self.data.qpos[self.qadr] = ready(self.joints) if command is None else command
         mujoco.mj_forward(self.model, self.data)
+
+    def gravity_torque(self):
+        # Evaluate bias at the measured pose with zero velocity: gravity only.
+        self.gravity_data.qpos[:] = self.data.qpos
+        self.gravity_data.qvel[:] = 0
+        mujoco.mj_forward(self.model, self.gravity_data)
+        return self.gravity_data.qfrc_bias[self.vadr].copy()
 
     def step(self, command):
         raw = self.kp * (command - self.data.qpos[self.qadr]) - self.kd * self.data.qvel[self.vadr]
+        self.last_feedforward = self.gravity_torque() if self.gravity_compensation else np.zeros_like(raw)
+        raw += self.last_feedforward
         torque = np.clip(raw, -self.limits, self.limits)
         self.data.ctrl[self.aids] = torque
         mujoco.mj_step(self.model, self.data)
@@ -102,12 +114,13 @@ class MotorPlant:
 
 
 def run_trial(plant: MotorPlant, test: MotorTest) -> dict:
-    plant.reset()
+    initial = target(test, 0, plant.joints)
+    plant.reset(initial)
     for _ in range(round(0.75 / DT)):
-        plant.step(ready(plant.joints))
+        plant.step(initial)
     count = round(test.seconds / DT)
     n = len(plant.joints)
-    log = {key: np.zeros((count, n)) for key in ("target", "delivered", "q", "dq", "raw_torque", "torque")}
+    log = {key: np.zeros((count, n)) for key in ("target", "delivered", "q", "dq", "raw_torque", "torque", "gravity_feedforward", "gravity_required")}
     log.update(time=np.arange(count) * DT, hand_error=np.zeros((count, 2)), orientation_error=np.zeros((count, 2)))
     log["target_hand"] = np.zeros((count, 2, 3))
     log["actual_hand"] = np.zeros((count, 2, 3))
@@ -128,7 +141,9 @@ def run_trial(plant: MotorPlant, test: MotorTest) -> dict:
         log["hand_error"][i] = np.linalg.norm(actual_hand - target_hand, axis=1)
         relative = actual_rot @ np.swapaxes(target_rot, -1, -2)
         log["orientation_error"][i] = np.arccos(np.clip((np.trace(relative, axis1=-2, axis2=-1) - 1) / 2, -1, 1))
+        log["gravity_required"][i] = plant.gravity_torque()
         log["raw_torque"][i], log["torque"][i] = plant.step(delivered)
+        log["gravity_feedforward"][i] = plant.last_feedforward
     elapsed = time.perf_counter() - started
     error = log["q"] - log["target"]
     common = [i for i, j in enumerate(plant.joints) if "wrist_pitch" not in j and "wrist_yaw" not in j]
@@ -148,13 +163,31 @@ def run_trial(plant: MotorPlant, test: MotorTest) -> dict:
         "torque_slew_rms_nm_s": float(np.sqrt(np.mean((np.diff(log["torque"], axis=0) / DT) ** 2))),
         "estimated_lag_s": None, "stop_peak_excursion_rad": None,
         "stop_last_second_peak_speed_rad_s": None,
+        "rise_to_90_s": None, "rise_10_to_90_s": None,
+        "max_step_overshoot_pct": None, "active_joint_rmse_rad": None,
+        "post_motion_settling_s": None, "post_motion_peak_error_rad": None,
+        "last_second_hand_sag_m": float(np.max(np.mean((log["target_hand"] - log["actual_hand"])[-round(1 / DT):, :, 2], axis=0))),
+        "peak_gravity_torque_fraction": float(np.max(np.abs(log["gravity_required"]) / plant.limits)),
     }
+    active = np.flatnonzero(np.ptp(log["target"], axis=0) > 1e-9)
+    if len(active):
+        metrics["active_joint_rmse_rad"] = float(np.sqrt(np.mean(error[:, active] ** 2)))
     if test.name.endswith("_step"):
         delta = log["target"][-1] - log["target"][0]
         active = np.flatnonzero(np.abs(delta) > 0)
         start = round(1 / DT)
         signed = error[start:, active] * np.sign(delta[active])
         metrics["max_step_overshoot_rad"] = float(max(0, signed.max()))
+        metrics["max_step_overshoot_pct"] = float(max(0, np.max(signed / np.abs(delta[active]))) * 100)
+        progress = (log["q"][start:, active] - log["target"][0, active]) / delta[active]
+        crossings = []
+        for column in progress.T:
+            lo, hi = np.flatnonzero(column >= 0.1), np.flatnonzero(column >= 0.9)
+            if len(lo) and len(hi):
+                crossings.append((hi[0] * DT, (hi[0] - lo[0]) * DT))
+        if len(crossings) == len(active):
+            metrics["rise_to_90_s"] = float(max(c[0] for c in crossings))
+            metrics["rise_10_to_90_s"] = float(max(c[1] for c in crossings))
         inside = np.all(np.abs(error[start:, active]) <= 0.02, axis=1)
         last_bad = np.flatnonzero(~inside)
         settle_index = int(last_bad[-1] + 1) if len(last_bad) else 0
@@ -187,4 +220,13 @@ def run_trial(plant: MotorPlant, test: MotorTest) -> dict:
         stop = round(2.0 / DT)
         metrics["stop_peak_excursion_rad"] = float(np.max(np.abs(log["q"][stop:] - log["q"][stop])))
         metrics["stop_last_second_peak_speed_rad_s"] = float(np.max(np.abs(log["dq"][-round(1 / DT):])))
-    return {"test": test, "profile": plant.profile, "joints": plant.joints, "log": log, "metrics": metrics}
+    if test.kind in {"fast_move", "reversal"}:
+        stop = round((1 + test.move_seconds * (2 if test.kind == "reversal" else 1)) / DT)
+        post_error = error[stop:, active]
+        metrics["post_motion_peak_error_rad"] = float(np.max(np.abs(post_error)))
+        outside = np.flatnonzero(np.any(np.abs(post_error) > 0.02, axis=1))
+        settle = int(outside[-1] + 1) if len(outside) else 0
+        if len(post_error) - settle >= round(0.5 / DT):
+            metrics["post_motion_settling_s"] = settle * DT
+    return {"test": test, "profile": plant.profile, "joints": plant.joints, "log": log, "metrics": metrics,
+            "gravity_compensation": plant.gravity_compensation}

@@ -171,6 +171,19 @@ side-by-side replay. See [method and tests](motor-config-comparison.md).
 This advances item 1 below as a standalone benchmark; it does not complete the live
 LeRobot/DDS runtime or the transport/XR acceptance in items 2-4.
 
+The corresponding `run_compare_g1_29_motor_configs_with_gravity_compensation.sh` and
+`run_compare_g1_29_g1_23_motor_configs_with_gravity_compensation.sh` add exact-model
+gravity feedforward at measured joint positions, including known payload mass.
+Review these separately from the preserved PD-only benchmarks. This is an ideal-model
+simulation check, not validation of hardware mass estimates or the live IK feedforward.
+
+All four pair launchers share 34 scenarios, including faster shoulder steps/sweeps,
+point-to-point motion, reversal/stop, and extended holds with 0-1 kg per hand.
+`compare_motor_config.sh` summarizes the same suite in a synchronized 3-column,
+2-row viewer: LeRobot G1-29, derived G1-29, derived G1-23, with compensation OFF
+above and ON below. Reports include rise time, overshoot, settling, sag, and torque
+headroom. This remains supported-arm benchmark evidence, not live DDS acceptance.
+
 1. **Motor-driven simulation:** build the native G1-23 LeRobot/MuJoCo runtime with
    actuators, gravity, inertia, damping, and appropriate contacts. Verify pose holding
    and motion under motor commands; direct assignment to `qpos` is not this test.

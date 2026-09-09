@@ -204,6 +204,9 @@ viewers:
 ```bash
 ./run_compare_g1_29_motor_configs_no_gravity_compensation.sh
 ./run_compare_g1_29_g1_23_motor_configs_no_gravity_compensation.sh
+./run_compare_g1_29_motor_configs_with_gravity_compensation.sh
+./run_compare_g1_29_g1_23_motor_configs_with_gravity_compensation.sh
+./compare_motor_config.sh
 ```
 
 These run the same supported-arm physics suite and produce side-by-side playback, plots,

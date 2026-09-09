@@ -2,6 +2,7 @@
 import unittest
 
 import numpy as np
+import mujoco
 
 from unitree_g1_lerobot.diagnostics.motor_suite import SUITE, ready, target
 from unitree_g1_lerobot.robots.motor_configs import derive_profile, load_profile, lerobot_profile
@@ -58,6 +59,67 @@ class MotorConfigTests(unittest.TestCase):
         self.assertGreater(a["metrics"]["joint_rmse_rad"], 0.001)
         self.assertLess(a["metrics"]["joint_rmse_rad"], 0.1)
         self.assertEqual(a["metrics"]["max_limit_violation_rad"], 0)
+
+    def test_gravity_compensation_holds_both_models_with_known_payload(self):
+        for profile in (load_profile("g1_29"), lerobot_profile(), load_profile("g1_23")):
+            for payload in (0, 0.5):
+                plant = MotorPlant(profile, self.meshes, payload, gravity_compensation=True)
+                result = run_trial(plant, SUITE[0])
+                self.assertLess(result["metrics"]["joint_rmse_rad"], 1e-6)
+                self.assertGreater(np.max(np.abs(result["log"]["gravity_feedforward"])), 0.1)
+                self.assertEqual(result["metrics"]["saturation_fraction"], 0)
+
+    def test_feedforward_is_gravity_only_and_total_torque_is_clipped(self):
+        for variant in ("g1_29", "g1_23"):
+            plant = MotorPlant(load_profile(variant), self.meshes, gravity_compensation=True)
+            for fraction in (0.2, 0.5, 0.8):
+                plant.data.qpos[plant.qadr] = plant.ranges[:, 0] + fraction * np.diff(plant.ranges, axis=1).ravel()
+                plant.data.qvel[:] = 0
+                mujoco.mj_forward(plant.model, plant.data)
+                expected = plant.data.qfrc_bias[plant.vadr].copy()
+                plant.data.qvel[:] = 2
+                np.testing.assert_allclose(plant.gravity_torque(), expected, atol=1e-12)
+                np.testing.assert_array_equal(plant.data.qvel, 2)
+            plant.reset()
+            command = ready(plant.joints) + 1
+            expected = plant.kp * (command - plant.data.qpos[plant.qadr]) + plant.gravity_torque()
+            raw, applied = plant.step(command)
+            np.testing.assert_allclose(raw, expected)
+            np.testing.assert_allclose(applied, np.clip(expected, -plant.limits, plant.limits))
+
+    def test_extended_hold_exposes_sag_without_saturation(self):
+        test = next(t for t in SUITE if t.name == "extended_hold_1kg")
+        for variant in ("g1_29", "g1_23"):
+            plant = MotorPlant(load_profile(variant), self.meshes, test.payload_kg)
+            plant.reset(target(test, 0, plant.joints))
+            self.assertEqual(plant.data.ncon, 0)
+            results = [run_trial(MotorPlant(load_profile(variant), self.meshes, test.payload_kg,
+                                           gravity_compensation=mode), test) for mode in (False, True)]
+            self.assertGreater(results[0]["metrics"]["last_second_hand_sag_m"], 0.01)
+            self.assertLess(abs(results[1]["metrics"]["last_second_hand_sag_m"]), 1e-5)
+            for result in results:
+                self.assertLess(result["metrics"]["peak_gravity_torque_fraction"], 0.8)
+                self.assertEqual(result["metrics"]["saturation_fraction"], 0)
+
+    def test_fast_step_metrics_and_reversal_endpoints(self):
+        test = next(t for t in SUITE if t.name == "pitch_20deg_step")
+        plant = MotorPlant(load_profile("g1_29"), self.meshes, gravity_compensation=True)
+        metrics = run_trial(plant, test)["metrics"]
+        self.assertGreater(metrics["rise_to_90_s"], 0)
+        self.assertGreater(metrics["rise_10_to_90_s"], 0)
+        self.assertGreater(metrics["max_step_overshoot_pct"], 0)
+        self.assertIsNotNone(metrics["settling_to_target_s"])
+        for test in SUITE:
+            if test.kind == "reversal":
+                np.testing.assert_allclose(target(test, test.seconds, plant.joints), ready(plant.joints))
+
+    def test_summary_panel_order(self):
+        from unitree_g1_lerobot.diagnostics.compare_motor_configs import comparison_cases
+        cases = comparison_cases("summary")
+        self.assertEqual([mode for _, mode in cases], [False] * 3 + [True] * 3)
+        self.assertEqual([p["name"] for p, _ in cases[:3]],
+                         [lerobot_profile()["name"], load_profile("g1_29")["name"], load_profile("g1_23")["name"]])
+        self.assertEqual(cases[:3], [(p, False) for p, _ in cases[3:]])
 
 
 if __name__ == "__main__":

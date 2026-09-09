@@ -1,8 +1,52 @@
 # Motor Configuration Comparison
 
-Two launchers run actual MuJoCo motor-driven arm tests, save quantitative results, then
+Two pairs of launchers run actual MuJoCo motor-driven arm tests, save quantitative results, then
 continuously replay the recorded physics trajectories in a side-by-side Tk/X viewer.
 They do not publish DDS commands and need neither CloudXR nor a headset.
+
+## Six-Panel Summary
+
+Verification checkpoint: all four pair launchers completed 34 scenarios and opened
+their Tk viewers; the summary completed all 204 trials. Each report has the expected
+unique raw traces and 34 previews. Sixteen regression tests passed with real-viewer
+checks enabled, including pause/resume, navigation, restart, test selection, and
+robot-pixel motion in every panel. The extended hold pose is collision-free on both
+models, and the 1 kg demonstration has no torque saturation. These checks do not
+establish hardware speed/payload ratings or complete Rung 4 DDS/XR acceptance.
+
+Reproduce the regression checks from the project root in the `lerobot-g1` environment:
+
+```bash
+python -m unittest discover -s tests -v
+G1_TEST_VIEWER=1 python -m unittest discover -s tests -v
+```
+
+The second command requires a working X display and EGL; the first skips only the
+real-viewer interaction test.
+
+```bash
+./compare_motor_config.sh
+```
+
+| | LeRobot G1-29 | Derived G1-29 | Derived G1-23 |
+|---|---|---|---|
+| Top row | Compensation OFF | Compensation OFF | Compensation OFF |
+| Bottom row | Compensation ON | Compensation ON | Compensation ON |
+
+The summary runs the same 34 scenarios for all six configurations, then replays
+them on a shared timeline in one 1200-by-760-pixel image plus the toolbar. These are
+independent supported-arm simulations, not interacting robots in one physics world.
+Each panel identifies its profile and compensation mode. Compare vertically to isolate
+gravity feedforward, and compare the first two columns to isolate G1-29 gains.
+Reports include all six cases; raw trace filenames include compensation mode.
+
+All launchers accept `--tests`, `--no-view`, `--gui-seconds`, `--output-dir`, and the
+same camera options. Summary panel sizes can be changed with `--width` and `--height`.
+For example:
+
+```bash
+./compare_motor_config.sh --tests pitch_20deg_step extended_hold_0kg extended_hold_1kg
+```
 
 ## Run
 
@@ -12,15 +56,17 @@ From an `ssh -Y` terminal:
 cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_compare_g1_29_motor_configs_no_gravity_compensation.sh
 ./run_compare_g1_29_g1_23_motor_configs_no_gravity_compensation.sh
+./run_compare_g1_29_motor_configs_with_gravity_compensation.sh
+./run_compare_g1_29_g1_23_motor_configs_with_gravity_compensation.sh
 ```
 
-Run one at a time for review. The first compares Unitree-derived G1-29 gains (left)
+Run one at a time for review. Within each pair, the first compares Unitree-derived G1-29 gains (left)
 against the current installed LeRobot G1-29 gains (right), on identical physics models.
 The second compares Unitree-derived G1-29 (left) and G1-23 (right) on their native models.
 All body motor settings are recorded in the two profiles, but this benchmark tests arms
 only: pelvis, legs, and waist are rigidly supported, so their holding gains are not ranked.
 
-The ten tests run before the viewer opens. Playback repeats the suite until the window
+The 34 tests run before the viewer opens. Playback repeats the suite until the window
 is closed or Ctrl+C is pressed. Pause, restart, previous/next, test selection, and playback
 speed are available. Yellow spheres mark the commanded hand positions; green sites mark
 the actual end-effector locations. Both cameras default to the robot's left-front:
@@ -75,9 +121,49 @@ See [source provenance and licenses](../assets/g1/motor_sources/README.md).
 
 ## Test Conditions
 
+All four launchers share the same suite. In addition to the original ten cases:
+
+- Pitch and roll steps of 5, 10, and 20 degrees (six tests).
+- Pitch and roll sweeps at 0.5, 1, and 2 Hz with 10-degree amplitude (six tests).
+- Pitch and roll 20-degree point-to-point moves over 0.8, 0.4, and 0.2 seconds
+  (six tests). Quintic interpolation gives bounded acceleration and zero endpoint velocity.
+- Pitch and roll rapid out-and-back reversals, 0.2 seconds per leg (two tests).
+- Extended-arm holds with 0, 0.25, 0.5, and 1 kg per hand (four tests). Native joint
+  targets use shoulder pitch -1.2 rad, elbow 1.0 rad, and mirrored shoulder yaw
+  0.6 rad to separate the hands; this is a long forward reach, not a
+  claimed maximum workspace pose. These tests reset at the hold target before warmup.
+
+Step reports include worst-arm time to 90%, 10-90% rise time, target overshoot in
+percent, and settling in a 0.02 rad band. Crossing thresholds reference the commanded
+initial/final angles; uncompensated sag can prevent reaching them. Null means not reached,
+not zero. CSV/JSON also include active-joint RMSE and post-motion settling/peak error
+for point-to-point and reversal cases. These tests are not a maximum safe speed search.
+
+Extended holds report final-second mean vertical hand sag (the larger of the two
+hands) and peak gravity torque divided by motor limits. Compare identical profiles
+between OFF and ON runs to isolate compensation. Payload is known to the compensated
+model. These are demonstration loads, not hardware payload ratings; inspect saturation
+and gravity torque headroom before interpreting sag. NPZ files record required gravity
+torque even with compensation OFF; PD torque is raw torque minus gravity feedforward.
+
+For a shorter gravity demonstration, append to any launcher:
+
+```bash
+--tests extended_hold_0kg extended_hold_0.5kg extended_hold_1kg
+```
+
 - 500 Hz MuJoCo physics and PD feedback; commanded joint targets update at 250 Hz.
-- Torque control: `tau = clip(kp*(q_command-q) - kd*dq, +/-torque_limit)`.
-- Gravity enabled; feedforward/gravity compensation disabled equally for both sides.
+- Gravity is enabled in all four launchers. The `no_gravity_compensation` pair uses
+  `tau = clip(kp*(q_command-q) - kd*dq, +/-torque_limit)`.
+- The `with_gravity_compensation` pair adds `g(q_measured)` before clipping the total
+  torque. Gravity feedforward runs at 500 Hz, equally on both comparison sides.
+  A separate MuJoCo data object evaluates bias forces at the measured pose with zero
+  velocity, excluding Coriolis/centrifugal terms and avoiding changes to simulation state.
+- Feedforward uses the exact plant model, including known payload mass. This is an
+  ideal-model baseline, not a test of mass-estimation errors or live IK feedforward.
+  No acceleration feedforward or friction compensation is applied.
+- Viewer labels, output directory names, and reports identify the compensation mode;
+  NPZ traces include the gravity feedforward torque separately from total torque.
 - Published native inertias, passive damping, armature, friction, limits, and collisions.
 - Every test resets to the same supported ready pose and warms up for 0.75 seconds.
 - Tests replay deterministic joint targets, so IK differences cannot alter the gain A/B.

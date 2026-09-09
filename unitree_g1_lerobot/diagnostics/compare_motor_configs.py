@@ -22,8 +22,9 @@ from unitree_g1_lerobot.simulation.motor_bench import DT, MESH_REVISION, MotorPl
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--comparison", choices=("lerobot", "embodiments"), required=True)
-    parser.add_argument("--tests", nargs="+", choices=[t.name for t in SUITE], help="Default: all ten tests")
+    parser.add_argument("--comparison", choices=("lerobot", "embodiments", "summary"), required=True)
+    parser.add_argument("--gravity-compensation", action="store_true", help="Add exact-model gravity feedforward at measured pose, including known payload")
+    parser.add_argument("--tests", nargs="+", choices=[t.name for t in SUITE], help=f"Default: all {len(SUITE)} tests")
     parser.add_argument("--no-view", action="store_true")
     parser.add_argument("--gui-seconds", type=float, default=0, help="Close viewer after N seconds; 0 loops until closed")
     parser.add_argument("--output-dir", type=Path)
@@ -33,12 +34,17 @@ def parse_args():
     parser.add_argument("--width", type=int, default=540)
     parser.add_argument("--height", type=int, default=520)
     args = parser.parse_args()
+    if args.comparison == "summary" and args.gravity_compensation:
+        parser.error("summary always includes both compensation modes")
     if not all(np.isfinite(v) for v in (args.camera_azimuth, args.camera_elevation, args.camera_distance, args.gui_seconds)) or args.camera_distance <= 0 or args.gui_seconds < 0:
         parser.error("camera parameters must be finite; distance positive and gui-seconds nonnegative")
     if not 240 <= args.width <= 1600 or not 240 <= args.height <= 1200:
         parser.error("panel dimensions must fit 240..1600 by 240..1200")
     if args.output_dir is None:
-        args.output_dir = ROOT / "artifacts/motors" / f"{datetime.now():%Y%m%d_%H%M%S_%f}_{args.comparison}"
+        mode = "gravity_compensation" if args.gravity_compensation else "no_gravity_compensation"
+        if args.comparison == "summary":
+            mode = "both_modes"
+        args.output_dir = ROOT / "artifacts/motors" / f"{datetime.now():%Y%m%d_%H%M%S_%f}_{args.comparison}_{mode}"
     return args
 
 
@@ -48,13 +54,23 @@ def write_report(pairs, output, comparison):
     import matplotlib.pyplot as plt
 
     rows = []
+    modes = {t["gravity_compensation"] for pair in pairs for t in pair}
+    compensated = next(iter(modes)) if len(modes) == 1 else None
+    controller = ("tau = clip(kp * (q_command - q) - kd * dq + g(q_measured), torque_limit); "
+                  "exact-model gravity feedforward including known payload, evaluated at zero velocity" if compensated else
+                  "tau = clip(kp * (q_command - q) - kd * dq, torque_limit); no gravity feedforward")
+    if compensated is None:
+        controller = "Top row: PD only. Bottom row: PD + exact-model g(q_measured), including known payload. Total torque is clipped in both rows."
     metadata = {
         "comparison": comparison, "physics_dt_s": DT, "target_update_dt_s": 0.004,
         "support": "Pelvis, legs and waist rigidly supported; only arm joints simulated",
-        "controller": "tau = clip(kp * (q_command - q) - kd * dq, torque_limit); no gravity feedforward",
+        "controller": controller,
+        "gravity_compensation": compensated,
+        "gravity_m_s2": [0, 0, -9.81],
         "scope": "Same G1-29 model and identical targets for gain A/B; different native models with common-joint targets for embodiment comparison. Not hardware or DDS validation.",
         "tests": [asdict(pair[0]["test"]) for pair in pairs],
         "profiles": [trial["profile"] for trial in pairs[0]],
+        "panels": [{"profile": t["profile"]["name"], "gravity_compensation": t["gravity_compensation"]} for t in pairs[0]],
         "mesh_source": {"repo": "lerobot/unitree-g1-mujoco", "revision": MESH_REVISION},
         "versions": {"mujoco": mujoco.__version__, "numpy": np.__version__},
         "integrity_limits": {"max_limit_violation_rad": 0.03, "peak_joint_speed_rad_s": 20},
@@ -64,13 +80,17 @@ def write_report(pairs, output, comparison):
     for row, pair in enumerate(pairs):
         test = pair[0]["test"]
         feature = "shoulder_roll" if test.name in {"shoulder_roll_step", "left_right"} else "elbow" if test.name == "forward_back" else "wrist_roll" if test.name == "wrist_rotation" else "shoulder_pitch"
+        if test.kind != "legacy":
+            feature = test.axis
         for side, trial in enumerate(pair):
             profile, log = trial["profile"], trial["log"]
             label = profile["name"]
+            if comparison == "summary":
+                label += "_gravity_on" if trial["gravity_compensation"] else "_gravity_off"
             joint = trial["joints"].index(f"left_{feature}_joint")
             rows.append({"test": test.name, "profile": label, **trial["metrics"]})
             np.savez_compressed(output / f"{test.name}_{label}.npz", joints=np.array(trial["joints"]), **log)
-            color = ("#007f80", "#c04659")[side]
+            color = ("#007f80", "#c04659", "#6666aa", "#228833", "#cc8811", "#aa3377")[side]
             if side == 0:
                 axes[row, 0].plot(log["time"], log["target"][:, joint], color="#555555", linestyle="--", label="joint target")
             axes[row, 0].plot(log["time"], log["q"][:, joint], color=color, label=label)
@@ -94,18 +114,25 @@ def write_report(pairs, output, comparison):
         writer.writeheader()
         writer.writerows(rows)
     lines = ["# G1 Motor Comparison", "", metadata["scope"], "", metadata["support"], "",
-             "PD feedback runs at 500 Hz; targets update at 250 Hz. All cases use gravity, with no gravity feedforward. Each test resets, then warms up for 0.75 s before measurement.", "",
+             "PD feedback and optional gravity feedforward run at 500 Hz; targets update at 250 Hz. Gravity is enabled. Each test resets, then warms up for 0.75 s before measurement.", "", controller, "",
              "Common-joint RMSE uses the same ten shoulder/elbow/wrist-roll joints in both robots. Hand error is measured relative to each model's own FK of commanded joints, not a common Cartesian path.", "",
              "| Test | Profile | Common joint RMS (rad) | Hand RMS (mm) | Peak torque (Nm) | Saturation (%) |", "|---|---|---:|---:|---:|---:|"]
     for r in rows:
         lines.append(f"| {r['test']} | {r['profile']} | {r['common_joint_rmse_rad']:.4f} | {1000*r['hand_rmse_m']:.1f} | {r['peak_torque_nm']:.2f} | {100*r['saturation_fraction']:.2f} |")
     steps = [r for r in rows if r["step_equilibrium_overshoot_rad"] is not None]
+    holds = [r for r in rows if r["test"].startswith("extended_hold_")]
+    if holds:
+        lines.extend(["", "## Extended-Arm Holds", "", "| Test | Profile | Final hand sag (mm) | Peak gravity / torque limit (%) | Saturation (%) |", "|---|---|---:|---:|---:|"])
+        for r in holds:
+            lines.append(f"| {r['test']} | {r['profile']} | {1000*r['last_second_hand_sag_m']:.2f} | {100*r['peak_gravity_torque_fraction']:.1f} | {100*r['saturation_fraction']:.2f} |")
     if steps:
-        lines.extend(["", "## Step Response", "", "| Test | Profile | Overshoot around equilibrium (deg) | Settling to equilibrium (s) |", "|---|---|---:|---:|"])
+        lines.extend(["", "## Step Response", "", "| Test | Profile | Time to 90% (s) | Rise 10-90% (s) | Target overshoot (%) | Target settling (s) | Equilibrium overshoot (deg) | Equilibrium settling (s) |", "|---|---|---:|---:|---:|---:|---:|---:|"])
         for r in steps:
             settling = r["settling_to_equilibrium_s"]
             settling_text = "not settled" if settling is None else f"{settling:.3f}"
-            lines.append(f"| {r['test']} | {r['profile']} | {np.rad2deg(r['step_equilibrium_overshoot_rad']):.2f} | {settling_text} |")
+            values = ["not reached" if r[k] is None else f"{r[k]:.3f}" for k in
+                      ("rise_to_90_s", "rise_10_to_90_s", "max_step_overshoot_pct", "settling_to_target_s")]
+            lines.append(f"| {r['test']} | {r['profile']} | " + " | ".join(values) + f" | {np.rad2deg(r['step_equilibrium_overshoot_rad']):.2f} | {settling_text} |")
     lines.extend(["", "`comparison.png`: overlaid traces. `summary.csv` / `report.json`: metrics and source provenance. Each NPZ contains full 500 Hz target, delivered target, joint, velocity, requested/applied torque, and hand-error traces.", "",
                   "Lag is a mean-centered cross-correlation estimate within +/-0.2 s, not a network latency measurement. Stop excursion is measured from the actual joint positions when the target stops. Torque slew measures successive applied torque changes per second.", "",
                   "Step settling uses a 0.02 rad band around the commanded target and requires remaining inside for at least the final 0.5 s. Null means not settled within the trial (or not a step test), not zero settling time. Gravity-induced steady-state error may prevent settling.", "",
@@ -154,13 +181,16 @@ class PairRenderer:
             image = Image.fromarray(pixels)
             draw = ImageDraw.Draw(image)
             draw.rectangle((0, 0, self.args.width, 54), fill=(20, 23, 26))
-            draw.text((10, 8), trial["profile"]["name"], fill="white")
+            mode = "gravity FF ON" if trial["gravity_compensation"] else "gravity FF OFF"
+            draw.text((10, 8), f"{trial['profile']['name']} | {mode}", fill="white")
             error = 1000 * np.sqrt(np.mean(log["hand_error"][i] ** 2))
             draw.text((10, 28), f"{trial['test'].name} | t={log['time'][i]:.2f}s | hand error={error:.1f} mm", fill=(220, 220, 220))
             images.append(image)
-        combined = Image.new("RGB", (2 * self.args.width, self.args.height))
+        columns = 3 if len(images) == 6 else len(images)
+        rows = (len(images) + columns - 1) // columns
+        combined = Image.new("RGB", (columns * self.args.width, rows * self.args.height))
         for side, image in enumerate(images):
-            combined.paste(image, (side * self.args.width, 0))
+            combined.paste(image, ((side % columns) * self.args.width, (side // columns) * self.args.height))
         return combined
 
     def close(self):
@@ -175,7 +205,10 @@ def replay(pairs, meshes, args):
     from PIL import ImageTk
 
     root = tk.Tk()
-    root.title("G1 motor physics comparison")
+    mode = "gravity compensation ON" if pairs[0][0]["gravity_compensation"] else "gravity compensation OFF"
+    if len(pairs[0]) == 6:
+        mode = "Top: gravity compensation OFF | Bottom: ON"
+    root.title(f"G1 motor physics comparison - {mode}")
     bar = ttk.Frame(root)
     bar.pack(fill="x")
     choice = ttk.Combobox(bar, values=[p[0]["test"].name for p in pairs], state="readonly", width=25)
@@ -186,10 +219,22 @@ def replay(pairs, meshes, args):
     state = {"test": 0, "t": 0.0, "playing": True, "last": time.monotonic()}
     current = [PairRenderer(pairs[0], meshes, args)]
     errors = []
+    timers = []
+    close_timer = None
+
+    def close_window():
+        for timer in timers:
+            root.after_cancel(timer)
+        timers.clear()
+        if close_timer is not None:
+            root.after_cancel(close_timer)
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", close_window)
 
     def callback_error(exc_type, exc, traceback):
         errors.append(exc)
-        root.destroy()
+        close_window()
 
     root.report_callback_exception = callback_error
 
@@ -224,21 +269,31 @@ def replay(pairs, meshes, args):
         photo = ImageTk.PhotoImage(current[0].frame(round(state["t"] / DT)))
         canvas.configure(image=photo)
         canvas.image = photo
-        root.after(33, tick)
+        if timers:
+            timers.pop()
+        timers.append(root.after(33, tick))
 
     if args.gui_seconds:
-        root.after(round(1000 * args.gui_seconds), root.destroy)
+        close_timer = root.after(round(1000 * args.gui_seconds), close_window)
     try:
         tick()
         root.mainloop()
     finally:
         current[0].close()
         try:
-            root.destroy()
+            close_window()
         except tk.TclError:
             pass
     if errors:
         raise RuntimeError("Viewer callback failed") from errors[0]
+
+
+def comparison_cases(comparison, gravity_compensation=False):
+    if comparison == "summary":
+        profiles = [lerobot_profile(), load_profile("g1_29"), load_profile("g1_23")]
+        return [(profile, mode) for mode in (False, True) for profile in profiles]
+    profiles = [load_profile("g1_29"), lerobot_profile() if comparison == "lerobot" else load_profile("g1_23")]
+    return [(profile, gravity_compensation) for profile in profiles]
 
 
 def main():
@@ -251,22 +306,26 @@ def main():
         raise SystemExit("No DISPLAY. Use an ssh -Y terminal, or pass --no-view for reports only.")
     output = args.output_dir.expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
-    profiles = [load_profile("g1_29"), lerobot_profile() if args.comparison == "lerobot" else load_profile("g1_23")]
-    if any(profile["control_hz"] != 250 for profile in profiles):
+    cases = comparison_cases(args.comparison, args.gravity_compensation)
+    if any(profile["control_hz"] != 250 for profile, _ in cases):
         raise ValueError("This benchmark requires both profiles at 250 Hz")
     meshes = mesh_directory()
     tests = [test for test in SUITE if not args.tests or test.name in args.tests]
     pairs = []
     for test in tests:
         pair = []
-        for profile in profiles:
-            trial = run_trial(MotorPlant(profile, meshes, test.payload_kg), test)
+        for profile, compensation in cases:
+            trial = run_trial(MotorPlant(profile, meshes, test.payload_kg, compensation), test)
             m = trial["metrics"]
             if m["max_limit_violation_rad"] > 0.03 or m["peak_joint_speed_rad_s"] > 20:
                 raise RuntimeError(f"{test.name}: exceeded simulation integrity limits: {m}")
-            print(f"{test.name:22} {profile['name']:24} joint RMS={m['common_joint_rmse_rad']:.4f}rad hand RMS={1000*m['hand_rmse_m']:.1f}mm saturation={100*m['saturation_fraction']:.2f}%", flush=True)
+            print(f"{test.name:22} {profile['name']:24} gravity FF={'ON' if compensation else 'OFF'} joint RMS={m['common_joint_rmse_rad']:.4f}rad hand RMS={1000*m['hand_rmse_m']:.1f}mm saturation={100*m['saturation_fraction']:.2f}%", flush=True)
             pair.append(trial)
         if args.comparison == "lerobot":
+            np.testing.assert_array_equal(pair[0]["log"]["target"], pair[1]["log"]["target"])
+        if args.comparison == "summary":
+            for i in range(3):
+                np.testing.assert_array_equal(pair[i]["log"]["target"], pair[i + 3]["log"]["target"])
             np.testing.assert_array_equal(pair[0]["log"]["target"], pair[1]["log"]["target"])
         pairs.append(pair)
         renderer = PairRenderer(pair, meshes, args)

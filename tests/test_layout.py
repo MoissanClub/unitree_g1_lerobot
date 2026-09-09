@@ -56,6 +56,9 @@ class LayoutTests(unittest.TestCase):
                 "run_g1_mujoco_dds_sim.sh",
                 "run_xr_g1_mujoco.sh",
                 "run_compare_g1_29_motor_configs_no_gravity_compensation.sh",
+                "compare_motor_config.sh",
+                "run_compare_g1_29_motor_configs_with_gravity_compensation.sh",
+                "run_compare_g1_29_g1_23_motor_configs_with_gravity_compensation.sh",
                 "run_compare_g1_29_g1_23_motor_configs_no_gravity_compensation.sh",
             ):
                 with self.subTest(launcher=name):
