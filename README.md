@@ -175,35 +175,39 @@ Headset: connect to CloudXR after A, C, and B are ready
 
 ## Rung 4: G1-23 Embodiment Bring-Up
 
-Step 1-3 now have a local verifier:
+There are two side-by-side verification scripts for this rung.
+
+First, inspect the two native models in a stationary neutral pose:
 
 ```bash
 cd ~/lerobot-sim/unitree_g1_lerobot
-./run_compare_g1_29_g1_23.sh
+./run_compare_g1_29_g1_23_urdf_mesh.sh
+```
+
+This is the Step 3 URDF/mesh verifier: the left panel shows G1-29 and the right panel shows the native G1-23 URDF compiled by MuJoCo. Both cameras use the same distance and angle, adjusted for the models' root heights. The window stays open until closed or interrupted.
+
+Then verify Step 4 with the native G1-23 MuJoCo model:
+
+```bash
+./run_compare_g1_29_g1_23_ik.sh
 ```
 
 This opens one Tk/X window with two MuJoCo panels:
 
-- left: LeRobot's existing G1-29 IK
+- left: LeRobot's existing G1-29 IK on the G1-29 MuJoCo scene
 - right: local G1-23 IK driving a native G1-23 MuJoCo model compiled from the vendored URDF
+
+The Step 4 script continuously repeats a 24-second cycle: up/down (Z), forward/back (X), left/right (Y), then hand orientation changes, six seconds per phase. Both models receive the same target offsets relative to their respective ready poses: +/-12 cm in Z and X, +/-10 cm in Y. These are diagnostic target ranges, not a measurement of the complete reachable workspace. G1-23 has five joints per arm, so it cannot independently match every position and orientation target. Actual hand travel is printed for each phase.
+
+The active phase appears on both panels. Frames are precomputed at startup and then replayed continuously; this verifies kinematics, not live physics or DDS control. Close the window or press Ctrl+C to stop. A positive `--duration-s` limits playback for automated checks. The old `run_compare_g1_29_g1_23.sh` name forwards to the IK launcher.
 
 For headless smoke testing:
 
 ```bash
-./run_compare_g1_29_g1_23.sh --duration-s 2 --no-view --save-final-frame /tmp/g1_compare_step4.png
+./run_compare_g1_29_g1_23_urdf_mesh.sh --duration-s 1 --no-view --save-final-frame /tmp/g1_compare_urdf_mesh.png
+./run_compare_g1_29_g1_23_ik.sh --duration-s 24 --control-hz 10 --no-view --save-phase-frames /tmp/g1_compare_phases --save-final-frame /tmp/g1_compare_step4.png
 ```
 
-What this proves: the G1-23 URDF is present, mesh lookup works through the cached
-`lerobot/unitree-g1-mujoco` asset layout, the local G1-23 embodiment spec builds under the
-`lerobot-g1` conda environment, and the 10 active G1-23 arm joints can be visually compared
-against the 14 active G1-29 arm joints.
+The scripts include a blank-panel sanity check and print per-panel render statistics.
 
-The script includes a blank-panel sanity check and prints per-panel render statistics. The
-older Step 1-3 mapped visualization is still available for debugging:
-
-```bash
-./run_compare_g1_29_g1_23.sh --right-visual g1_29_mapped
-```
-
-Current limitation: the native G1-23 panel is a visual/kinematic MuJoCo model compiled
-directly from URDF. It is not yet wrapped as a LeRobot Gym/DDS simulator.
+Current limitation: the native G1-23 panel is a visual/kinematic MuJoCo model compiled directly from URDF. It is not yet wrapped as a LeRobot Gym/DDS simulator.

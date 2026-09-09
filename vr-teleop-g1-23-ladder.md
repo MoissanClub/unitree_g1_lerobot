@@ -121,20 +121,27 @@ Per-embodiment variation is **data, not behaviour**: URDF, locked joints, EE par
 Step 1-4 status: `assets/g1/g1_body23.urdf` is vendored from Unitree's LeRobot evaluation
 assets, mesh lookup reuses the cached `lerobot/unitree-g1-mujoco` `assets/meshes` layout,
 and `g1_embodiments.py` contains a local G1-23 spec/IK implementation with the 10 active
-arm joints from Unitree's `G1_23_ArmController`. The comparison verifier now compiles that
-URDF into a native G1-23 MuJoCo model at runtime for the right panel.
+arm joints from Unitree's `G1_23_ArmController`.
 
-Verification command:
+There are two side-by-side verifiers:
 
 ```bash
 cd ~/lerobot-sim/unitree_g1_lerobot
-./run_compare_g1_29_g1_23.sh
+./run_compare_g1_29_g1_23_urdf_mesh.sh
+./run_compare_g1_29_g1_23_ik.sh
 ```
 
-This opens a two-panel MuJoCo visual comparison. The left panel is G1-29 IK on the existing
-G1-29 MuJoCo scene. The right panel is G1-23 IK on a native G1-23 MuJoCo model compiled
-from the vendored URDF. The script also supports `--right-visual g1_29_mapped` to compare
-the G1-23 constrained solution on the G1-29 body.
+`run_compare_g1_29_g1_23_urdf_mesh.sh` is the stationary Step 3 check: G1-29 and native
+G1-23 in neutral poses, with matching camera distance and angle for URDF/mesh inspection.
+
+`run_compare_g1_29_g1_23_ik.sh` is the Step 4 verifier: left panel G1-29 IK on the existing
+G1-29 MuJoCo scene, right panel G1-23 IK on a native G1-23 MuJoCo model compiled from the
+vendored URDF. Its default motion profile cycles through arm up/down, forward/back,
+left/right, and hand orientation changes, repeating continuously every 24 seconds.
+The diagnostic targets use +/-12 cm X/Z and +/-10 cm Y offsets from each model's ready
+pose; these are not full workspace limits. Frames are precomputed and replayed, so this
+checks kinematics rather than physics or live control. The old unsuffixed launcher forwards
+to the IK script.
 
 Remaining Rung 4 acceptance: wrap the native G1-23 model as a LeRobot Gym/DDS simulator so
 the same XR controller path can drive it live, then verify joint ordering against that
