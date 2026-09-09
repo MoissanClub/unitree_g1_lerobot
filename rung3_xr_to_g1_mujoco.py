@@ -15,11 +15,13 @@ import argparse
 import os
 import shlex
 import sys
+import threading
 import time
 from pathlib import Path
 
 import numpy as np
 import pinocchio as pin
+import unitree_sdk2py.core.channel as unitree_channel
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,6 +30,11 @@ def parse_args() -> argparse.Namespace:
         "--lerobot-root",
         default="/home/dwei/lerobot-sim/lerobot",
         help="Path to the LeRobot checkout.",
+    )
+    parser.add_argument(
+        "--isaacteleop-site-packages",
+        default="/home/dwei/.venvs/isaacteleop/lib/python3.12/site-packages",
+        help="Existing Isaac Teleop venv site-packages path to append when running in lerobot-g1.",
     )
     parser.add_argument("--hand-side", choices=("left", "right"), default="right")
     parser.add_argument(
@@ -41,8 +48,10 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="CloudXR env file when auto-launching. Defaults to examples/isaac_teleop_to_so101/default.env.",
     )
-    parser.add_argument("--duration-s", type=float, default=120.0)
+    parser.add_argument("--duration-s", type=float, default=0.0, help="Run duration in seconds; <= 0 runs until Ctrl+C.")
     parser.add_argument("--control-hz", type=float, default=30.0)
+    parser.add_argument("--arm-kp-scale", type=float, default=1.0, help="Scale G1 arm position gains for MuJoCo responsiveness.")
+    parser.add_argument("--arm-kd-scale", type=float, default=1.0, help="Scale G1 arm damping gains; raise with kp if the sim overshoots.")
     parser.add_argument("--clutch-threshold", type=float, default=0.5)
     parser.add_argument(
         "--max-delta-m",
@@ -60,6 +69,26 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Build G1 IK, solve the home pose once, then exit without XR or MuJoCo.",
     )
+    parser.add_argument(
+        "--mock-xr",
+        action="store_true",
+        help="Use a deterministic fake XR controller; validates rung 3 without headset/CloudXR.",
+    )
+    parser.add_argument(
+        "--external-g1-sim",
+        action="store_true",
+        help="Attach to an already-running G1 MuJoCo DDS sim instead of starting one in this process.",
+    )
+    parser.add_argument(
+        "--wait-for-cloudxr",
+        action="store_true",
+        help="Keep retrying XR connection so this bridge can be started before CloudXR/headset.",
+    )
+    parser.add_argument("--cloudxr-retry-s", type=float, default=2.0)
+    parser.add_argument("--g1-state-timeout-s", type=float, default=10.0)
+    parser.add_argument("--ready-x-m", type=float, default=0.03, help="Ready pose hand offset forward from IK home.")
+    parser.add_argument("--ready-z-m", type=float, default=0.12, help="Ready pose hand offset upward from IK home.")
+    parser.add_argument("--ready-spread-m", type=float, default=0.03, help="Ready pose outward lateral offset for each hand.")
     return parser.parse_args()
 
 
@@ -106,6 +135,178 @@ def action_from_arm_q(q_g1: np.ndarray, joint_index: type, arm_index: type) -> d
     return action
 
 
+def scale_arm_gains(robot, arm_index: type, kp_scale: float, kd_scale: float) -> None:
+    if kp_scale <= 0.0 or kd_scale <= 0.0:
+        raise ValueError("arm gain scales must be positive")
+    if kp_scale == 1.0 and kd_scale == 1.0:
+        return
+    robot.kp = np.asarray(robot.kp, dtype=np.float32).copy()
+    robot.kd = np.asarray(robot.kd, dtype=np.float32).copy()
+    for joint in arm_index:
+        robot.kp[joint.value] *= kp_scale
+        robot.kd[joint.value] *= kd_scale
+    print(f"scaled arm gains: kp x{kp_scale:.2f}, kd x{kd_scale:.2f}")
+
+
+def make_ready_targets(
+    left_home: np.ndarray,
+    right_home: np.ndarray,
+    ready_x_m: float,
+    ready_z_m: float,
+    ready_spread_m: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    left_ready = left_home.copy()
+    right_ready = right_home.copy()
+    left_ready[:3, 3] += np.array([ready_x_m, ready_spread_m, ready_z_m])
+    right_ready[:3, 3] += np.array([ready_x_m, -ready_spread_m, ready_z_m])
+    return left_ready, right_ready
+
+
+def solve_ready_q(ik, left_ready: np.ndarray, right_ready: np.ndarray, q_seed: np.ndarray) -> np.ndarray:
+    q = np.asarray(q_seed, dtype=float)
+    for _ in range(12):
+        q, _ = ik.solve_ik(left_ready, right_ready, q)
+        q = np.asarray(q, dtype=float)
+    if not np.all(np.isfinite(q)):
+        raise RuntimeError("Ready pose IK produced non-finite values")
+    return q
+
+
+def publish_ready_for(robot, action: dict[str, float], duration_s: float, hz: float) -> None:
+    if robot is None:
+        time.sleep(max(0.0, duration_s))
+        return
+    period_s = 1.0 / hz
+    deadline = time.monotonic() + max(0.0, duration_s)
+    while time.monotonic() < deadline:
+        t0 = time.perf_counter()
+        robot.send_action(action)
+        time.sleep(max(0.0, period_s - (time.perf_counter() - t0)))
+
+
+def patch_unitree_dds_config() -> None:
+    unitree_channel.ChannelConfigHasInterface = """<?xml version="1.0" encoding="UTF-8" ?>
+<CycloneDDS>
+    <Domain Id="any">
+        <General>
+            <Interfaces>
+                <NetworkInterface name="$__IF_NAME__$" priority="default" multicast="default"/>
+            </Interfaces>
+        </General>
+    </Domain>
+</CycloneDDS>"""
+
+
+def patch_g1_hub_env_factory() -> None:
+    import lerobot.envs.factory as env_factory
+
+    original_call_make_env = env_factory._call_make_env
+
+    def call_make_env_headless(module, n_envs, use_async_envs, cfg):
+        module_file = str(getattr(module, "__file__", ""))
+        if "models--lerobot--unitree-g1-mujoco" not in module_file:
+            return original_call_make_env(module, n_envs, use_async_envs, cfg)
+
+        original_safe_load = module.yaml.safe_load
+
+        def safe_load_headless(stream):
+            config = original_safe_load(stream)
+            config["ENABLE_ONSCREEN"] = False
+            config["ENABLE_OFFSCREEN"] = False
+            return config
+
+        module.yaml.safe_load = safe_load_headless
+        try:
+            return module.make_env(
+                n_envs=n_envs,
+                use_async_envs=use_async_envs,
+                publish_images=False,
+                cameras=[],
+            )
+        finally:
+            module.yaml.safe_load = original_safe_load
+
+    env_factory._call_make_env = call_make_env_headless
+
+
+def cloudxr_runtime_error(exc: RuntimeError) -> bool:
+    message = str(exc)
+    return (
+        "Failed to create OpenXR instance" in message
+        or "XR_ERROR_RUNTIME_UNAVAILABLE" in message
+        or "Failed to get OpenXR system" in message
+    )
+
+
+def connect_unitree_g1_external_dds(robot, g1_module, joint_index: type, timeout_s: float) -> None:
+    robot._ChannelFactoryInitialize(0, "lo")
+    robot.lowcmd_publisher = robot._ChannelPublisher(g1_module.kTopicLowCommand_Debug, g1_module.hg_LowCmd)
+    robot.lowcmd_publisher.Init()
+    robot.lowstate_subscriber = robot._ChannelSubscriber(g1_module.kTopicLowState, g1_module.hg_LowState)
+    robot.lowstate_subscriber.Init()
+
+    robot.subscribe_thread = threading.Thread(target=robot._subscribe_lowstate, daemon=True)
+    robot.subscribe_thread.start()
+
+    for cam in robot._cameras.values():
+        if not cam.is_connected:
+            cam.connect()
+
+    robot.crc = g1_module.CRC()
+    robot.msg = g1_module.unitree_hg_msg_dds__LowCmd_()
+    robot.msg.mode_pr = 0
+
+    lowstate = None
+    deadline = time.time() + timeout_s
+    while lowstate is None:
+        with robot._lowstate_lock:
+            lowstate = robot._lowstate
+        if lowstate is None:
+            if time.time() > deadline:
+                robot._shutdown_event.set()
+                raise TimeoutError(
+                    f"Timed out waiting for external G1 MuJoCo DDS lowstate ({timeout_s:.1f}s). "
+                    "Start process A first with ./run_g1_mujoco_dds_sim.sh."
+                )
+            time.sleep(0.01)
+
+    robot.msg.mode_machine = lowstate.mode_machine
+    robot.kp = np.array(robot.config.kp, dtype=np.float32)
+    robot.kd = np.array(robot.config.kd, dtype=np.float32)
+    for joint in joint_index:
+        robot.msg.motor_cmd[joint].mode = 1
+        robot.msg.motor_cmd[joint].kp = robot.kp[joint.value]
+        robot.msg.motor_cmd[joint].kd = robot.kd[joint.value]
+        robot.msg.motor_cmd[joint].q = lowstate.motor_state[joint.value].q
+
+
+class MockXRController:
+    def __init__(self, hand_side: str, clutch_threshold: float) -> None:
+        self.hand_side = hand_side
+        self.clutch_threshold = clutch_threshold
+        self.is_tracking = True
+        self.step = 0
+
+    def connect(self) -> None:
+        print("mock XR connected")
+
+    def disconnect(self) -> None:
+        print("mock XR disconnected")
+
+    def get_action(self) -> dict[str, np.ndarray | float]:
+        a = 2.0 * np.pi * self.step / 180.0
+        self.step += 1
+        return {
+            "grip_pos": np.array(
+                [0.03 * np.sin(a), 0.03 * (1.0 - np.cos(a)), 0.02 * np.sin(0.5 * a)],
+                dtype=np.float32,
+            ),
+            "grip_quat": np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32),
+            "squeeze": max(self.clutch_threshold, 0.8),
+            "trigger": 0.0,
+        }
+
+
 def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(line_buffering=True)
@@ -116,15 +317,21 @@ def main() -> int:
         print(f"LeRobot checkout not found: {lerobot_root}", file=sys.stderr)
         return 2
     sys.path.insert(0, str(lerobot_root))
+    isaacteleop_site = Path(args.isaacteleop_site_packages).expanduser()
+    if isaacteleop_site.is_dir() and str(isaacteleop_site) not in sys.path:
+        sys.path.append(str(isaacteleop_site))
 
-    from examples.isaac_teleop_to_so101.isaac_teleop import XRController, XRControllerConfig
     from examples.isaac_teleop_to_so101.isaac_teleop.clutch import Clutch
     from lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config
+    from lerobot.robots.unitree_g1 import unitree_g1 as g1_module
     from lerobot.robots.unitree_g1.g1_kinematics import G1_29_ArmIK
     from lerobot.robots.unitree_g1.g1_utils import G1_29_JointArmIndex, G1_29_JointIndex
     from lerobot.utils.rotation import Rotation
 
-    if args.external_cloudxr:
+    patch_unitree_dds_config()
+    patch_g1_hub_env_factory()
+
+    if args.external_cloudxr and not args.mock_xr:
         os.environ["LEROBOT_CLOUDXR_SKIP_AUTOLAUNCH"] = "1"
         runtime_env = Path.home() / ".cloudxr" / "run" / "cloudxr.env"
         if runtime_env.is_file():
@@ -135,7 +342,7 @@ def main() -> int:
             return 2
 
     cloudxr_env_file = args.cloudxr_env_file
-    if cloudxr_env_file is None and not args.external_cloudxr:
+    if cloudxr_env_file is None and not args.external_cloudxr and not args.mock_xr:
         default_env = lerobot_root / "examples" / "isaac_teleop_to_so101" / "default.env"
         cloudxr_env_file = str(default_env) if default_env.is_file() else None
 
@@ -147,56 +354,108 @@ def main() -> int:
 
     q = np.zeros(model.nq, dtype=float)
     left_home, right_home = fk(model, data, ik.L_hand_id, ik.R_hand_id, q)
-    left_target = left_home.copy()
-    right_target = right_home.copy()
-    active_home = right_home if args.hand_side == "right" else left_home
-    clutch = Clutch(active_home)
+    left_ready, right_ready = make_ready_targets(
+        left_home,
+        right_home,
+        args.ready_x_m,
+        args.ready_z_m,
+        args.ready_spread_m,
+    )
     reorder = np.asarray(ik._arm_reorder_pin_to_g1)
 
     q_home, _ = ik.solve_ik(left_home, right_home, q)
     if not np.all(np.isfinite(q_home)):
         print("IK home solve produced non-finite values.", file=sys.stderr)
         return 1
-    q = np.asarray(q_home, dtype=float)
+    try:
+        q_ready = solve_ready_q(ik, left_ready, right_ready, np.asarray(q_home, dtype=float))
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    q = q_ready.copy()
+    left_target = left_ready.copy()
+    right_target = right_ready.copy()
+    active_home = right_ready if args.hand_side == "right" else left_ready
+    clutch = Clutch(active_home)
+    ready_action = action_from_arm_q(q_ready[reorder], G1_29_JointIndex, G1_29_JointArmIndex)
     if args.dry_run_ik:
         print("dry-run IK ok")
         print(f"  q_dim: {q.size}")
         print(f"  first_arm_joint_g1: {float(q[reorder][0]):+.4f}")
+        print(f"  ready_arm_norm: {float(np.linalg.norm(q_ready[reorder])):.4f}")
         return 0
 
-    print("Connecting UnitreeG1 MuJoCo sim")
-    robot = UnitreeG1(UnitreeG1Config(is_simulation=True))
-    robot.connect()
-    print(f"robot connected: {robot.is_connected}")
+    robot = None
+    if args.external_g1_sim:
+        print("Connecting to existing G1 MuJoCo DDS sim")
+        robot = UnitreeG1(UnitreeG1Config(is_simulation=True))
+        try:
+            connect_unitree_g1_external_dds(robot, g1_module, G1_29_JointIndex, args.g1_state_timeout_s)
+        except TimeoutError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        print(f"external G1 DDS sim connected: {robot.is_connected}")
+        scale_arm_gains(robot, G1_29_JointArmIndex, args.arm_kp_scale, args.arm_kd_scale)
+        robot.send_action(ready_action)
+        print("sent G1 ready pose")
 
-    teleop = XRController(
-        XRControllerConfig(
-            hand_side=args.hand_side,
-            clutch_threshold=args.clutch_threshold,
-            auto_launch_cloudxr=not args.external_cloudxr,
-            cloudxr_env_file=cloudxr_env_file,
+    if args.mock_xr:
+        teleop = MockXRController(args.hand_side, args.clutch_threshold)
+    else:
+        from examples.isaac_teleop_to_so101.isaac_teleop import XRController, XRControllerConfig
+
+        teleop = XRController(
+            XRControllerConfig(
+                hand_side=args.hand_side,
+                clutch_threshold=args.clutch_threshold,
+                auto_launch_cloudxr=not args.external_cloudxr,
+                cloudxr_env_file=cloudxr_env_file,
+            )
         )
-    )
 
-    print()
-    print("Headset browser:")
-    print("  1. Open https://nvidia.github.io/IsaacTeleop/client")
-    print("  2. Set/leave headset profile as Quest3")
-    print("  3. Enter the workstation IP printed by ./run_isaac_teleop.sh")
-    print("  4. Enter XR and connect")
-    print()
-    print("Controls:")
-    print(f"  Move the {args.hand_side} controller while holding squeeze > {args.clutch_threshold:.2f}.")
-    print("  Release squeeze to freeze the G1 wrist while repositioning your hand.")
-    print()
-    if not args.no_wait:
-        input("After the headset client is connected, press Enter to create the OpenXR session...")
+        print()
+        print("Headset browser:")
+        print("  1. Open https://nvidia.github.io/IsaacTeleop/client")
+        print("  2. Set/leave headset profile as Quest3")
+        print("  3. Enter the workstation IP printed by ./run_isaac_teleop.sh")
+        print("  4. Enter XR and connect")
+        print()
+        print("Controls:")
+        print(f"  Move the {args.hand_side} controller while holding squeeze > {args.clutch_threshold:.2f}.")
+        print("  Release squeeze to freeze the G1 wrist while repositioning your hand.")
+        print()
+        if not args.no_wait:
+            input("After the headset client is connected, press Enter to create the OpenXR session...")
 
-    teleop.connect()
+    while True:
+        try:
+            teleop.connect()
+            break
+        except RuntimeError as exc:
+            if not cloudxr_runtime_error(exc):
+                raise
+            print("\nOpenXR/CloudXR is not available yet.", file=sys.stderr)
+            print("Start CloudXR in another terminal with: cd ~/lerobot-sim/G1Arm23LeRobot && ./run_isaac_teleop.sh", file=sys.stderr)
+            print("Then connect the headset browser client.", file=sys.stderr)
+            if not args.wait_for_cloudxr:
+                return 2
+            if robot is not None:
+                print("Holding G1 ready pose while waiting for XR attach.", file=sys.stderr)
+            print(f"Waiting {args.cloudxr_retry_s:.1f}s before retrying XR attach...", file=sys.stderr)
+            publish_ready_for(robot, ready_action, args.cloudxr_retry_s, args.control_hz)
     print("XR teleop connected. Waiting for tracked controller frames...")
 
+    if robot is None:
+        print("Connecting UnitreeG1 MuJoCo sim")
+        robot = UnitreeG1(UnitreeG1Config(is_simulation=True))
+        robot.connect()
+        print(f"robot connected: {robot.is_connected}")
+        scale_arm_gains(robot, G1_29_JointArmIndex, args.arm_kp_scale, args.arm_kd_scale)
+        robot.send_action(ready_action)
+        print("sent G1 ready pose")
+
     period_s = 1.0 / args.control_hz
-    deadline = time.monotonic() + args.duration_s
+    deadline = float("inf") if args.duration_s <= 0.0 else time.monotonic() + args.duration_s
     was_engaged = False
     last_tracking: bool | None = None
     step = 0
@@ -233,12 +492,13 @@ def main() -> int:
 
             q_g1 = q[reorder]
             robot.send_action(action_from_arm_q(q_g1, G1_29_JointIndex, G1_29_JointArmIndex))
+            arm_norm = float(np.linalg.norm(q_g1))
 
             if tracking or tracking != last_tracking or step % max(1, int(args.control_hz)) == 0:
                 active_target = right_target if args.hand_side == "right" else left_target
                 print(
                     "step={step:04d} tracking={tracking} engaged={engaged} squeeze={squeeze:.3f} "
-                    "target=({x:+.3f},{y:+.3f},{z:+.3f}) q0={q0:+.3f}".format(
+                    "target=({x:+.3f},{y:+.3f},{z:+.3f}) q0={q0:+.3f} |q|={qnorm:.3f}".format(
                         step=step,
                         tracking=tracking,
                         engaged=engaged,
@@ -247,6 +507,7 @@ def main() -> int:
                         y=float(active_target[1, 3]),
                         z=float(active_target[2, 3]),
                         q0=float(q_g1[0]),
+                        qnorm=arm_norm,
                     )
                 )
 
@@ -258,7 +519,8 @@ def main() -> int:
         print("\nInterrupted.")
     finally:
         teleop.disconnect()
-        robot.disconnect()
+        if robot is not None:
+            robot.disconnect()
         print("disconnected")
 
     return 0

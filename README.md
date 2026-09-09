@@ -66,53 +66,85 @@ controller pose/squeeze values from the headset.
 
 ## Rung 3: XR Controller To G1 MuJoCo
 
-Rung 3 joins the working CloudXR controller path with the working G1 IK/MuJoCo path.
-Use the `lerobot` conda environment, not the standalone Isaac Teleop venv, because
-`G1_29_ArmIK` requires conda-forge Pinocchio with `pinocchio.casadi`.
+Rung 3 joins the CloudXR controller path with the G1 IK/MuJoCo path. Use the
+`lerobot-g1` conda environment through the repo-local wrapper; it keeps conda-forge
+Pinocchio/CasADi first and appends the existing Isaac Teleop venv only for XR imports.
 
-One-time dependency bridge already validated on this workstation:
+Before a headset run, verify the G1 MuJoCo visual path from an `ssh -Y` terminal:
 
 ```bash
-conda run -n lerobot python -m pip install \
-  "isaacteleop[cloudxr,retargeters-lite]==1.3.132rc1" \
-  --extra-index-url https://pypi.nvidia.com
+cd ~/lerobot-sim/G1Arm23LeRobot
+./run_g1_mujoco_keyboard.sh
 ```
 
-Validate the IK side without headset or MuJoCo:
+Validate rung 3 without headset or CloudXR:
 
 ```bash
-conda run -n lerobot python rung3_xr_to_g1_mujoco.py --dry-run-ik
+cd ~/lerobot-sim/G1Arm23LeRobot
+./run_xr_g1_mujoco.sh --dry-run-ik
+./run_xr_g1_mujoco.sh --mock-xr --duration-s 5 --no-wait
 ```
 
-For the full rung 3 run, start CloudXR first:
+For the ergonomic real headset run, start the lightweight pieces before putting on the
+headset.
+
+Terminal A, start G1 MuJoCo as a standalone DDS simulator:
 
 ```bash
+cd ~/lerobot-sim/G1Arm23LeRobot
+./run_g1_mujoco_dds_sim.sh
+```
+
+Terminal C, start the XR-to-G1 bridge before CloudXR exists. It attaches to DDS, sends the
+G1 to the raised-arm ready pose, and keeps holding that pose while it retries XR attach:
+
+```bash
+cd ~/lerobot-sim/G1Arm23LeRobot
+./run_xr_g1_mujoco.sh --external-g1-sim --external-cloudxr --wait-for-cloudxr --no-wait
+```
+
+This command runs until Ctrl+C. For bounded smoke tests, pass `--duration-s N`.
+
+If the MuJoCo arms feel too slow, tune only the bridge command gains first:
+
+```bash
+./run_xr_g1_mujoco.sh --external-g1-sim --external-cloudxr --wait-for-cloudxr --no-wait --arm-kp-scale 2.0 --arm-kd-scale 1.5
+```
+
+Raise `--arm-kp-scale` for faster response. If the arm overshoots or shakes, raise
+`--arm-kd-scale` or reduce `--arm-kp-scale`.
+
+Terminal B, start CloudXR:
+
+```bash
+cd ~/lerobot-sim/G1Arm23LeRobot
 ./run_isaac_teleop.sh
 ```
 
-Then, in another terminal after the headset browser is connected with the `Quest3`
-profile:
+Then put on the headset. In the headset browser, open
+`https://nvidia.github.io/IsaacTeleop/client`, use the `Quest3` profile, enter the
+workstation IP printed by `run_isaac_teleop.sh`, enter XR, and connect.
 
-```bash
-conda run -n lerobot python rung3_xr_to_g1_mujoco.py --external-cloudxr
-```
-
-Default behavior is conservative: the right controller drives the right wrist only,
-the left wrist holds home, and squeeze is a hold-to-enable clutch.
+Default behavior is conservative: before XR attaches, both arms hold the raised ready pose.
+After XR attaches, the right controller drives the right wrist only, the left wrist holds
+ready, and squeeze is a hold-to-enable clutch.
 
 ### Rung 3 Runtime Model
 
 `run_isaac_teleop.sh` starts CloudXR as a separate process. The rung 3 script attaches to
 that existing CloudXR/OpenXR runtime with `--external-cloudxr`.
 
-MuJoCo is different: do not start a separate MuJoCo process. `rung3_xr_to_g1_mujoco.py`
-creates `UnitreeG1(UnitreeG1Config(is_simulation=True))`, and `robot.connect()` launches
-or loads the LeRobot G1 MuJoCo simulation inside that Python process. The loop then calls
-`robot.send_action(...)` with the IK-generated G1 joint targets.
+MuJoCo has two modes. Without `--external-g1-sim`, `rung3_xr_to_g1_mujoco.py` creates
+`UnitreeG1(UnitreeG1Config(is_simulation=True))`, and `robot.connect()` launches the
+LeRobot G1 MuJoCo simulation inside that Python process. With `--external-g1-sim`, the
+bridge skips simulator creation and only publishes IK-generated G1 joint targets onto DDS;
+`run_g1_mujoco_dds_sim.sh` owns the MuJoCo process.
 
 Process split:
 
 ```text
-Terminal 1: ./run_isaac_teleop.sh                  # CloudXR runtime
-Terminal 2: conda run -n lerobot python rung3...   # XR attach + IK + MuJoCo sim
+A: cd ~/lerobot-sim/G1Arm23LeRobot && ./run_g1_mujoco_dds_sim.sh
+C: cd ~/lerobot-sim/G1Arm23LeRobot && ./run_xr_g1_mujoco.sh --external-g1-sim --external-cloudxr --wait-for-cloudxr --no-wait
+B: cd ~/lerobot-sim/G1Arm23LeRobot && ./run_isaac_teleop.sh
+Headset: connect to CloudXR after A, C, and B are ready
 ```
