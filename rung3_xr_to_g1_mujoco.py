@@ -12,6 +12,7 @@ to move; release squeeze to freeze the commanded wrist pose while repositioning.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shlex
 import sys
@@ -101,6 +102,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ready-x-m", type=float, default=0.03, help="Ready pose hand offset forward from IK home.")
     parser.add_argument("--ready-z-m", type=float, default=0.12, help="Ready pose hand offset upward from IK home.")
     parser.add_argument("--ready-spread-m", type=float, default=0.03, help="Ready pose outward lateral offset for each hand.")
+    parser.add_argument(
+        "--diagnostic-request-file",
+        default="/tmp/g1_mujoco_startup_diagnostic.request",
+        help="File used by launchers to request bridge-owned startup diagnostic poses.",
+    )
+    parser.add_argument(
+        "--diagnostic-ack-file",
+        default="/tmp/g1_mujoco_startup_diagnostic.ack",
+        help="File written after the bridge observes a startup diagnostic request.",
+    )
     return parser.parse_args()
 
 
@@ -216,6 +227,67 @@ def publish_ready_for(robot, action: dict[str, float], duration_s: float, hz: fl
         t0 = time.perf_counter()
         robot.send_action(action)
         time.sleep(max(0.0, period_s - (time.perf_counter() - t0)))
+
+
+
+class StartupDiagnosticRequests:
+    def __init__(
+        self,
+        request_file: Path,
+        ack_file: Path,
+        raise_action: dict[str, float],
+        lower_action: dict[str, float],
+        hz: float,
+    ) -> None:
+        self.request_file = request_file
+        self.ack_file = ack_file
+        self.raise_action = raise_action
+        self.lower_action = lower_action
+        self.hz = hz
+        self.active_id: str | None = None
+
+    def read_request(self) -> dict | None:
+        try:
+            return json.loads(self.request_file.read_text())
+        except FileNotFoundError:
+            self.active_id = None
+            return None
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Ignoring invalid startup diagnostic request: {exc}", file=sys.stderr, flush=True)
+            return None
+
+    def write_ack(self, request_id: str) -> None:
+        try:
+            self.ack_file.write_text(json.dumps({"id": request_id, "status": "active"}) + "\n")
+        except OSError as exc:
+            print(f"Could not write startup diagnostic ack: {exc}", file=sys.stderr, flush=True)
+
+    def step(self, robot) -> bool:
+        request = self.read_request()
+        if not request or request.get("mode") != "lower_hold":
+            return False
+
+        request_id = str(request.get("id", ""))
+        if request_id != self.active_id:
+            self.active_id = request_id
+            print("Startup diagnostic request: lowering both arms until user confirmation.", flush=True)
+            publish_ready_for(robot, self.raise_action, 1.0, self.hz)
+            self.write_ack(request_id)
+
+        robot.send_action(self.lower_action)
+        return True
+
+    def publish_or_ready_for(self, robot, ready_action: dict[str, float], duration_s: float) -> None:
+        if robot is None:
+            time.sleep(max(0.0, duration_s))
+            return
+        period_s = 1.0 / self.hz
+        deadline = time.monotonic() + max(0.0, duration_s)
+        while time.monotonic() < deadline:
+            t0 = time.perf_counter()
+            if not self.step(robot):
+                robot.send_action(ready_action)
+            time.sleep(max(0.0, period_s - (time.perf_counter() - t0)))
 
 
 def patch_unitree_dds_config() -> None:
@@ -412,6 +484,14 @@ def main() -> int:
     active_home = right_ready if args.hand_side == "right" else left_ready
     clutch = Clutch(active_home)
     ready_action = action_from_arm_q(q_ready[reorder], G1_29_JointIndex, G1_29_JointArmIndex)
+    lower_action = action_from_arm_q(np.asarray(q_home, dtype=float)[reorder], G1_29_JointIndex, G1_29_JointArmIndex)
+    startup_diagnostics = StartupDiagnosticRequests(
+        Path(args.diagnostic_request_file),
+        Path(args.diagnostic_ack_file),
+        ready_action,
+        lower_action,
+        args.control_hz,
+    )
     if args.dry_run_ik:
         print("dry-run IK ok")
         print(f"  q_dim: {q.size}")
@@ -477,7 +557,7 @@ def main() -> int:
                 if robot is not None:
                     print("Holding G1 ready pose while waiting for XR attach.", file=sys.stderr)
                 print(f"Waiting {args.cloudxr_retry_s:.1f}s before retrying XR attach...", file=sys.stderr)
-                publish_ready_for(robot, ready_action, args.cloudxr_retry_s, args.control_hz)
+                startup_diagnostics.publish_or_ready_for(robot, ready_action, args.cloudxr_retry_s)
 
     try:
         connect_teleop_with_retry()
@@ -504,6 +584,10 @@ def main() -> int:
     try:
         while time.monotonic() < deadline:
             t0 = time.perf_counter()
+            if startup_diagnostics.step(robot):
+                step += 1
+                time.sleep(max(0.0, period_s - (time.perf_counter() - t0)))
+                continue
             xr_action = teleop.get_action()
             tracking = bool(teleop.is_tracking)
             now = time.monotonic()
@@ -521,7 +605,7 @@ def main() -> int:
                     flush=True,
                 )
                 teleop.disconnect()
-                publish_ready_for(robot, ready_action, args.cloudxr_retry_s, args.control_hz)
+                startup_diagnostics.publish_or_ready_for(robot, ready_action, args.cloudxr_retry_s)
                 connect_teleop_with_retry()
                 print("XR teleop reconnected. Waiting for tracked controller frames...", flush=True)
                 last_tracking_time = time.monotonic()

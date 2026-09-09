@@ -118,9 +118,10 @@ If the MuJoCo arms feel too slow, tune only the bridge command gains first:
 Raise `--arm-kp-scale` for faster response. If the arm overshoots or shakes, raise
 `--arm-kd-scale` or reduce `--arm-kp-scale`.
 
-Terminal B, start CloudXR. It first simulates an XR device input by raising both
-arms briefly, lowering both arms, and pausing for confirmation before CloudXR
-starts:
+Terminal B, start CloudXR. When Terminal C is already running, this asks the XR
+bridge to raise both arms briefly, lower both arms, and hold that diagnostic pose
+until you confirm it. This avoids Terminal B and Terminal C publishing conflicting
+DDS arm commands before CloudXR starts:
 
 ```bash
 cd ~/lerobot-sim/G1Arm23LeRobot
@@ -128,7 +129,9 @@ cd ~/lerobot-sim/G1Arm23LeRobot
 ```
 
 For non-interactive smoke tests, prefix any launcher with
-`SKIP_G1_STARTUP_DIAGNOSTIC=1` to skip these confirmation pauses.
+`SKIP_G1_STARTUP_DIAGNOSTIC=1` to skip these confirmation pauses. If Terminal B
+cannot see the XR bridge within a few seconds, it falls back to the direct DDS
+lower-arm diagnostic.
 
 Then put on the headset. In the headset browser, open
 `https://nvidia.github.io/IsaacTeleop/client`, use the `Quest3` profile, enter the

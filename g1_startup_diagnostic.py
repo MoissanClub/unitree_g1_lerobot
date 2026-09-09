@@ -145,7 +145,11 @@ def run_diagnostic(args: argparse.Namespace) -> int:
         send_for(robot, actions[args.mode], args.duration_s, args.hz)
         print("== Startup diagnostic complete ==", flush=True)
         if args.confirm:
-            input(confirmation_prompts[args.mode])
+            try:
+                input(confirmation_prompts[args.mode])
+            except EOFError:
+                print("Startup diagnostic confirmation could not read from stdin; aborting.", file=sys.stderr, flush=True)
+                return 2
             print("== User verification confirmed; entering steady-state listening ==", flush=True)
     finally:
         robot.disconnect()
