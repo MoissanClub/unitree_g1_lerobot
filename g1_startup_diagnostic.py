@@ -107,6 +107,11 @@ def run_diagnostic(args: argparse.Namespace) -> int:
         "orient": "simulating CloudXR input - verify the right arm orientation changes",
         "lower": "simulating XR device input - verify both robot arms lower",
     }
+    confirmation_prompts = {
+        "raise": "Press Enter after you verify the diagnostic motion of arm raising, or Ctrl+C to abort...",
+        "orient": "Press Enter after you verify the diagnostic motion of right-arm orientation change, or Ctrl+C to abort...",
+        "lower": "Press Enter after you verify the diagnostic motion of both arms lowering, or Ctrl+C to abort...",
+    }
     print(f"== Startup diagnostic: {messages[args.mode]} ==", flush=True)
 
     patch_unitree_dds_config()
@@ -127,7 +132,7 @@ def run_diagnostic(args: argparse.Namespace) -> int:
         send_for(robot, actions[args.mode], args.duration_s, args.hz)
         print("== Startup diagnostic complete ==", flush=True)
         if args.confirm:
-            input("Press Enter after you verify the diagnostic motion, or Ctrl+C to abort...")
+            input(confirmation_prompts[args.mode])
     finally:
         robot.disconnect()
     return 0
