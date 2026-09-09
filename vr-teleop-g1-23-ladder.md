@@ -47,7 +47,7 @@ input device.
 | **2a** | Script → `G1_29_ArmIK` | IK stack, no sim, no XR | **none** | ✅ done |
 | **2b** | 2a → MuJoCo | Robot interface + sim | **none** | ✅ done |
 | **3** | Join 1' + 2b | **The glue — the actual contribution** | headset | ✅ done |
-| **4** | G1-29 sim → G1-23 sim | The spec-as-data refactor | headset | 🟡 step 1-3 verifier done |
+| **4** | G1-29 sim → G1-23 sim | The spec-as-data refactor | headset | 🟡 native visual verifier done |
 | **5** | G1-23 sim → real G1-23 | Transport, FSM, arm_sdk, safety | + G1-23 | ⬜ todo |
 | **6** | Gripper → BrainCo hand | Tactile integration | + BrainCo | ⬜ todo |
 
@@ -118,10 +118,11 @@ Per-embodiment variation is **data, not behaviour**: URDF, locked joints, EE par
 (`wrist_roll` + 0.20 vs `wrist_yaw` + 0.05), rotation weight (0.5 vs 1.0), filter width
 (10 vs 14). LeRobot has *one* copy of the IK — add the variant as a spec, not as copy #2.
 
-Step 1-3 status: `assets/g1/g1_body23.urdf` is vendored from Unitree's LeRobot evaluation
+Step 1-4 status: `assets/g1/g1_body23.urdf` is vendored from Unitree's LeRobot evaluation
 assets, mesh lookup reuses the cached `lerobot/unitree-g1-mujoco` `assets/meshes` layout,
 and `g1_embodiments.py` contains a local G1-23 spec/IK implementation with the 10 active
-arm joints from Unitree's `G1_23_ArmController`.
+arm joints from Unitree's `G1_23_ArmController`. The comparison verifier now compiles that
+URDF into a native G1-23 MuJoCo model at runtime for the right panel.
 
 Verification command:
 
@@ -130,14 +131,14 @@ cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_compare_g1_29_g1_23.sh
 ```
 
-This opens a two-panel MuJoCo visual comparison. The left panel is G1-29 IK. The right
-panel is G1-23-constrained IK mapped onto the existing G1-29 visual body, with wrist
-pitch/yaw held at zero. This is intentionally a Step 1-3 verifier, not the final native
-G1-23 MuJoCo simulator.
+This opens a two-panel MuJoCo visual comparison. The left panel is G1-29 IK on the existing
+G1-29 MuJoCo scene. The right panel is G1-23 IK on a native G1-23 MuJoCo model compiled
+from the vendored URDF. The script also supports `--right-visual g1_29_mapped` to compare
+the G1-23 constrained solution on the G1-29 body.
 
-Remaining Rung 4 acceptance: the same XR controller path drives a native G1-23 MuJoCo
-model, the joint ordering is verified against that model, the EE frame/offset is explicit,
-and the 5-DoF orientation compromise is documented.
+Remaining Rung 4 acceptance: wrap the native G1-23 model as a LeRobot Gym/DDS simulator so
+the same XR controller path can drive it live, then verify joint ordering against that
+runtime and document the 5-DoF orientation compromise.
 
 Behind **golden-output tests**: the two implementations are not identical, and silently
 normalising a weight changes robot behaviour.

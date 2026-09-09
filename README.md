@@ -185,12 +185,12 @@ cd ~/lerobot-sim/unitree_g1_lerobot
 This opens one Tk/X window with two MuJoCo panels:
 
 - left: LeRobot's existing G1-29 IK
-- right: local G1-23-constrained IK mapped onto the existing G1-29 visual model
+- right: local G1-23 IK driving a native G1-23 MuJoCo model compiled from the vendored URDF
 
 For headless smoke testing:
 
 ```bash
-./run_compare_g1_29_g1_23.sh --duration-s 2 --no-view
+./run_compare_g1_29_g1_23.sh --duration-s 2 --no-view --save-final-frame /tmp/g1_compare_step4.png
 ```
 
 What this proves: the G1-23 URDF is present, mesh lookup works through the cached
@@ -198,6 +198,12 @@ What this proves: the G1-23 URDF is present, mesh lookup works through the cache
 `lerobot-g1` conda environment, and the 10 active G1-23 arm joints can be visually compared
 against the 14 active G1-29 arm joints.
 
-Current limitation: the right panel is a G1-23-constrained IK/control visualization on the
-G1-29 MuJoCo body, not a full native G1-23 MuJoCo XML scene yet. That is the next Rung 4
-step before real G1-23 hardware transport.
+The script includes a blank-panel sanity check and prints per-panel render statistics. The
+older Step 1-3 mapped visualization is still available for debugging:
+
+```bash
+./run_compare_g1_29_g1_23.sh --right-visual g1_29_mapped
+```
+
+Current limitation: the native G1-23 panel is a visual/kinematic MuJoCo model compiled
+directly from URDF. It is not yet wrapped as a LeRobot Gym/DDS simulator.
