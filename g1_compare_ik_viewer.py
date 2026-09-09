@@ -23,6 +23,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--control-hz", type=float, default=20.0)
     parser.add_argument("--width", type=int, default=640)
     parser.add_argument("--height", type=int, default=480)
+    parser.add_argument("--camera-azimuth", type=float, default=-135.0, help="MuJoCo azimuth: 180 front, -135 robot's left-front, -90 robot's left.")
+    parser.add_argument("--camera-elevation", type=float, default=-10.0, help="Camera elevation in degrees; negative looks down from above.")
+    parser.add_argument("--camera-distance", type=float, default=2.2, help="Camera distance in meters, shared by both panels.")
     parser.add_argument("--no-view", action="store_true", help="Run offscreen only; useful for smoke tests.")
     parser.add_argument("--save-final-frame", default=None, help="Optional PNG path for the final side-by-side frame.")
     parser.add_argument("--save-phase-frames", type=Path, help="Save sweep extrema as PNGs for visual review.")
@@ -39,6 +42,8 @@ def parse_args() -> argparse.Namespace:
         help="Scripted target motion. basic preserves the Step 3 mapped-verifier motion.",
     )
     args = parser.parse_args()
+    if not all(np.isfinite(v) for v in (args.camera_azimuth, args.camera_elevation, args.camera_distance)) or args.camera_distance <= 0:
+        parser.error("camera angles must be finite and camera-distance must be positive")
     if not np.isfinite(args.control_hz) or args.control_hz <= 0 or not np.isfinite(args.duration_s):
         parser.error("control-hz must be positive and duration-s must be finite")
     return args
@@ -280,9 +285,13 @@ def main() -> int:
     else:
         right_xml_path = xml_path
         right_joint_names = visual_29_arm_joint_names()
-        right_camera = "global_view"
+        right_camera = "free"
         right_title = "G1-23 constrained IK on G1-29 visual"
     sim23 = MujocoPanelModel(right_xml_path, args.width, args.height, right_joint_names, right_camera)
+    for panel in (sim29, sim23):
+        panel.camera.azimuth = args.camera_azimuth
+        panel.camera.elevation = args.camera_elevation
+        panel.camera.distance = args.camera_distance
     frames = []
     phase_positions = {}
     phase_rotations = {}

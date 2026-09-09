@@ -199,7 +199,7 @@ This opens one Tk/X window with two MuJoCo panels:
 
 The Step 4 script continuously repeats a 24-second cycle: up/down (Z), forward/back (X), left/right (Y), then hand orientation changes, six seconds per phase. Both models receive the same target offsets relative to their respective ready poses: +/-12 cm in Z and X, +/-10 cm in Y. These are diagnostic target ranges, not a measurement of the complete reachable workspace. G1-23 has five joints per arm, so it cannot independently match every position and orientation target. Actual hand travel is printed for each phase.
 
-The active phase appears on both panels. Frames are precomputed at startup and then replayed continuously; this verifies kinematics, not live physics or DDS control. Close the window or press Ctrl+C to stop. A positive `--duration-s` limits playback for automated checks. The old `run_compare_g1_29_g1_23.sh` name forwards to the IK launcher.
+The active phase appears on both panels. Frames are precomputed at startup and then replayed continuously; this verifies kinematics, not live physics or DDS control. Close the window or press Ctrl+C to stop. A positive `--duration-s` limits playback for automated checks.
 
 For headless smoke testing:
 
@@ -209,5 +209,17 @@ For headless smoke testing:
 ```
 
 The scripts include a blank-panel sanity check and print per-panel render statistics.
+
+Both launchers accept camera settings. The default is the robot's left-front (robot-local
++X forward, +Y left), with matching angles and distance in both panels:
+
+```bash
+./run_compare_g1_29_g1_23_ik.sh --camera-azimuth -135 --camera-elevation -10 --camera-distance 2.2
+./run_compare_g1_29_g1_23_urdf_mesh.sh --camera-azimuth -135
+```
+
+Azimuth 180 is front, -90 is the robot's left, and +135 is its right-front.
+Negative elevation looks down from above. Change defaults in `g1_compare_ik_viewer.py`'s
+`parse_args()`; restart the launcher to apply camera changes to the precomputed frames.
 
 Current limitation: the native G1-23 panel is a visual/kinematic MuJoCo model compiled directly from URDF. It is not yet wrapped as a LeRobot Gym/DDS simulator.

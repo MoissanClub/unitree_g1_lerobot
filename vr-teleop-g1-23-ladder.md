@@ -140,8 +140,7 @@ vendored URDF. Its default motion profile cycles through arm up/down, forward/ba
 left/right, and hand orientation changes, repeating continuously every 24 seconds.
 The diagnostic targets use +/-12 cm X/Z and +/-10 cm Y offsets from each model's ready
 pose; these are not full workspace limits. Frames are precomputed and replayed, so this
-checks kinematics rather than physics or live control. The old unsuffixed launcher forwards
-to the IK script.
+checks kinematics rather than physics or live control.
 
 Remaining Rung 4 acceptance: wrap the native G1-23 model as a LeRobot Gym/DDS simulator so
 the same XR controller path can drive it live, then verify joint ordering against that
