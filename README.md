@@ -98,9 +98,9 @@ cd ~/lerobot-sim/G1Arm23LeRobot
 ```
 
 Terminal C, start the XR-to-G1 bridge before CloudXR exists. It first simulates a
-CloudXR/controller orientation change and pauses so you can verify the right arm changes
-orientation. Then it attaches to DDS, sends the G1 to the raised-arm ready pose, and keeps
-holding that pose while it retries XR attach:
+CloudXR/controller input and pauses so you can verify both hands face up. Then it
+attaches to DDS, sends the G1 to the raised-arm ready pose, and keeps holding that
+pose while it retries XR attach:
 
 ```bash
 cd ~/lerobot-sim/G1Arm23LeRobot
@@ -118,8 +118,9 @@ If the MuJoCo arms feel too slow, tune only the bridge command gains first:
 Raise `--arm-kp-scale` for faster response. If the arm overshoots or shakes, raise
 `--arm-kd-scale` or reduce `--arm-kp-scale`.
 
-Terminal B, start CloudXR. It first simulates an XR device input that lowers both arms and
-pauses for confirmation before CloudXR starts:
+Terminal B, start CloudXR. It first simulates an XR device input by raising both
+arms briefly, lowering both arms, and pausing for confirmation before CloudXR
+starts:
 
 ```bash
 cd ~/lerobot-sim/G1Arm23LeRobot

@@ -28,7 +28,7 @@ from rung3_xr_to_g1_mujoco import (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("raise", "orient", "lower"))
+    parser.add_argument("mode", choices=("raise", "orient", "hands-up", "lower"))
     parser.add_argument("--lerobot-root", default="/home/dwei/lerobot-sim/lerobot")
     parser.add_argument("--duration-s", type=float, default=2.0)
     parser.add_argument("--hz", type=float, default=30.0)
@@ -37,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ready-z-m", type=float, default=0.12)
     parser.add_argument("--ready-spread-m", type=float, default=0.03)
     parser.add_argument("--orientation-deg", type=float, default=35.0)
+    parser.add_argument("--hands-up-deg", type=float, default=90.0)
     parser.add_argument("--optional", action="store_true", help="Warn and continue if the DDS sim is not available.")
     parser.add_argument("--confirm", action="store_true", help="Wait for the user to confirm the observed motion before exiting.")
     return parser.parse_args()
@@ -83,10 +84,18 @@ def build_actions(args: argparse.Namespace, ik, joint_arm_index, joint_index) ->
     right_oriented[:3, :3] = right_oriented[:3, :3] @ rot_y(np.deg2rad(args.orientation_deg))
     q_orient = solve_ready_q(ik, left_ready, right_oriented, q_ready)
 
+    left_hands_up = left_ready.copy()
+    right_hands_up = right_ready.copy()
+    palm_up_rot = rot_y(np.deg2rad(args.hands_up_deg))
+    left_hands_up[:3, :3] = left_hands_up[:3, :3] @ palm_up_rot
+    right_hands_up[:3, :3] = right_hands_up[:3, :3] @ palm_up_rot
+    q_hands_up = solve_ready_q(ik, left_hands_up, right_hands_up, q_ready)
+
     return {
         "lower": action_from_arm_q(q_home[reorder], joint_index, joint_arm_index),
         "raise": action_from_arm_q(q_ready[reorder], joint_index, joint_arm_index),
         "orient": action_from_arm_q(q_orient[reorder], joint_index, joint_arm_index),
+        "hands-up": action_from_arm_q(q_hands_up[reorder], joint_index, joint_arm_index),
     }
 
 
@@ -105,11 +114,13 @@ def run_diagnostic(args: argparse.Namespace) -> int:
     messages = {
         "raise": "raising robot arm - verify the G1 arms move up in the MuJoCo viewer",
         "orient": "simulating CloudXR input - verify the right arm orientation changes",
-        "lower": "simulating XR device input - verify both robot arms lower",
+        "hands-up": "simulating CloudXR input - verify both hands face up",
+        "lower": "simulating XR device input - verify both robot arms raise briefly, then lower",
     }
     confirmation_prompts = {
         "raise": "Press Enter after you verify the diagnostic motion of arm raising, or Ctrl+C to abort...",
         "orient": "Press Enter after you verify the diagnostic motion of right-arm orientation change, or Ctrl+C to abort...",
+        "hands-up": "Press Enter after you verify the diagnostic motion of both hands facing up, or Ctrl+C to abort...",
         "lower": "Press Enter after you verify the diagnostic motion of both arms lowering, or Ctrl+C to abort...",
     }
     print(f"== Startup diagnostic: {messages[args.mode]} ==", flush=True)
@@ -127,12 +138,15 @@ def run_diagnostic(args: argparse.Namespace) -> int:
 
     try:
         actions = build_actions(args, G1_29_ArmIK(), G1_29_JointArmIndex, G1_29_JointIndex)
-        if args.mode == "orient":
+        if args.mode in {"orient", "hands-up"}:
             send_for(robot, actions["raise"], min(0.8, args.duration_s), args.hz)
+        elif args.mode == "lower":
+            send_for(robot, actions["raise"], min(1.0, args.duration_s), args.hz)
         send_for(robot, actions[args.mode], args.duration_s, args.hz)
         print("== Startup diagnostic complete ==", flush=True)
         if args.confirm:
             input(confirmation_prompts[args.mode])
+            print("== User verification confirmed; entering steady-state listening ==", flush=True)
     finally:
         robot.disconnect()
     return 0

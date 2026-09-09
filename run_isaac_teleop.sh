@@ -28,7 +28,7 @@ if [[ ! -f "${CLOUDXR_ENV_FILE}" ]]; then
 fi
 
 if [[ "${SKIP_G1_STARTUP_DIAGNOSTIC:-0}" != "1" ]]; then
-  "${G1_PYTHON_BIN}" "${SCRIPT_DIR}/g1_startup_diagnostic.py" lower --confirm
+  "${G1_PYTHON_BIN}" "${SCRIPT_DIR}/g1_startup_diagnostic.py" lower --duration-s 3.0 --confirm
 fi
 
 echo "== Starting Isaac Teleop CloudXR =="
