@@ -46,9 +46,9 @@ input device.
 | **1'** | Same headset via LeRobot's `XRController` | The LeRobot binding, minus actuators | headset | ⬜ todo |
 | **2a** | Script → `G1_29_ArmIK` | IK stack, no sim, no XR | **none** | ✅ done |
 | **2b** | 2a → MuJoCo | Robot interface + sim | **none** | ✅ done |
-| **3** | Join 1' + 2b | **The glue — the actual contribution** | headset | 🟡 in progress |
-| **4** | sim → real G1-29 | Transport, FSM, arm_sdk, safety | + G1-29 | ⬜ todo |
-| **5** | 29 → 23 | The spec-as-data refactor | + G1-23 | ⬜ todo |
+| **3** | Join 1' + 2b | **The glue — the actual contribution** | headset | ✅ done |
+| **4** | G1-29 sim → G1-23 sim | The spec-as-data refactor | headset | ⬜ todo |
+| **5** | G1-23 sim → real G1-23 | Transport, FSM, arm_sdk, safety | + G1-23 | ⬜ todo |
 | **6** | Gripper → BrainCo hand | Tactile integration | + BrainCo | ⬜ todo |
 
 Rungs 1' and 2 are independent — one needs the headset, the other needs nothing — so they
@@ -113,17 +113,15 @@ otherwise reinvent.
 1' and 2 currently require two separate environments.** Rung 3 is where that has to be
 resolved.
 
-### Rung 4 — sim → real G1-29
-Flip `is_simulation=False`, set `robot_ip`, run `run_g1_server.py`. Everything above the
-transport is unchanged. This is where FSM state, `arm_sdk` weight ramping, and the
-protective layer become real. Prerequisites: robot in **FSM 500** (Main Operation Control,
-`L2+B` → `L2+UP` → `R1+X`); seed `motor_cmd` from measured `q` before setting the weight;
-a stale-command watchdog.
-
-### Rung 5 — 29 → 23
+### Rung 4 — G1-29 sim → G1-23 sim
 Per-embodiment variation is **data, not behaviour**: URDF, locked joints, EE parent + offset
 (`wrist_roll` + 0.20 vs `wrist_yaw` + 0.05), rotation weight (0.5 vs 1.0), filter width
 (10 vs 14). LeRobot has *one* copy of the IK — add the variant as a spec, not as copy #2.
+
+This rung keeps the next change device-light and makes the simulator match the actual target
+robot before adding real-hardware risk. Acceptance is: the same XR controller path drives a
+G1-23 MuJoCo model, the joint ordering is verified, the EE frame/offset is explicit, and the
+5-DoF orientation compromise is documented.
 
 Behind **golden-output tests**: the two implementations are not identical, and silently
 normalising a weight changes robot behaviour.
@@ -132,8 +130,15 @@ Note a 5-DoF arm cannot reach an arbitrary SE(3) pose — 5 DoF against 6 object
 solver returns a weighted projection and never reports unreachability, which is exactly what
 the lower rotation weight encodes.
 
-> If no G1-23 hardware is available, rungs 5–6 are **sim-validated only**. Say so plainly in
-> the PR rather than letting reviewers assume otherwise.
+### Rung 5 — G1-23 sim → real G1-23
+Flip from the G1-23 MuJoCo simulator to the physical G1-23. Everything above transport
+should stay unchanged. This is where FSM state, `arm_sdk` weight ramping, and the protective
+layer become real. Prerequisites: robot in **FSM 500** (Main Operation Control, `L2+B` →
+`L2+UP` → `R1+X`); seed `motor_cmd` from measured `q` before setting the weight; add a
+stale-command watchdog.
+
+> If no G1-23 hardware is available, rung 4 is **sim-validated only**. Say so plainly in the
+> PR rather than letting reviewers assume hardware validation happened.
 
 ---
 
@@ -197,7 +202,7 @@ since the hardware is running anyway.
 1. Finish rung 0 — connect the headset, run the acceptance checklist, settle the Quest Pro question
 2. Rung 1' — ten lines, no purchase
 3. File findings 1–3, 7 and 8; file 9 with Unitree
-4. Rung 3 — the glue
+4. Rung 4 — G1-23 sim adaptation
 
 ## Companion documents
 
