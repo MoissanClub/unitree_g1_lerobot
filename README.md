@@ -198,6 +198,18 @@ Headset: connect to CloudXR after A, C, and B are ready
 
 ## Rung 4: G1-23 Embodiment Bring-Up
 
+Motor-driven verification is now available separately from the existing geometry/IK
+viewers:
+
+```bash
+./run_compare_g1_29_motor_configs_no_gravity_compensation.sh
+./run_compare_g1_29_g1_23_motor_configs_no_gravity_compensation.sh
+```
+
+These run the same supported-arm physics suite and produce side-by-side playback, plots,
+and numerical reports. See [motor configuration comparison](docs/motor-config-comparison.md)
+for the source methodology, test conditions, and interpretation of oscillation/tracking.
+
 There are two side-by-side verification scripts for this rung.
 
 First, inspect the two native models in a stationary neutral pose:
@@ -251,8 +263,8 @@ Current limitation: the native G1-23 panel is a visual/kinematic MuJoCo model co
 
 As of 2026-09-09, the user has completed visual review of the native models and the
 side-by-side IK sweeps. Keep both verification scripts as regression artifacts.
-Rung 4 is still incomplete: assigning joint positions for rendering does not verify
-motor-driven physics, DDS commands, or measured feedback.
+Rung 4 is still incomplete. The geometry/IK viewers assign joint positions directly;
+the new motor comparison runs supported-arm physics, but does not exercise DDS or XR.
 
 The remaining acceptance work is:
 

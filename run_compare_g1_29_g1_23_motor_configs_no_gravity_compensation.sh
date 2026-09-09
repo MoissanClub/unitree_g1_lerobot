@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Gravity is enabled in MuJoCo; the motor controller has no gravity feedforward.
+set -euo pipefail
+cd "$(dirname "$0")"
+export MUJOCO_GL="${MUJOCO_GL:-egl}"
+PYTHON_BIN="${G1_PYTHON_BIN:-${HOME}/miniforge3/envs/lerobot-g1/bin/python}"
+exec "${PYTHON_BIN}" -m unitree_g1_lerobot.diagnostics.compare_motor_configs --comparison embodiments "$@"

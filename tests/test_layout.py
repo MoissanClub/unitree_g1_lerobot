@@ -55,6 +55,8 @@ class LayoutTests(unittest.TestCase):
                 "run_compare_g1_29_g1_23_urdf_mesh.sh",
                 "run_g1_mujoco_dds_sim.sh",
                 "run_xr_g1_mujoco.sh",
+                "run_compare_g1_29_motor_configs_no_gravity_compensation.sh",
+                "run_compare_g1_29_g1_23_motor_configs_no_gravity_compensation.sh",
             ):
                 with self.subTest(launcher=name):
                     result = subprocess.run(

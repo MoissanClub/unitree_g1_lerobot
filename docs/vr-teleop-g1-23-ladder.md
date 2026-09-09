@@ -162,6 +162,15 @@ physics/DDS simulator: the comparison assigns joint positions and replays render
 
 #### What is actually left for Rung 4
 
+Motor-config checkpoint: both variants now have source-derived motor profiles and a
+supported-arm physics comparison suite. `run_compare_g1_29_motor_configs_no_gravity_compensation.sh` compares
+the derived G1-29 gains against the active LeRobot defaults on identical models;
+`run_compare_g1_29_g1_23_motor_configs_no_gravity_compensation.sh` compares both derived profiles on their native
+models. These produce measured tracking/torque/oscillation reports and continuous
+side-by-side replay. See [method and tests](motor-config-comparison.md).
+This advances item 1 below as a standalone benchmark; it does not complete the live
+LeRobot/DDS runtime or the transport/XR acceptance in items 2-4.
+
 1. **Motor-driven simulation:** build the native G1-23 LeRobot/MuJoCo runtime with
    actuators, gravity, inertia, damping, and appropriate contacts. Verify pose holding
    and motion under motor commands; direct assignment to `qpos` is not this test.
