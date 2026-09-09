@@ -1,6 +1,6 @@
-# G1Arm23LeRobot
+# unitree_g1_lerobot
 
-Supporting G1Arm23 in LeRobot.
+Supporting Unitree G1 integration in LeRobot for MuJoCo simulation and real robot workflows across G1-29 and G1-23 variants.
 
 ## Isaac Teleop CloudXR Scripts
 
@@ -11,7 +11,7 @@ Use these scripts for the Isaac Teleop / CloudXR part of the ladder.
 Run this once after cloning the repo:
 
 ```bash
-cd ~/lerobot-sim/G1Arm23LeRobot
+cd ~/lerobot-sim/unitree_g1_lerobot
 ./setup_isaac_teleop.sh
 ```
 
@@ -37,7 +37,7 @@ PYTHON_BIN=/usr/bin/python3.12 \
 Run this whenever you want to connect the VR headset:
 
 ```bash
-cd ~/lerobot-sim/G1Arm23LeRobot
+cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_isaac_teleop.sh
 ```
 
@@ -57,7 +57,7 @@ With `run_isaac_teleop.sh` still running, open another terminal and run:
 
 ```bash
 source /home/dwei/.venvs/isaacteleop/bin/activate
-cd ~/lerobot-sim/G1Arm23LeRobot
+cd ~/lerobot-sim/unitree_g1_lerobot
 python xr_controller_cloudxr_smoke_test.py --external-cloudxr
 ```
 
@@ -73,14 +73,14 @@ Pinocchio/CasADi first and appends the existing Isaac Teleop venv only for XR im
 Before a headset run, verify the G1 MuJoCo visual path from an `ssh -Y` terminal:
 
 ```bash
-cd ~/lerobot-sim/G1Arm23LeRobot
+cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_g1_mujoco_keyboard.sh
 ```
 
 Validate rung 3 without headset or CloudXR:
 
 ```bash
-cd ~/lerobot-sim/G1Arm23LeRobot
+cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_xr_g1_mujoco.sh --dry-run-ik
 ./run_xr_g1_mujoco.sh --mock-xr --duration-s 5 --no-wait
 ```
@@ -93,7 +93,7 @@ Terminal A, start G1 MuJoCo as a standalone DDS simulator. It first prints
 steady-state simulation starts:
 
 ```bash
-cd ~/lerobot-sim/G1Arm23LeRobot
+cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_g1_mujoco_dds_sim.sh
 ```
 
@@ -103,7 +103,7 @@ attaches to DDS, sends the G1 to the raised-arm ready pose, and keeps holding th
 pose while it retries XR attach:
 
 ```bash
-cd ~/lerobot-sim/G1Arm23LeRobot
+cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_xr_g1_mujoco.sh --external-g1-sim --external-cloudxr --wait-for-cloudxr --no-wait
 ```
 
@@ -131,7 +131,7 @@ until you confirm it. This avoids Terminal B and Terminal C publishing conflicti
 DDS arm commands before CloudXR starts:
 
 ```bash
-cd ~/lerobot-sim/G1Arm23LeRobot
+cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_isaac_teleop.sh
 ```
 
@@ -167,8 +167,8 @@ bridge skips simulator creation and only publishes IK-generated G1 joint targets
 Process split:
 
 ```text
-A: cd ~/lerobot-sim/G1Arm23LeRobot && ./run_g1_mujoco_dds_sim.sh
-C: cd ~/lerobot-sim/G1Arm23LeRobot && ./run_xr_g1_mujoco.sh --external-g1-sim --external-cloudxr --wait-for-cloudxr --no-wait
-B: cd ~/lerobot-sim/G1Arm23LeRobot && ./run_isaac_teleop.sh
+A: cd ~/lerobot-sim/unitree_g1_lerobot && ./run_g1_mujoco_dds_sim.sh
+C: cd ~/lerobot-sim/unitree_g1_lerobot && ./run_xr_g1_mujoco.sh --external-g1-sim --external-cloudxr --wait-for-cloudxr --no-wait
+B: cd ~/lerobot-sim/unitree_g1_lerobot && ./run_isaac_teleop.sh
 Headset: connect to CloudXR after A, C, and B are ready
 ```

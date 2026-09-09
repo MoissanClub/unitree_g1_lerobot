@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # One-time Isaac Teleop + LeRobot setup for CloudXR headset testing.
-# Defaults match the workstation setup used for the G1Arm23LeRobot ladder.
+# Defaults match the workstation setup used for the unitree_g1_lerobot ladder.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LEROBOT_ROOT="${LEROBOT_ROOT:-/home/dwei/lerobot-sim/lerobot}"

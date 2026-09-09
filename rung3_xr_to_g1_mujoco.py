@@ -569,7 +569,7 @@ def main() -> int:
                 if not cloudxr_runtime_error(exc):
                     raise
                 print("\nOpenXR/CloudXR is not available yet.", file=sys.stderr)
-                print("Start CloudXR in another terminal with: cd ~/lerobot-sim/G1Arm23LeRobot && ./run_isaac_teleop.sh", file=sys.stderr)
+                print("Start CloudXR in another terminal with: cd ~/lerobot-sim/unitree_g1_lerobot && ./run_isaac_teleop.sh", file=sys.stderr)
                 print("Then connect the headset browser client.", file=sys.stderr)
                 if not args.wait_for_cloudxr:
                     raise
