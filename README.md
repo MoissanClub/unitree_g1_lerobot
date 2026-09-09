@@ -172,3 +172,32 @@ C: cd ~/lerobot-sim/unitree_g1_lerobot && ./run_xr_g1_mujoco.sh --external-g1-si
 B: cd ~/lerobot-sim/unitree_g1_lerobot && ./run_isaac_teleop.sh
 Headset: connect to CloudXR after A, C, and B are ready
 ```
+
+## Rung 4: G1-23 Embodiment Bring-Up
+
+Step 1-3 now have a local verifier:
+
+```bash
+cd ~/lerobot-sim/unitree_g1_lerobot
+./run_compare_g1_29_g1_23.sh
+```
+
+This opens one Tk/X window with two MuJoCo panels:
+
+- left: LeRobot's existing G1-29 IK
+- right: local G1-23-constrained IK mapped onto the existing G1-29 visual model
+
+For headless smoke testing:
+
+```bash
+./run_compare_g1_29_g1_23.sh --duration-s 2 --no-view
+```
+
+What this proves: the G1-23 URDF is present, mesh lookup works through the cached
+`lerobot/unitree-g1-mujoco` asset layout, the local G1-23 embodiment spec builds under the
+`lerobot-g1` conda environment, and the 10 active G1-23 arm joints can be visually compared
+against the 14 active G1-29 arm joints.
+
+Current limitation: the right panel is a G1-23-constrained IK/control visualization on the
+G1-29 MuJoCo body, not a full native G1-23 MuJoCo XML scene yet. That is the next Rung 4
+step before real G1-23 hardware transport.
