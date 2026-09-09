@@ -119,6 +119,7 @@ def run_raise_arm_diagnostic(env, args: argparse.Namespace, *, drive_steps: bool
             ready_spread_m=0.03,
             orientation_deg=35.0,
             hands_up_deg=90.0,
+            hands_up_direction="inward",
             optional=False,
             confirm=not args.no_diagnostic_confirm,
         )

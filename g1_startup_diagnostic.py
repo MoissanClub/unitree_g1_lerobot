@@ -38,6 +38,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ready-spread-m", type=float, default=0.03)
     parser.add_argument("--orientation-deg", type=float, default=35.0)
     parser.add_argument("--hands-up-deg", type=float, default=90.0)
+    parser.add_argument(
+        "--hands-up-direction",
+        choices=("inward", "outward"),
+        default="inward",
+        help="Wrist-roll direction for the hands-up diagnostic.",
+    )
     parser.add_argument("--optional", action="store_true", help="Warn and continue if the DDS sim is not available.")
     parser.add_argument("--confirm", action="store_true", help="Wait for the user to confirm the observed motion before exiting.")
     return parser.parse_args()
@@ -84,18 +90,23 @@ def build_actions(args: argparse.Namespace, ik, joint_arm_index, joint_index) ->
     right_oriented[:3, :3] = right_oriented[:3, :3] @ rot_y(np.deg2rad(args.orientation_deg))
     q_orient = solve_ready_q(ik, left_ready, right_oriented, q_ready)
 
-    left_hands_up = left_ready.copy()
-    right_hands_up = right_ready.copy()
-    palm_up_rot = rot_y(np.deg2rad(args.hands_up_deg))
-    left_hands_up[:3, :3] = left_hands_up[:3, :3] @ palm_up_rot
-    right_hands_up[:3, :3] = right_hands_up[:3, :3] @ palm_up_rot
-    q_hands_up = solve_ready_q(ik, left_hands_up, right_hands_up, q_ready)
+    q_ready_g1 = q_ready[reorder].copy()
+    q_hands_up_g1 = q_ready_g1.copy()
+    wrist_roll_rad = np.deg2rad(args.hands_up_deg)
+    if args.hands_up_direction == "inward":
+        left_wrist_roll = -wrist_roll_rad
+        right_wrist_roll = wrist_roll_rad
+    else:
+        left_wrist_roll = wrist_roll_rad
+        right_wrist_roll = -wrist_roll_rad
+    q_hands_up_g1[4] = left_wrist_roll
+    q_hands_up_g1[11] = right_wrist_roll
 
     return {
         "lower": action_from_arm_q(q_home[reorder], joint_index, joint_arm_index),
-        "raise": action_from_arm_q(q_ready[reorder], joint_index, joint_arm_index),
+        "raise": action_from_arm_q(q_ready_g1, joint_index, joint_arm_index),
         "orient": action_from_arm_q(q_orient[reorder], joint_index, joint_arm_index),
-        "hands-up": action_from_arm_q(q_hands_up[reorder], joint_index, joint_arm_index),
+        "hands-up": action_from_arm_q(q_hands_up_g1, joint_index, joint_arm_index),
     }
 
 

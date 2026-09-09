@@ -109,14 +109,21 @@ cd ~/lerobot-sim/G1Arm23LeRobot
 
 This command runs until Ctrl+C. For bounded smoke tests, pass `--duration-s N`.
 
-If the MuJoCo arms feel too slow, tune only the bridge command gains first:
+If the MuJoCo arms feel too slow or too subtle, tune only the bridge command gains
+and controller translation scale first:
 
 ```bash
-./run_xr_g1_mujoco.sh --external-g1-sim --external-cloudxr --wait-for-cloudxr --no-wait --arm-kp-scale 2.0 --arm-kd-scale 1.5
+./run_xr_g1_mujoco.sh --external-g1-sim --external-cloudxr --wait-for-cloudxr --no-wait --arm-kp-scale 2.0 --arm-kd-scale 1.5 --xr-pos-scale 3.0
 ```
 
 Raise `--arm-kp-scale` for faster response. If the arm overshoots or shakes, raise
-`--arm-kd-scale` or reduce `--arm-kp-scale`.
+`--arm-kd-scale` or reduce `--arm-kp-scale`. Raise `--xr-pos-scale` when the target
+changes but the visual motion is too small.
+
+To debug headset motion, add `--debug-xr` to Terminal C. While moving the controller
+and holding the clutch, `raw_d`, `target_d`, and `q_d` should become nonzero. If
+`raw_d` stays zero, CloudXR/OpenXR is reporting button state but not changing controller
+position.
 
 Terminal B, start CloudXR. When Terminal C is already running, this asks the XR
 bridge to raise both arms briefly, lower both arms, and hold that diagnostic pose

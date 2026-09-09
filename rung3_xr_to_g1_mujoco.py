@@ -67,6 +67,17 @@ def parse_args() -> argparse.Namespace:
         help="Clamp commanded wrist translation to this radius from the IK home pose.",
     )
     parser.add_argument(
+        "--xr-pos-scale",
+        type=float,
+        default=1.0,
+        help="Scale controller translation before applying it to the G1 wrist target.",
+    )
+    parser.add_argument(
+        "--debug-xr",
+        action="store_true",
+        help="Print raw controller position, controller delta, target delta, and IK joint delta.",
+    )
+    parser.add_argument(
         "--no-wait",
         action="store_true",
         help="Do not pause before creating the OpenXR session.",
@@ -145,6 +156,14 @@ def valid_pose_frame(pos: np.ndarray, quat: np.ndarray) -> bool:
         and np.all(np.isfinite(quat))
         and float(np.linalg.norm(quat)) > 1e-6
     )
+
+
+def scaled_rebase(clutch, grip_pos: np.ndarray, grip_quat: np.ndarray, scale: float) -> tuple[np.ndarray, np.ndarray]:
+    if scale == 1.0:
+        return clutch.rebase(grip_pos, grip_quat)
+    origin_pos = clutch._origin_pos.copy()
+    grip_pos_scaled = origin_pos + (np.asarray(grip_pos, dtype=float) - origin_pos) * scale
+    return clutch.rebase(grip_pos_scaled, grip_quat)
 
 
 def clutch_value(action: dict, axis: str) -> float:
@@ -577,6 +596,8 @@ def main() -> int:
     period_s = 1.0 / args.control_hz
     deadline = float("inf") if args.duration_s <= 0.0 else time.monotonic() + args.duration_s
     was_engaged = False
+    last_raw_grip_pos: np.ndarray | None = None
+    last_q_g1: np.ndarray | None = None
     last_tracking: bool | None = None
     last_tracking_time = time.monotonic()
     step = 0
@@ -636,7 +657,7 @@ def main() -> int:
                 print(f"clutch engaged at step {step}")
 
             if engaged:
-                pos, quat = clutch.rebase(xr_action["grip_pos"], xr_action["grip_quat"])
+                pos, quat = scaled_rebase(clutch, xr_action["grip_pos"], xr_action["grip_quat"], args.xr_pos_scale)
                 active_target = make_transform(pos, quat, Rotation)
                 active_target = clamp_translation(active_target, active_home, args.max_delta_m)
                 if args.hand_side == "right":
@@ -657,23 +678,42 @@ def main() -> int:
 
             if tracking or tracking != last_tracking or step % max(1, int(args.control_hz)) == 0:
                 active_target = right_target if args.hand_side == "right" else left_target
-                print(
+                raw_pos = np.asarray(xr_action["grip_pos"], dtype=float)
+                raw_delta = 0.0 if last_raw_grip_pos is None else float(np.linalg.norm(raw_pos - last_raw_grip_pos))
+                q_delta = 0.0 if last_q_g1 is None else float(np.linalg.norm(q_g1 - last_q_g1))
+                target_delta = float(np.linalg.norm(active_target[:3, 3] - active_home[:3, 3]))
+                line = (
                     "step={step:04d} tracking={tracking} engaged={engaged} "
                     "squeeze={squeeze:.3f} trigger={trigger:.3f} clutch={clutch:.3f} "
-                    "target=({x:+.3f},{y:+.3f},{z:+.3f}) q0={q0:+.3f} |q|={qnorm:.3f}".format(
-                        step=step,
-                        tracking=tracking,
-                        engaged=engaged,
-                        squeeze=squeeze,
-                        trigger=trigger,
-                        clutch=clutch_level,
-                        x=float(active_target[0, 3]),
-                        y=float(active_target[1, 3]),
-                        z=float(active_target[2, 3]),
-                        q0=float(q_g1[0]),
-                        qnorm=arm_norm,
-                    )
+                    "target=({x:+.3f},{y:+.3f},{z:+.3f}) q0={q0:+.3f} |q|={qnorm:.3f}"
+                ).format(
+                    step=step,
+                    tracking=tracking,
+                    engaged=engaged,
+                    squeeze=squeeze,
+                    trigger=trigger,
+                    clutch=clutch_level,
+                    x=float(active_target[0, 3]),
+                    y=float(active_target[1, 3]),
+                    z=float(active_target[2, 3]),
+                    q0=float(q_g1[0]),
+                    qnorm=arm_norm,
                 )
+                if args.debug_xr:
+                    line += (
+                        " raw=({rx:+.3f},{ry:+.3f},{rz:+.3f}) "
+                        "raw_d={raw_delta:.4f} target_d={target_delta:.4f} q_d={q_delta:.4f}"
+                    ).format(
+                        rx=float(raw_pos[0]),
+                        ry=float(raw_pos[1]),
+                        rz=float(raw_pos[2]),
+                        raw_delta=raw_delta,
+                        target_delta=target_delta,
+                        q_delta=q_delta,
+                    )
+                print(line)
+                last_raw_grip_pos = raw_pos.copy()
+                last_q_g1 = q_g1.copy()
 
             was_engaged = engaged
             last_tracking = tracking
