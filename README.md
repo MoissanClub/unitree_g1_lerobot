@@ -223,3 +223,34 @@ Negative elevation looks down from above. Change defaults in `g1_compare_ik_view
 `parse_args()`; restart the launcher to apply camera changes to the precomputed frames.
 
 Current limitation: the native G1-23 panel is a visual/kinematic MuJoCo model compiled directly from URDF. It is not yet wrapped as a LeRobot Gym/DDS simulator.
+
+### Rung 4 Remaining Work
+
+As of 2026-09-09, the user has completed visual review of the native models and the
+side-by-side IK sweeps. Keep both verification scripts as regression artifacts.
+Rung 4 is still incomplete: assigning joint positions for rendering does not verify
+motor-driven physics, DDS commands, or measured feedback.
+
+The remaining acceptance work is:
+
+1. Build the live native G1-23 MuJoCo/LeRobot simulator, with actuators, gravity,
+   inertia, damping, and appropriate contacts. Verify that it holds and reaches arm
+   poses through motor commands rather than direct joint-position assignment.
+2. Verify the command/observation round trip through DDS: each of the ten active arm
+   joints must have the correct name, index, direction, limits, and measured feedback.
+   Account explicitly for unused slots in the transport's joint layout.
+3. Send the existing scripted Cartesian/orientation sweeps through IK and DDS to the
+   live simulator, without a headset. Compare targets, commanded joints, measured joints,
+   and measured hand poses. Check tracking, timing, stability, and command-loss behavior.
+   Distinguish G1-23 IK orientation compromises from actuator tracking errors.
+4. Select G1-23 in the existing XR bridge and validate live headset control, startup
+   diagnostics, engagement/release, and tracking loss/disconnect behavior. Recheck the
+   G1-29 path for regressions and document the G1-23 five-joint orientation limitations.
+
+A keyboard-controlled Cartesian stage is optional, not a prerequisite: it supplies
+targets to the same IK and does not isolate an additional failure domain. The scripted
+DDS verification is the next useful device-free check.
+
+Implementation details, controller settings, and numerical acceptance thresholds remain
+for the next planning session. This update records scope only; no live G1-23 simulator
+or additional launcher is claimed to exist. Physical robot validation remains Rung 5.

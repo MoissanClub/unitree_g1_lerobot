@@ -142,9 +142,38 @@ The diagnostic targets use +/-12 cm X/Z and +/-10 cm Y offsets from each model's
 pose; these are not full workspace limits. Frames are precomputed and replayed, so this
 checks kinematics rather than physics or live control.
 
-Remaining Rung 4 acceptance: wrap the native G1-23 model as a LeRobot Gym/DDS simulator so
-the same XR controller path can drive it live, then verify joint ordering against that
-runtime and document the 5-DoF orientation compromise.
+**2026-09-09 checkpoint:** the user has completed visual review of both verification
+scripts. Native geometry and the scripted IK comparison have been reviewed. Preserve
+these scripts as regression artifacts. This is not yet validation of a live G1-23
+physics/DDS simulator: the comparison assigns joint positions and replays rendered poses.
+
+#### What is actually left for Rung 4
+
+1. **Motor-driven simulation:** build the native G1-23 LeRobot/MuJoCo runtime with
+   actuators, gravity, inertia, damping, and appropriate contacts. Verify pose holding
+   and motion under motor commands; direct assignment to `qpos` is not this test.
+2. **DDS and joint mapping:** exercise each of the ten active arm joints individually
+   through a separate DDS command sender. Verify names, indices, directions, limits,
+   unused transport slots, and measured joint feedback from the simulator.
+3. **Scripted end-to-end motion, no headset:** route the existing Cartesian/orientation
+   sweep targets through IK, DDS, and actuators. Compare target hand poses, commanded
+   joint positions, measured joint positions, and hand poses computed from measurements.
+   Separate IK residuals from actuator errors. Verify tracking, control timing, stability,
+   and the intended response when commands stop or become stale.
+4. **XR integration and regression:** select G1-23 in the existing bridge and verify
+   headset control, startup diagnostics, engagement/release, and tracking loss/disconnect
+   behavior. Verify supported arm control paths and retain working G1-29 behavior.
+   Document the five-joint arm's position/orientation compromise and test results.
+
+**No mandatory keyboard stage.** Keyboard Cartesian control reuses the same IK and merely
+changes the source of targets. Scripted sweeps over DDS isolate the new physics,
+actuator, transport, feedback, and timing behavior without introducing another input device.
+
+**Next planning session:** decide the runtime integration details, controller settings,
+verification artifact interfaces, and numerical pass/fail thresholds before implementation.
+The items above are remaining acceptance work, not newly implemented capabilities.
+Rung 4 is complete only after live G1-23 simulation and XR acceptance, with regression
+evidence and documented limitations. Real robot work belongs to Rung 5.
 
 Behind **golden-output tests**: the two implementations are not identical, and silently
 normalising a weight changes robot behaviour.
@@ -222,10 +251,12 @@ since the hardware is running anyway.
 
 ## Immediate next actions
 
-1. Finish rung 0 — connect the headset, run the acceptance checklist, settle the Quest Pro question
-2. Rung 1' — ten lines, no purchase
-3. File findings 1–3, 7 and 8; file 9 with Unitree
-4. Rung 4 — G1-23 sim adaptation
+1. Plan the remaining Rung 4 physics/DDS work described above; visual review is complete.
+2. Implement and verify the device-free simulator and scripted DDS path before headset testing.
+3. Finish G1-23 XR acceptance and G1-29 regression checks, then move to Rung 5 planning.
+
+Earlier rung notes retain historical bring-up observations; they are not the current
+next-action list. Upstream issue reporting remains separate from Rung 4 acceptance.
 
 ## Companion documents
 
