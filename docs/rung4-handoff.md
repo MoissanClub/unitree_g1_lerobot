@@ -1,21 +1,103 @@
 # Rung 4 Handoff
 
+## Next Session: Camera Streaming
+
+**User direction:** dual-arm headset visual review is complete. Resume with robot-camera
+streaming to the headset (Rung 4V), not another model/IK/motor comparison or backend bring-up.
+Systematic numerical DDS/actuator and controller-lifecycle acceptance remains open, but
+is deferred rather than a prerequisite to beginning camera work. Do not mark it complete.
+
+**Baseline:** `8d29a6f` on `main` was committed and pushed. It enables gravity compensation
+by default and makes CloudXR robot-independent. The latest headset-review and handoff
+documentation updates follow that implementation baseline; check `git status` before continuing.
+Latest verification: 38 tests passed across the unit and isolated DDS runs; one GUI test
+skipped. Actual three-launcher headless checks passed for both embodiments, including
+dual-arm motion and clean shutdown. Logs: `/tmp/g1-xr-headless-vt4dfxg1` (temporary).
+CloudXR also started and stopped successfully without a simulator or bridge.
+
+### Working Operator Sequence
+
+From `~/lerobot-sim/unitree_g1_lerobot`, in separate terminals:
+
+```bash
+# Simulator; use ssh -Y for its local Tk view.
+./run_g1_mujoco_dds_sim.sh --embodiment g1_23
+
+# XR bridge; both arms and gravity compensation are enabled by default.
+./run_xr_g1_mujoco.sh --embodiment g1_23 --external-g1-sim --external-cloudxr --wait-for-cloudxr --no-wait
+
+# CloudXR only: no embodiment, robot diagnostic, or confirmation prompt.
+./run_isaac_teleop.sh
+```
+
+Use `g1_29` on the simulator and bridge for that embodiment. Confirm the simulator and
+bridge startup motions, then connect the headset. CloudXR may start independently in
+either order. `--no-wait` skips the headset-attachment prompt, not the bridge diagnostic
+confirmation; `--headless` suppresses viewers/confirmations for automated checks.
+
+### Implementation Sequence
+
+1. Inspect the installed Isaac Teleop/CloudXR SDK and its rendering examples to establish
+   the supported image-submission path. The current bridge opens a headless OpenXR
+   session for controller input; determine how rendering and input can share its session
+   before adding another XR client. Do not assume the existing browser's "Running" screen
+   can display arbitrary camera frames or that a second session can coexist safely.
+2. Define a camera in each simulator, render actual robot-camera frames, and verify local
+   images first. Existing Tk views are workstation previews, not delivered headset video.
+   Keep the robot arms and useful workspace visible. Start with one embodiment, then
+   verify the same frame contract on the other.
+3. Add a bounded latest-frame handoff with camera identity, dimensions, pixel format,
+   sequence number, and timestamp. Keep capture under `simulation/`, transport/display
+   under `xr/`, and robot/IK code independent. Avoid blocking the physics or DDS loop on
+   rendering, encoding, or a disconnected headset. Use supported SDK transport where available.
+4. Submit frames using the verified XR integration while preserving controller input,
+   independent clutches, and the single robot-command publisher. Preserve no-video mode
+   and all existing verification launchers; do not reintroduce robot settings into the
+   CloudXR-only service launcher.
+5. Add local/headless frame checks, then ask for headset review only when images actually
+   reach the display. Verify both embodiments, correct framing/orientation, visibly live
+   motion, reconnect behavior, and continued bilateral control. Measure frame rate,
+   frame age, and physics/control timing with video off versus on.
+
+**Decisions not yet made:** mono versus stereo, fixed robot camera versus head-coupled
+view, display composition, resolution/frame-rate targets, and the supported transport/API.
+A fixed mono view is a reasonable first proposed checkpoint, not an agreed requirement.
+Inspect SDK capabilities first; ask only for consequential tradeoffs. Keep physical
+robot work out of this session. G1-23 remains supported-arm simulation, not full-body balance.
+
+### Files and Environment
+
+- `simulation/g1_mujoco_dds_sim.py`: standalone selection, Hub rendering, and Tk viewer.
+- `simulation/native_g1.py`, `simulation/native_g1_viewer.py`: native G1-23 physics/viewer.
+- `xr/xr_to_g1_mujoco.py`, `xr/both_controllers.py`: XR session/input and bilateral control.
+- `xr/cloudxr_session.py`, `run_isaac_teleop.sh`: robot-independent CloudXR service lifetime.
+- `diagnostics/verify_xr_headless.py`: preserve the real three-launcher regression matrix.
+- Package paths above are under `unitree_g1_lerobot/`. Use descriptive filenames, not rung numbers.
+- Robot Python: `/home/dwei/miniforge3/envs/lerobot-g1/bin/python`.
+- XR Python/SDK: `/home/dwei/.venvs/isaacteleop/bin/python` and its Python 3.12 site-packages.
+- Adjacent LeRobot: `/home/dwei/lerobot-sim/lerobot`; preserve its existing changes and patch workflow.
+
+Camera delivery is currently **not implemented or verified**. Keep the DDS native teardown
+finding open; use fresh processes for independent sessions, avoid concurrent test publishers,
+and do not claim headset video success based only on CloudXR service readiness.
+
 ## Resume Point
 
 Resume using the [three-track project plan](project-plan.md): Track 1 owns G1-23
 LeRobot support (`robots/`), Track 2 owns XR (`xr/`), and Track 3 owns G1 simulation
 (`simulation/`). Track 3's native supported-arm G1-23 backend now runs, including
-basic standalone/embedded DDS checks. Next is systematic Track 1 joint/IK/DDS
-acceptance; Track 2 headset acceptance follows. Existing rung names remain shared
+basic standalone/embedded DDS checks. Systematic Track 1 joint/IK/DDS
+acceptance and Track 2 lifecycle testing remain deferred work. Dual-arm headset visual review
+is complete. Existing rung names remain shared
 acceptance gates, not separate implementation tracks.
 
 The simulator and bridge accept `--embodiment`; all three accept `--headless`. Both variants passed
 real CloudXR/OpenXR startup and separate plus simultaneous mock left/right motion with
 measured feedback. The user confirmed right-arm headset control on both embodiments.
 The bridge now defaults to `--hand-side both`, with independent clutches in one XR
-session and one combined IK/DDS update. Next visual acceptance is simultaneous
-two-controller motion, independent release, tracking loss, and re-engagement on both
-embodiments. Single-hand modes remain available explicitly.
+session and one combined IK/DDS update. The user has now completed dual-arm headset
+visual review. Do not infer exhaustive release, tracking-loss, reconnect, or numerical
+acceptance from that confirmation. Single-hand modes remain available explicitly.
 
 The XR launcher and simulator startup diagnostics now default to gravity compensation
 ON for both embodiments, with `--no-gravity-compensation` as an explicit opt-out.
@@ -57,7 +139,8 @@ for the tested standalone launcher, confirmation flow, and remaining acceptance 
 
 The user has confirmed visual review of the motor-comparison checkpoint. Geometry,
 scripted IK, and the supported-arm motor benchmarks are reviewed. **Rung 4 is not
-complete:** next work is systematic per-joint, Cartesian/DDS, and XR acceptance.
+complete:** systematic per-joint, Cartesian/DDS, and XR lifecycle acceptance remains open.
+The next session prioritizes camera streaming as directed above.
 Do not repeat the completed comparisons or backend bring-up as a new milestone.
 
 The live-simulator baseline is `252e29b` on `main`; this headless XR extension is
@@ -157,6 +240,6 @@ The user prefers continued implementation with minimal intervention; ask only wh
 a real tradeoff or required external observation blocks progress.
 
 Robot-camera delivery to the headset remains unimplemented/unverified **Rung 4V**,
-after control acceptance and before physical robots. Physical G1-29 baseline is
+and is now the next-session priority following visual headset review. Physical G1-29 baseline is
 Rung 5a, followed by G1-23 work. A connected headset showing "Running" is not evidence
 of camera streaming. Refer to the [ladder](vr-teleop-g1-23-ladder.md) for acceptance.

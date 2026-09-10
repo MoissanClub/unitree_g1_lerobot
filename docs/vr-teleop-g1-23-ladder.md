@@ -42,7 +42,7 @@ establish that transport, timing, and downstream behavior are correct.
 |---|---|
 | **LeRobot** | Provides the robot/configuration interfaces and dataset ecosystem; this project extends the existing G1 integration. |
 | **Isaac Teleop** for XR | Already an accepted, documented LeRobot dependency with an `XRController` `Teleoperator` subclass. Adding a *robot target* to an existing device beats proposing a new device abstraction. |
-| **G1-23** | Five-joint arms use the embodiment-selectable XR/IK workflow. Right-arm headset control is user-confirmed. Headless bilateral motion and real OpenXR startup pass; simultaneous two-controller headset acceptance remains pending. |
+| **G1-23** | Five-joint arms use the embodiment-selectable XR/IK workflow. Right-arm headset control is user-confirmed. Headless bilateral motion and real OpenXR startup pass; dual-arm headset visual review is complete. Systematic lifecycle/numerical acceptance remains. |
 | **Use `xr_teleoperate` as a reference** | Derive embodiment/control data from pinned sources while preserving LeRobot interfaces and shared implementation. |
 
 ### What already exists vs. what must be built
@@ -235,8 +235,9 @@ headroom. This remains supported-arm benchmark evidence, not live DDS acceptance
    The bridge now defaults to `--hand-side both`: two controller streams in one session,
    independent clutches and validity checks, one bilateral IK solve and DDS command,
    and frozen joint commands for inactive arms. Separate and simultaneous mock motion
-   pass with measured simulator feedback on both variants. Verify actual simultaneous
-   headset control, startup diagnostics, engagement/release, and tracking loss/disconnect
+   pass with measured simulator feedback on both variants. The user has completed
+   dual-arm headset visual review. Separately record systematic startup diagnostic,
+   engagement/release, and tracking loss/disconnect
    behavior. Verify supported arm control paths and retain working G1-29 behavior.
    Document the five-joint arm's position/orientation compromise and test results.
 
@@ -266,7 +267,12 @@ simulator also disables offscreen rendering and supplies no cameras. There is no
 camera-frame-to-XR-display pipeline. A connected client showing "Running" is not evidence
 of robot video delivery.
 
-Plan this after Rung 4 control acceptance and before moving to physical-robot work, so
+The user has completed dual-arm headset visual review and selected camera streaming
+for the next session. Numerical control and exhaustive lifecycle checks remain open,
+but are deferred rather than blockers to starting this work. See the
+[camera handoff](rung4-handoff.md#next-session-camera-streaming).
+
+Implement this before moving to physical-robot work, so
 rendering/streaming problems can be isolated from IK, DDS, and actuator problems. Preserve
 the existing control path while adding a separate visual-feedback path:
 
@@ -401,7 +407,7 @@ since the hardware is running anyway.
 ## Immediate next actions
 
 1. Tracks 3 + 1: extend the tested G1-23 live backend to systematic per-joint and scripted DDS acceptance.
-2. Track 2: finish headset acceptance for the implemented embodiment-selectable bridge, retaining G1-29 regression.
+2. Track 2: preserve the completed dual-arm headset review and finish systematic controller lifecycle acceptance, retaining G1-29 regression.
 3. Tracks 3 + 2: capture and deliver robot camera frames for Rung 4V.
 4. Tracks 1 + 2: establish physical G1-29 baseline when available, then physical G1-23.
 

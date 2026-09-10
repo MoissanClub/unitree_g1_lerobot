@@ -8,12 +8,12 @@ and simulation work tracks. Simulation and physical-robot acceptance are distinc
 | Track | Code Owner | Current Status | Next Milestone |
 |---|---|---|---|
 | 1. Add G1-23 to the LeRobot stack | `unitree_g1_lerobot/robots/` | Configurable G1 class and native backend connected; basic DDS command/feedback tested | Systematic per-joint and IK/DDS acceptance |
-| 2. XR support for LeRobot | `unitree_g1_lerobot/xr/` | Both-arm bridge; both variants pass headless motion and real CloudXR/OpenXR checks; user confirmed right-arm headset control on both | Simultaneous two-controller headset acceptance |
+| 2. XR support for LeRobot | `unitree_g1_lerobot/xr/` | Both-arm bridge; headless checks pass on both variants; dual-arm headset review complete | Systematic lifecycle testing and headset camera display |
 | 3. Simulation for G1 | `unitree_g1_lerobot/simulation/` | Live G1-29 and supported-arm G1-23 backends; reviewed model/IK/motor benchmarks | Broader DDS/actuator timing and scripted trajectory acceptance |
 
 The tracks share interfaces and acceptance tests, not duplicate control implementations.
 G1-23 now runs as a native supported-arm DDS simulator. Robot-camera streaming to the
-headset, full bilateral headset acceptance, and physical-robot validation remain pending.
+headset, systematic controller lifecycle testing, and physical-robot validation remain pending.
 
 **Roadmap:** [three-track project plan](docs/project-plan.md).
 **Resume:** [handoff](docs/rung4-handoff.md).
@@ -140,8 +140,8 @@ Start the native G1-23 simulator from `ssh -Y`, without a headset:
 The Tk view opens before both arms raise. Verify the motion and press Enter in the
 terminal to proceed to steady-state DDS listening. Only the arms are dynamic; pelvis,
 legs, and waist are supported. See [live simulator details](docs/g1-23-live-simulator.md).
-Use the matching `--embodiment g1_23` on the XR bridge. Right-arm headset motion is
-user-confirmed; simultaneous two-controller headset acceptance is pending.
+Use the matching `--embodiment g1_23` on the XR bridge. The user has completed the
+dual-arm headset review; exhaustive tracking-loss and reconnect coverage is not implied.
 
 Preserve the separate geometry, IK, and motor-physics verification artifacts:
 
@@ -200,15 +200,14 @@ crash. Responsibility among LeRobot, the Unitree SDK, and CycloneDDS bindings is
 not yet isolated; this is not a confirmed CycloneDDS transport bug or an SDK fix.
 See [Finding 10: evidence and next investigation](docs/vr-teleop-g1-23-ladder.md#finding-10-dds-session-teardown).
 
-Right-arm headset control is user-confirmed for both embodiments. Remaining Rung 4
+Dual-arm headset visual review is user-confirmed. Remaining Rung 4
 acceptance includes:
 
 1. Preserve the implemented embodiment selection and headless launcher regression checks above.
 2. Verify every active arm joint and scripted IK -> DDS -> actuator trajectories,
-   including feedback, control timing, and stale-command behavior, before headset use.
-3. Verify both arms, engagement/release, tracking loss, and reconnection with the
-   headset on both embodiments using the new default `--hand-side both`, including
-   G1-23's five-joint orientation limitations.
+   including feedback, control timing, and stale-command behavior.
+3. Record systematic engagement/release, invalid tracking, loss, and reconnection
+   coverage on both embodiments, including G1-23's five-joint orientation limitations.
 
 Robot-camera streaming is separate **Rung 4V**, after control acceptance and before
 physical G1-29 and G1-23 work. See the
