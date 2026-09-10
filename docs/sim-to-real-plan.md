@@ -23,6 +23,11 @@ acceptance and physical acceptance remain separately recorded.
 
 ## Stage 0: Read-only preflight and control handover
 
+Implemented tooling: [physical preflight and lifecycle audit](physical-preflight.md).
+Run `run_g1_physical_preflight.sh` for passive DDS observation and
+`verify_g1_physical_preflight.sh` for offline verification. Hardware observations and
+the reviewed command/stop contract remain pending; feedback success does not enable motion.
+
 Before the first command, confirm the physical embodiment, network interface, DDS joint
 mapping, fresh measured state, and robot control mode. Establish which controller owns
 the arms and which maintains the legs, waist, and balance or physical support. Preserve

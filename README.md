@@ -20,6 +20,7 @@ systematic controller lifecycle testing, and physical-robot validation remain pe
 **Resume:** [handoff](docs/rung4-handoff.md).
 **Future experiments:** [non-physical acceptance and reliability work](docs/future-non-physical-work.md).
 **Design:** [architecture and upstream boundaries](docs/architecture.md).
+**Physical Stage 0:** [read-only preflight, lifecycle audit, and offline verification](docs/physical-preflight.md).
 The [rung ladder](docs/vr-teleop-g1-23-ladder.md) preserves earlier acceptance milestones;
 Rung 4 spans all three tracks and is not complete.
 
