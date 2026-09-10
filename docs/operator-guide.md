@@ -270,11 +270,21 @@ Current limitation: the native G1-23 panel is a visual/kinematic MuJoCo model co
 
 ### Planning and Acceptance
 
+Native live G1-23 is now available with:
+
+```bash
+./run_g1_mujoco_dds_sim.sh --embodiment g1_23
+```
+
+See [G1-23 live simulator](g1-23-live-simulator.md) for the viewer-first diagnostic,
+Enter confirmation, supported-arm scope, and tests. Do not connect the current
+G1-29-specific XR bridge to this simulator.
+
 The user has reviewed the geometry, IK, and motor-comparison artifacts. The
-configuration-based G1 structure is also implemented and tested, but the native live
-G1-23 DDS backend and headset acceptance remain pending.
+configuration-based G1 structure and native supported-arm DDS backend are tested;
+systematic per-joint/Cartesian control and headset acceptance remain pending.
 
 See the [three-track project plan](project-plan.md) for current ownership and next work:
-Track 3 supplies the live simulator; Track 1 verifies robot/DDS control; Track 2 verifies
+Track 3 maintains the live simulator; Track 1 verifies robot/DDS control; Track 2 verifies
 XR integration. Robot-camera feedback and physical-robot validation are separate later
 acceptance gates. This guide documents operation, not a second independent roadmap.

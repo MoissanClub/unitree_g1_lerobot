@@ -4,8 +4,9 @@
 
 Resume using the [three-track project plan](project-plan.md): Track 1 owns G1-23
 LeRobot support (`robots/`), Track 2 owns XR (`xr/`), and Track 3 owns G1 simulation
-(`simulation/`). The next task is Track 3's live G1-23 backend with Track 1 DDS
-integration; Track 2 headset acceptance follows. Existing rung names remain shared
+(`simulation/`). Track 3's native supported-arm G1-23 backend now runs, including
+basic standalone/embedded DDS checks. Next is systematic Track 1 joint/IK/DDS
+acceptance; Track 2 headset acceptance follows. Existing rung names remain shared
 acceptance gates, not separate implementation tracks.
 
 The configurable runtime structure has now been implemented and tested after the
@@ -14,14 +15,14 @@ Use `unitree_g1_lerobot.robots.unitree_g1` to register G1-23 and import the shar
 LeRobot classes. The LeRobot checkout changes are reproduced by
 `apply_lerobot_embodiment_patch.sh` and the versioned patch; there are no variant robot
 subclasses. Configuration, active features, sparse DDS mapping, motor defaults, and
-IK/gravity selection are implemented. G1-23 `connect()` remains explicitly blocked
-until its live simulator backend is integrated; do not mistake construction tests
-for completed DDS or headset acceptance.
+IK/gravity selection are implemented. G1-23 `connect()` now creates the native
+supported-arm backend; hardware remains blocked. See [live simulator](g1-23-live-simulator.md)
+for the tested standalone launcher, confirmation flow, and remaining acceptance boundary.
 
 The user has confirmed visual review of the motor-comparison checkpoint. Geometry,
 scripted IK, and the supported-arm motor benchmarks are reviewed. **Rung 4 is not
-complete:** next work is live native G1-23 LeRobot/MuJoCo runtime integration, then
-DDS and XR acceptance. Do not repeat the completed comparisons as a new milestone.
+complete:** next work is systematic per-joint, Cartesian/DDS, and XR acceptance.
+Do not repeat the completed comparisons or backend bring-up as a new milestone.
 
 Last pushed benchmark baseline: `94ba97f` on `main`, pushed to
 `git@github.com:MoissanClub/unitree_g1_lerobot.git`. The structural refactor and these
@@ -95,10 +96,12 @@ See [benchmark details](motor-config-comparison.md) for metrics and test conditi
 
 ## Remaining Rung 4 Work
 
-1. Integrate the native G1-23 model and motor profile into the live LeRobot/MuJoCo
-   runtime. Verify motor-driven holds and motion with measured feedback. Decide and
-   explicitly document the runtime feedforward source, update timing, and gains;
-   the benchmark's ideal-model compensation is not automatically the live controller.
+1. Preserve the completed native G1-23 runtime integration and basic motor-driven
+   motion/feedback checks. Startup and stale-command holding use exact-model gravity
+   compensation; active DDS control uses the sender's gains and feedforward without
+   extra compensation. See [live simulator scope and verification](g1-23-live-simulator.md).
+   The G1-29 launcher/viewer regression passed with its startup diagnostic skipped;
+   broader G1-29 motion and headset regression remains pending.
 2. Exercise each of ten active arm joints through a separate DDS sender. Verify
    names, sparse transport indices, directions, ranges, unused slots, and feedback.
 3. Run deterministic Cartesian/orientation targets through IK -> DDS -> actuators.

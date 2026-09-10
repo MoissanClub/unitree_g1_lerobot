@@ -7,14 +7,13 @@ and simulation work tracks. Simulation and physical-robot acceptance are distinc
 
 | Track | Code Owner | Current Status | Next Milestone |
 |---|---|---|---|
-| 1. Add G1-23 to the LeRobot stack | `unitree_g1_lerobot/robots/` | Native model/IK reviewed; configurable G1 class, sparse joint mapping, motor defaults, and gravity adapter tested | Integrate selected G1-23 control with the live simulator and verify DDS feedback |
+| 1. Add G1-23 to the LeRobot stack | `unitree_g1_lerobot/robots/` | Configurable G1 class and native backend connected; basic DDS command/feedback tested | Systematic per-joint and IK/DDS acceptance |
 | 2. XR support for LeRobot | `unitree_g1_lerobot/xr/` | G1-29 right-controller-to-simulation motion user-confirmed | Bind the existing XR bridge to embodiment selection; verify G1-23 control and G1-29 regression |
-| 3. Simulation for G1 | `unitree_g1_lerobot/simulation/` | Live G1-29 path; reviewed native geometry/IK and motor benchmarks for both variants | Supply the native G1-23 live simulator backend |
+| 3. Simulation for G1 | `unitree_g1_lerobot/simulation/` | Live G1-29 and supported-arm G1-23 backends; reviewed model/IK/motor benchmarks | Broader DDS/actuator timing and scripted trajectory acceptance |
 
 The tracks share interfaces and acceptance tests, not duplicate control implementations.
-G1-23 live `connect()` is still explicitly blocked until its simulator backend is
-integrated. Robot camera streaming to the headset and physical-robot validation remain
-pending.
+G1-23 now runs as a native supported-arm DDS simulator. Robot camera streaming to the
+headset and physical-robot validation remain pending.
 
 **Roadmap:** [three-track project plan](docs/project-plan.md).
 **Resume:** [handoff](docs/rung4-handoff.md).
@@ -42,7 +41,7 @@ robot = UnitreeG1(UnitreeG1Config(embodiment="g1_23", is_simulation=True))
 print(robot.action_features)
 ```
 
-This constructs the robot interface; it does not claim a working G1-23 live connection.
+The selected G1-23 factory now supports an embedded headless live connection.
 The local import registers G1-23 with LeRobot. `LEROBOT_ROOT` overrides the patch target.
 See [configuration and backend boundaries](docs/architecture.md#configurable-g1-runtime-structure).
 
@@ -73,6 +72,17 @@ See the [operator guide](docs/operator-guide.md) for one-time setup, headset con
 diagnostic behavior, embedded/external simulator modes, and troubleshooting.
 
 ## Track 3: Simulation for G1
+
+Start the native G1-23 simulator from `ssh -Y`, without a headset:
+
+```bash
+./run_g1_mujoco_dds_sim.sh --embodiment g1_23
+```
+
+The Tk view opens before both arms raise. Verify the motion and press Enter in the
+terminal to proceed to steady-state DDS listening. Only the arms are dynamic; pelvis,
+legs, and waist are supported. See [live simulator details](docs/g1-23-live-simulator.md).
+The existing XR bridge is still G1-29-specific; do not attach it to G1-23 yet.
 
 Preserve the separate geometry, IK, and motor-physics verification artifacts:
 
@@ -118,7 +128,7 @@ The structural refactor passed 25 project tests (including real viewers) and 92
 existing LeRobot G1 robot/configuration/teleoperator tests. Geometry, IK, and motor
 comparison visual review is complete. This is not hardware or live G1-23 acceptance.
 
-Next: Track 3 supplies the native G1-23 backend; Tracks 1 and 3 verify the scripted
-IK/DDS/actuator loop; Track 2 then verifies headset operation. Camera feedback follows
+Next: Tracks 1 and 3 extend the native backend's basic DDS verification to all arm
+joints and the scripted IK/DDS/actuator loop; Track 2 then verifies headset operation. Camera feedback follows
 control acceptance, before physical G1-29 and G1-23 work. See the
 [acceptance sequence](docs/project-plan.md#cross-track-acceptance).

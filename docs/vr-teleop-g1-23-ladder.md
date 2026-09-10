@@ -22,7 +22,8 @@ Working method and status log. September 2026.
 Current checkpoint (2026-09-09): G1-29 controller-to-simulation teleoperation was
 confirmed by the user. G1-23 geometry and scripted IK have been visually reviewed;
 motor comparisons are reviewed and the configurable runtime structure is tested;
-live G1-23 physics/DDS integration is still pending. Robot camera video has not been
+native supported-arm G1-23 physics/DDS bring-up is tested, with systematic joint/IK
+and XR acceptance still pending. Robot camera video has not been
 streamed to or verified in the headset. The code now lives in responsibility-based
 subpackages; see [architecture](architecture.md).
 
@@ -75,7 +76,7 @@ input device.
 | **2a** | Script → `G1_29_ArmIK` | IK stack, no sim, no XR | **none** | ✅ done |
 | **2b** | 2a → MuJoCo | Robot interface + sim | **none** | ✅ done |
 | **3** | Join 1' + 2b | **The glue — the actual contribution** | headset | ✅ done |
-| **4** | G1-29 sim → G1-23 sim | Embodiment, physics, DDS, XR control | none first, then headset | 🟡 visual review complete; live runtime pending |
+| **4** | G1-29 sim → G1-23 sim | Embodiment, physics, DDS, XR control | none first, then headset | 🟡 native live backend tested; full control acceptance pending |
 | **4V** | Robot camera → VR headset | Live visual feedback alongside control | headset | ⬜ planned after rung 4 control acceptance |
 | **5a** | G1-29 sim → real G1-29 | Hardware transport and control baseline | + G1-29 | ⬜ planned first if hardware is available |
 | **5b** | G1-23 sim → real G1-23 | Five-joint embodiment on hardware | + G1-23 | ⬜ after hardware baseline |
@@ -182,7 +183,7 @@ physics/DDS simulator: the comparison assigns joint positions and replays render
 #### What is actually left for Rung 4
 
 **User review confirmed:** the motor-comparison verification checkpoint is reviewed.
-Resume with live native G1-23 runtime integration, not another geometry/benchmark
+Resume with systematic G1-23 joint/IK/DDS acceptance, not another geometry/benchmark
 review. See the [handoff note](rung4-handoff.md) for the implementation baseline,
 verification commands, caveats, and remaining acceptance work.
 
@@ -190,8 +191,10 @@ verification commands, caveats, and remaining acceptance work.
 registered embodiment definitions for joint features, sparse DDS loops, motor/home
 defaults, and IK/gravity. G1-29 defaults remain unchanged. The local G1-23 definition
 and reproducible LeRobot patch are described in [architecture](architecture.md).
-G1-23 live simulation/hardware connection is intentionally blocked until the backend
-is supplied; the refactor does not mark the remaining runtime/DDS acceptance complete.
+G1-23 live simulation is now available through the selected native supported-arm
+backend. Hardware remains blocked. The launcher, basic DDS motion/feedback, command-loss
+hold, and embedded lifecycle are tested; systematic joint/IK/DDS and XR acceptance remain.
+See [native G1-23 simulator](g1-23-live-simulator.md).
 
 Motor-config checkpoint: both variants now have source-derived motor profiles and a
 supported-arm physics comparison suite. `run_compare_g1_29_motor_configs_no_gravity_compensation.sh` compares
@@ -215,9 +218,9 @@ point-to-point motion, reversal/stop, and extended holds with 0-1 kg per hand.
 above and ON below. Reports include rise time, overshoot, settling, sag, and torque
 headroom. This remains supported-arm benchmark evidence, not live DDS acceptance.
 
-1. **Motor-driven simulation:** build the native G1-23 LeRobot/MuJoCo runtime with
-   actuators, gravity, inertia, damping, and appropriate contacts. Verify pose holding
-   and motion under motor commands; direct assignment to `qpos` is not this test.
+1. **Motor-driven simulation checkpoint implemented:** native G1-23 supported-arm
+   runtime, viewer-first diagnostic, DDS motion/feedback and holding, and embedded
+   lifecycle are verified. Preserve these checks while extending acceptance below.
 2. **DDS and joint mapping:** exercise each of the ten active arm joints individually
    through a separate DDS command sender. Verify names, indices, directions, limits,
    unused transport slots, and measured joint feedback from the simulator.
@@ -364,7 +367,7 @@ since the hardware is running anyway.
 
 ## Immediate next actions
 
-1. Tracks 3 + 1: supply the G1-23 live backend, then verify per-joint and scripted DDS paths.
+1. Tracks 3 + 1: extend the tested G1-23 live backend to systematic per-joint and scripted DDS acceptance.
 2. Track 2: select the existing embodiment control and finish G1-23 XR acceptance, retaining G1-29 regression.
 3. Tracks 3 + 2: capture and deliver robot camera frames for Rung 4V.
 4. Tracks 1 + 2: establish physical G1-29 baseline when available, then physical G1-23.

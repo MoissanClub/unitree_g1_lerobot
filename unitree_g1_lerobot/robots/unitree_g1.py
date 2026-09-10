@@ -11,7 +11,7 @@ except ImportError as exc:
     raise ImportError("Apply patches/lerobot-g1-embodiments.patch to the adjacent LeRobot checkout first; see docs/architecture.md") from exc
 
 from .g1_embodiments import G1_23_SPEC, G1_23_JointIndex, G1_23_JointArmIndex, make_arm_ik
-from .motor_configs import load_profile
+from .motor_configs import SOURCES, load_profile
 
 
 G1_23_ActiveJointIndex = IntEnum(
@@ -21,6 +21,11 @@ G1_23_ActiveJointIndex = IntEnum(
 
 def _make_g1_23_ik():
     return make_arm_ik("g1_23")
+
+
+def _make_g1_23_simulation():
+    from ..simulation.native_g1 import make_g1_23_simulation
+    return make_g1_23_simulation()
 
 
 def register_local_embodiments():
@@ -34,7 +39,8 @@ def register_local_embodiments():
         kp[motor["dds_index"]], kd[motor["dds_index"]] = motor["kp"], motor["kd"]
     spec = G1RuntimeSpec("g1_23", G1_23_ActiveJointIndex, G1_23_JointArmIndex,
                          tuple(kp), tuple(kd), _make_g1_23_ik,
-                         model_resource=str(G1_23_SPEC.urdf_path))
+                         make_simulation=_make_g1_23_simulation,
+                         model_resource=str(SOURCES / "g1_23dof.xml"))
     register_g1_embodiment(spec)
     return spec
 

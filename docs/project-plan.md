@@ -11,12 +11,14 @@ sequence and historical record, not the source-code ownership structure.
 |---|---|---|
 | 1. G1-23 in LeRobot | Native embodiment/IK, sparse mapping, derived profiles, shared configurable G1 interface; reviewed geometry/IK and contract tests | Live command/feedback acceptance, runtime feedforward decision, hardware support and contribution preparation |
 | 2. XR for LeRobot | CloudXR input and G1-29 right-controller-to-simulation motion | Embodiment-selectable bridge, G1-23 headset acceptance, broader lifecycle/bilateral testing, camera display in headset |
-| 3. G1 simulation | Existing live G1-29 simulator; native geometry/IK and supported-arm physics comparisons for both variants | Native live G1-23 simulator factory, DDS/actuator timing and command-loss tests, camera capture |
+| 3. G1 simulation | Live G1-29 and native supported-arm G1-23 simulator; model/IK/motor comparisons and basic DDS/hold checks | Systematic DDS/actuator timing and trajectory acceptance, camera capture |
 
 User visual review of the geometry, IK, and motor-comparison checkpoint is complete.
 The structural refactor passed 25 project tests and 92 LeRobot G1 regression tests.
-Neither live G1-23 control nor camera streaming nor physical-robot teleoperation has
-been accepted. G1-23 `connect()` explicitly fails before DDS until its backend exists.
+The native G1-23 live simulator is now implemented, with standalone and embedded
+connection tests, both-arm DDS motion, feedback, and command-loss holding verified.
+Full Rung 4 control acceptance, camera streaming, and physical-robot work remain pending.
+See [native simulator operation and scope](g1-23-live-simulator.md).
 
 ## Track 1: G1-23 in the LeRobot Stack
 
@@ -38,7 +40,7 @@ Different embodiments still expose different active joints and pose capabilities
 
 ### Remaining
 
-1. With Track 3, connect the selected G1-23 definition to the live native simulator.
+1. Preserve the now-connected G1-23 backend and its basic standalone/embedded regression checks with Track 3.
 2. Verify each of the ten active arm joints through actual DDS command and feedback,
    including sparse indices, unused slots, signs, ranges, and partial commands.
 3. Explicitly choose live gain/feedforward settings and verify them. The current live
@@ -109,8 +111,9 @@ live command/state backend that the shared robot interface can use.
 
 ### Remaining
 
-1. Implement the native G1-23 live simulator factory and attach it to the selected
-   runtime definition. Reuse validated model/motor data, not a G1-29 visual substitute.
+1. Extend the implemented native G1-23 live factory's smoke checks into systematic
+   acceptance. It reuses the reviewed model/motor data with ten dynamic arm joints
+   and supported pelvis/legs/waist, not a G1-29 visual substitute.
 2. With Track 1, test motor-command-to-measured-state DDS round trips. Define simulator
    ownership, timestep/control rate, contacts/support assumptions, limits, and stale
    command behavior. Do not silently turn the supported-arm benchmark into a claimed
@@ -140,7 +143,7 @@ not a claim that every boundary is fully implemented.
 
 ## Cross-Track Acceptance
 
-1. **Next: Tracks 1 + 3.** Add the live G1-23 backend, exercise individual DDS joints,
+1. **Next: Tracks 1 + 3.** With the live G1-23 backend in place, exercise individual DDS joints,
    then run scripted IK-to-actuator tests without a headset.
 2. **Then Track 2 with Tracks 1 + 3.** Verify G1-23 headset control and G1-29 regression.
    This completes the remaining historical **Rung 4 control** acceptance.

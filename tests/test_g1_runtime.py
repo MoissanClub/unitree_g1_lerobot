@@ -65,12 +65,14 @@ class G1RuntimeTests(unittest.TestCase):
         np.testing.assert_array_equal(tau[[13,14,20,21,27,28]], 0)
 
     def test_unintegrated_backend_fails_before_transport(self):
-        for simulation in (True, False):
+        for simulation in (False,):
             robot = UnitreeG1(UnitreeG1Config(embodiment="g1_23", is_simulation=simulation))
             robot._ChannelFactoryInitialize = Mock()
             with self.assertRaises(NotImplementedError):
                 robot.connect()
             robot._ChannelFactoryInitialize.assert_not_called()
+        robot = UnitreeG1(UnitreeG1Config(embodiment="g1_23"))
+        self.assertTrue(callable(robot.embodiment.make_simulation))
 
     def test_config_round_trip_and_factory(self):
         import draccus

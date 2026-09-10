@@ -19,7 +19,8 @@ headset display/streaming belongs to Track 2. Their frame contract is shared wor
 - `robots/control.py`: shared kinematics, ready targets, and arm command helpers.
   These do not import the XR bridge, CloudXR, or simulator launch code.
 - `simulation/`: MuJoCo rendering and runtime integration. `dds.py` owns the external
-  simulation connection helper; the existing simulator remains G1-29 only.
+  simulation connection helper; `native_g1.py` supplies supported-arm G1-23 physics/DDS
+  and `native_g1_viewer.py` supplies its viewer-first startup verification.
 - `xr/`: controller input, clutch handling, CloudXR attachment, and XR-to-robot orchestration.
 - `diagnostics/`: startup motions, bridge diagnostic requests, and rung smoke tests.
 - `assets/g1/`: robot assets, outside the code package; asset paths resolve from the
@@ -86,17 +87,16 @@ Gravity torques are mapped by arm enumeration, not by subtracting a start index.
 Configuration validates variant names, array sizes, finite/nonnegative gains, control
 timestep, unused slots, and controller compatibility. G1-29 retains LeRobot's existing
 gains, model factory, zero home pose, and simulation/hardware transport selection.
-G1-23 selects the source-derived gains, native URDF, and existing parametric IK.
+G1-23 selects the source-derived gains, native MJCF runtime, and existing URDF-based parametric IK.
 Its added `solve_tau()` adapter accepts G1 arm order and returns torque in that order.
 The live controller retains its existing command-pose gravity policy; this is not the
 benchmark's measured-pose compensation and this refactor does not silently change it.
 
-**Integration boundary:** G1-23 can be instantiated and its configuration, features,
-mapping, and IK/gravity contracts tested, but `connect()` deliberately raises before
-opening DDS because the live G1-23 simulator factory is not integrated yet. G1-23
-hardware and G1-29-specific whole-body controllers are also explicitly blocked.
-This is the completed structural refactor, not completion of live Rung 4 acceptance.
-Next, provide the native G1-23 simulator factory and verify the full DDS loop, then XR.
+**Integration boundary:** G1-23 now has a native supported-arm live simulator factory
+and an embodiment-selectable standalone launcher. Basic DDS commands/feedback,
+identity checks, stale holding, and embedded lifecycle have been tested. See
+[live simulator](g1-23-live-simulator.md). G1-23 hardware and G1-29-specific whole-body
+controllers remain blocked. Full per-joint, Cartesian/DDS, and XR acceptance is still pending.
 
 Tests: `tests/test_g1_runtime.py` exercises defaults, config round-trips/factory,
 active features, sparse commands/torques, real G1-23 gravity ordering, and early backend

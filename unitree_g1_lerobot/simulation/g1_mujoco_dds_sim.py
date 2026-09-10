@@ -23,13 +23,21 @@ import unitree_sdk2py.core.channel as unitree_channel
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lerobot-root", default="/home/dwei/lerobot-sim/lerobot")
+    parser.add_argument("--embodiment", choices=("g1_29", "g1_23"), default="g1_29")
+    parser.add_argument("--duration-s", type=float, default=0, help="Stop after N seconds; 0 runs until interrupted.")
+    parser.add_argument("--save-frame", type=Path, help="Save the native G1-23 viewer's latest frame.")
     parser.add_argument("--hz", type=float, default=250.0)
     parser.add_argument("--view-fps", type=float, default=20.0)
     parser.add_argument("--no-view", action="store_true", help="Run without the Tk/X viewer.")
     parser.add_argument("--skip-startup-diagnostic", action="store_true", help="Skip the raise-arm startup diagnostic.")
     parser.add_argument("--diagnostic-duration-s", type=float, default=2.0)
     parser.add_argument("--no-diagnostic-confirm", action="store_true", help="Do not pause for visual confirmation after the startup diagnostic.")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if not all(np.isfinite(x) for x in (args.hz, args.view_fps, args.duration_s, args.diagnostic_duration_s)) or min(args.hz, args.view_fps, args.diagnostic_duration_s) <= 0 or args.duration_s < 0:
+        parser.error("Rates and diagnostic duration must be positive and finite; duration must be nonnegative")
+    if args.embodiment == "g1_23" and args.hz != 250:
+        parser.error("Native G1-23 uses 250 Hz DDS/control with 500 Hz physics")
+    return args
 
 
 def patch_unitree_dds_config() -> None:
@@ -152,6 +160,8 @@ class TkViewer:
         )
         self.root.after(self.dt_ms, self.tick)
         self.root.after(800, self.start_startup_diagnostic)
+        if args.duration_s:
+            self.root.after(round(args.duration_s * 1000), self.close)
 
     def start_startup_diagnostic(self) -> None:
         if self.closed or self.diagnostic_thread is not None:
@@ -192,7 +202,13 @@ class TkViewer:
         self.root.destroy()
 
     def run(self) -> None:
-        self.root.mainloop()
+        try:
+            self.root.mainloop()
+        finally:
+            # Hub renderers must be freed in the Tk thread before EGL teardown.
+            for renderer in self.inner.renderers.values():
+                renderer.close()
+            self.inner.renderers.clear()
 
 
 def main() -> int:
@@ -202,13 +218,48 @@ def main() -> int:
 
     sys.path.insert(0, str(Path(args.lerobot_root).expanduser().resolve()))
     patch_unitree_dds_config()
+    if args.embodiment == "g1_23":
+        from .native_g1 import NativeG1Simulation
+        from .native_g1_viewer import run_native
+        args.skip_startup_diagnostic |= os.environ.get("SKIP_G1_STARTUP_DIAGNOSTIC", "").strip() == "1"
+        root = None
+        if not args.no_view:
+            try:
+                root = tk.Tk()
+                root.withdraw()
+            except tk.TclError as exc:
+                raise SystemExit(f"Cannot open Tk/X on DISPLAY={os.environ.get('DISPLAY')!r}. Use ssh -Y or --no-view. {exc}") from exc
+        print("Starting native g1_23 on loopback DDS: 10 dynamic arm joints; pelvis, legs and waist supported.", flush=True)
+        env = None
+        try:
+            env = NativeG1Simulation()
+            run_native(env, args, root)
+        except KeyboardInterrupt:
+            print("Stopping G1-23 simulator", flush=True)
+        finally:
+            if env is not None:
+                env.close()
+            if root is not None:
+                try:
+                    root.destroy()
+                except tk.TclError:
+                    pass
+        return 0
     patch_g1_hub_env_factory(enable_view=not args.no_view)
 
     from lerobot.envs import make_env
+    from .native_g1 import acquire_simulator_lock
+    from .dds import start_simulator_identity
 
     print("Starting standalone G1 MuJoCo DDS sim on loopback")
-    wrapper = make_env("lerobot/unitree-g1-mujoco", trust_remote_code=True)
-    env = wrapper["hub_env"][0].envs[0]
+    process_lock = acquire_simulator_lock()
+    try:
+        wrapper = make_env("lerobot/unitree-g1-mujoco", trust_remote_code=True)
+        env = wrapper["hub_env"][0].envs[0]
+        stop_identity = start_simulator_identity("g1_29")
+    except BaseException:
+        process_lock.close()
+        raise
     print("G1 MuJoCo DDS sim is running. Ctrl+C to stop.")
 
     try:
@@ -221,7 +272,10 @@ def main() -> int:
                 return diagnostic_rc
             period_s = 1.0 / args.hz
             steps = 0
+            started = time.monotonic()
             while True:
+                if args.duration_s and time.monotonic() - started >= args.duration_s:
+                    break
                 t0 = time.perf_counter()
                 env.step(None)
                 steps += 1
@@ -231,7 +285,9 @@ def main() -> int:
     except KeyboardInterrupt:
         print("\nStopping G1 MuJoCo DDS sim")
     finally:
+        stop_identity()
         env.close()
+        process_lock.close()
     return 0
 
 
