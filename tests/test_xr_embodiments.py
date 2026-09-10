@@ -11,7 +11,7 @@ import numpy as np
 from unitree_g1_lerobot.robots.unitree_g1 import get_g1_embodiment
 from unitree_g1_lerobot.diagnostics.g1_startup_diagnostic import build_actions
 from unitree_g1_lerobot.diagnostics.requests import StartupDiagnosticRequests
-from unitree_g1_lerobot.xr.rung3_xr_to_g1_mujoco import parse_args
+from unitree_g1_lerobot.xr.xr_to_g1_mujoco import parse_args
 
 
 class XREmbodimentTests(unittest.TestCase):

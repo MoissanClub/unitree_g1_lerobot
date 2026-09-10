@@ -150,9 +150,9 @@ Raise `--arm-kp-scale` for faster response. If the arm overshoots or shakes, rai
 changes but the visual motion is too small.
 
 To debug headset motion, add `--debug-xr` to Terminal C. While moving the controller
-and holding the clutch, `raw_d`, `target_d`, and `q_d` should become nonzero. If
-`raw_d` stays zero, CloudXR/OpenXR is reporting button state but not changing controller
-position.
+and holding the clutch, each hand's `raw` position and `target` should change, with
+nonzero combined joint delta `q_d`. If `raw` stays constant, CloudXR/OpenXR is reporting
+button state but not changing controller position.
 
 Terminal B, start CloudXR. When Terminal C is already running, this asks the XR
 bridge to raise both arms briefly, lower both arms, and hold that diagnostic pose
@@ -187,15 +187,31 @@ control/status screen because `run_xr_g1_mujoco.sh` creates a headless OpenXR se
 does not submit MuJoCo camera frames to VR yet.
 
 Default behavior is conservative: before XR attaches, both arms hold the raised ready pose.
-After XR attaches, the right controller drives the right wrist only, the left wrist holds
-ready, and the clutch defaults to max(squeeze, trigger) as a hold-to-enable input.
+After XR attaches, `--hand-side both` is the default: left controller drives the left
+wrist and right controller drives the right wrist. Each clutch defaults to
+max(squeeze, trigger) as an independent hold-to-enable input (threshold 0.5).
+Release, invalid pose, or tracking loss freezes only that arm's joint command;
+the other controller can continue moving its arm. Re-engagement latches a fresh
+controller origin. Both controllers share one XR session and one IK/DDS sender.
+Do not start two bridges. `--hand-side left` and `--hand-side right` retain single-arm modes.
+If neither selected controller has a valid tracked pose, the existing reconnect policy
+still applies: with `--wait-for-cloudxr`, after `--tracking-timeout-s` (default 20),
+the bridge holds the ready pose while recreating its XR session. A single lost
+controller does not restart the session while the other remains tracked.
+
+For headset review, use the same embodiment on all three launchers. Move each arm
+separately, then both together, including wrist rotation. Release one clutch while
+moving the other, then re-engage after repositioning the released controller. Repeat
+with one controller temporarily untracked. Inspect both `left` and `right` log lines.
+G1-23's five-joint arms cannot match arbitrary position and orientation simultaneously.
+Finger actuation and robot-camera video are not added by this change.
 
 ### Rung 3 Runtime Model
 
 `run_isaac_teleop.sh` starts CloudXR as a separate process. The rung 3 script attaches to
 that existing CloudXR/OpenXR runtime with `--external-cloudxr`.
 
-MuJoCo has two modes. Without `--external-g1-sim`, `unitree_g1_lerobot/xr/rung3_xr_to_g1_mujoco.py` creates
+MuJoCo has two modes. Without `--external-g1-sim`, `unitree_g1_lerobot/xr/xr_to_g1_mujoco.py` creates
 `UnitreeG1(UnitreeG1Config(is_simulation=True))`, and `robot.connect()` launches the
 LeRobot G1 MuJoCo simulation inside that Python process. With `--external-g1-sim`, the
 bridge skips simulator creation and only publishes IK-generated G1 joint targets onto DDS;

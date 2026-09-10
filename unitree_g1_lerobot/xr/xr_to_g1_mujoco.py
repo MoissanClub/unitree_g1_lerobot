@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-"""Drive either G1 embodiment in MuJoCo from an Isaac Teleop XR controller.
+"""Drive either G1 embodiment in MuJoCo from Isaac Teleop XR controllers.
 
-This joins rung 1' (CloudXR -> XRController.get_action) with rung 2b
-(selected arm IK -> UnitreeG1(is_simulation=True)).
-
-Default behavior is intentionally conservative: one controller drives one wrist while the
-other wrist holds the IK home pose. Hold the controller squeeze past the clutch threshold
-to move; release squeeze to freeze the commanded wrist pose while repositioning.
+Connect CloudXR controller poses to embodiment-selected IK and one LeRobot DDS sender.
+Both arms are enabled by default, with independent hold-to-enable clutches. Release
+or invalid tracking freezes that arm's joint command while the other remains usable.
 """
 
 from __future__ import annotations
@@ -60,7 +57,7 @@ def parse_args() -> argparse.Namespace:
         default="/home/dwei/.venvs/isaacteleop/lib/python3.12/site-packages",
         help="Existing Isaac Teleop venv site-packages path to append when running in lerobot-g1.",
     )
-    parser.add_argument("--hand-side", choices=("left", "right"), default="right")
+    parser.add_argument("--hand-side", choices=("left", "right", "both"), default="both")
     parser.add_argument(
         "--external-cloudxr",
         action=argparse.BooleanOptionalAction,
@@ -113,7 +110,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--mock-xr",
         action="store_true",
-        help="Use a deterministic fake XR controller; validates rung 3 without headset/CloudXR.",
+        help="Use deterministic controller input to validate XR-to-IK/DDS motion without headset/CloudXR.",
     )
     parser.add_argument(
         "--external-g1-sim",
@@ -272,6 +269,14 @@ class MockXRController:
         print("mock XR disconnected")
 
     def get_action(self) -> dict[str, np.ndarray | float]:
+        if self.hand_side == "both":
+            if not hasattr(self, "controllers"):
+                self.controllers = {side: MockXRController(side, self.clutch_threshold)
+                                    for side in ("left", "right")}
+                self.controllers["left"].step = 45
+            self.tracking_by_hand = {"left": True, "right": True}
+            return {f"{side}.{key}": value for side, controller in self.controllers.items()
+                    for key, value in controller.get_action().items()}
         a = 2.0 * np.pi * self.step / 180.0
         self.step += 1
         return {
@@ -283,6 +288,65 @@ class MockXRController:
             "squeeze": max(self.clutch_threshold, 0.8),
             "trigger": 0.0,
         }
+
+
+class ArmTargets:
+    """Independent clutches with a single bilateral solve in Pinocchio joint order."""
+
+    def __init__(self, ik, arm_index, homes, args):
+        from examples.isaac_teleop_to_so101.isaac_teleop.clutch import Clutch
+        self.ik, self.args = ik, args
+        self.homes = homes
+        self.targets = {side: pose.copy() for side, pose in homes.items()}
+        self.clutches = {side: Clutch(pose) for side, pose in homes.items()}
+        self.engaged = dict(left=False, right=False)
+        reorder = np.asarray(ik._arm_reorder_pin_to_g1)
+        self.indices = {side: reorder[[i for i, joint in enumerate(arm_index)
+                                      if joint.name.startswith(f"k{side.title()}")]]
+                        for side in homes}
+
+    def reset_clutches(self):
+        self.engaged = dict(left=False, right=False)
+
+    def update(self, actions, tracking, q):
+        from lerobot.utils.rotation import Rotation
+        poses = dict(zip(("left", "right"), fk(self.ik.reduced_robot.model,
+                     self.ik.reduced_robot.data, self.ik.L_hand_id, self.ik.R_hand_id, q)))
+        status = {}
+        for side in ("left", "right"):
+            action = actions.get(side)
+            valid = bool(action is not None and tracking.get(side, False)
+                         and valid_pose_frame(action["grip_pos"], action["grip_quat"]))
+            level = clutch_value(action, self.args.clutch_axis) if valid else 0.
+            buttons_valid = action is not None and np.isfinite([action["squeeze"], action.get("trigger", 0.)]).all()
+            engaged = valid and buttons_valid and level >= self.args.clutch_threshold
+            if engaged:
+                clutch = self.clutches[side]
+                if not self.engaged[side]:
+                    clutch.engage(action["grip_pos"], action["grip_quat"], poses[side])
+                pos, quat = scaled_rebase(clutch, action["grip_pos"], action["grip_quat"], self.args.xr_pos_scale)
+                self.targets[side] = clamp_translation(make_transform(pos, quat, Rotation),
+                                                       self.homes[side], self.args.max_delta_m)
+            else:
+                self.targets[side] = poses[side].copy()
+            self.engaged[side] = bool(engaged)
+            status[side] = dict(tracking=valid, engaged=bool(engaged), clutch=float(level),
+                                squeeze=float(action["squeeze"]) if action else 0.,
+                                trigger=float(action.get("trigger", 0.)) if action else 0.,
+                                target=self.targets[side][:3, 3].tolist())
+        if any(self.engaged.values()):
+            candidate, _ = self.ik.solve_ik(self.targets["left"], self.targets["right"], q)
+            candidate = np.asarray(candidate, dtype=float)
+            if candidate.shape == q.shape and np.isfinite(candidate).all():
+                # IK regularization/filtering must not move an unclutched arm.
+                next_q = q.copy()
+                for side, engaged in self.engaged.items():
+                    if engaged:
+                        next_q[self.indices[side]] = candidate[self.indices[side]]
+                q = next_q
+            else:
+                print("Non-finite or malformed IK result; holding previous command", file=sys.stderr)
+        return q, status
 
 
 def run(args, cleanup) -> int:
@@ -298,10 +362,8 @@ def run(args, cleanup) -> int:
     if isaacteleop_site.is_dir() and str(isaacteleop_site) not in sys.path:
         sys.path.append(str(isaacteleop_site))
 
-    from examples.isaac_teleop_to_so101.isaac_teleop.clutch import Clutch
     from unitree_g1_lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config, get_g1_embodiment
     from lerobot.robots.unitree_g1 import unitree_g1 as g1_module
-    from lerobot.utils.rotation import Rotation
 
     patch_unitree_dds_config()
     patch_g1_hub_env_factory()
@@ -350,10 +412,7 @@ def run(args, cleanup) -> int:
         print(str(exc), file=sys.stderr)
         return 1
     q = q_ready.copy()
-    left_target = left_ready.copy()
-    right_target = right_ready.copy()
-    active_home = right_ready if args.hand_side == "right" else left_ready
-    clutch = Clutch(active_home)
+    targets = ArmTargets(ik, arm_index, dict(left=left_ready, right=right_ready), args)
     ready_action = action_from_arm_q(q_ready[reorder], joint_index, arm_index)
     lower_action = action_from_arm_q(np.asarray(q_home, dtype=float)[reorder], joint_index, arm_index)
     startup_diagnostics = StartupDiagnosticRequests(
@@ -407,9 +466,13 @@ def run(args, cleanup) -> int:
     else:
         from examples.isaac_teleop_to_so101.isaac_teleop import XRController, XRControllerConfig
 
-        teleop = XRController(
+        controller_class = XRController
+        if args.hand_side == "both":
+            from unitree_g1_lerobot.xr.both_controllers import BothXRControllers
+            controller_class = BothXRControllers
+        teleop = controller_class(
             XRControllerConfig(
-                hand_side=args.hand_side,
+                hand_side="right" if args.hand_side == "both" else args.hand_side,
                 clutch_threshold=args.clutch_threshold,
                 auto_launch_cloudxr=not args.external_cloudxr,
                 cloudxr_env_file=cloudxr_env_file,
@@ -424,8 +487,8 @@ def run(args, cleanup) -> int:
         print("  4. Enter XR and connect")
         print()
         print("Controls:")
-        print(f"  Move the {args.hand_side} controller while holding squeeze > {args.clutch_threshold:.2f}.")
-        print("  Release squeeze to freeze the G1 wrist while repositioning your hand.")
+        print(f"  Selected controllers: {args.hand_side}; clutch axis={args.clutch_axis}, threshold={args.clutch_threshold:.2f}.")
+        print("  Hold each controller's clutch to move its arm; release to freeze that arm independently.")
         print()
         if not args.no_wait:
             input("After the headset client is connected, press Enter to create the OpenXR session...")
@@ -467,8 +530,6 @@ def run(args, cleanup) -> int:
     print("XR teleop connected. Waiting for tracked controller frames...")
 
     period_s = 1.0 / args.control_hz
-    was_engaged = False
-    last_raw_grip_pos: np.ndarray | None = None
     last_q_g1: np.ndarray | None = None
     last_tracking: bool | None = None
     last_tracking_time = time.monotonic()
@@ -479,11 +540,21 @@ def run(args, cleanup) -> int:
         while time.monotonic() < deadline:
             t0 = time.perf_counter()
             if startup_diagnostics.step(robot):
+                targets.reset_clutches()
                 step += 1
                 time.sleep(max(0.0, period_s - (time.perf_counter() - t0)))
                 continue
             xr_action = teleop.get_action()
-            tracking = bool(teleop.is_tracking)
+            if args.hand_side == "both":
+                actions = {side: {key: xr_action[f"{side}.{key}"]
+                                 for key in ("grip_pos", "grip_quat", "squeeze", "trigger")}
+                           for side in ("left", "right")}
+                tracked = teleop.tracking_by_hand
+            else:
+                actions = {args.hand_side: xr_action}
+                tracked = {args.hand_side: bool(teleop.is_tracking)}
+            tracking = any(tracked.get(side, False) and valid_pose_frame(action["grip_pos"], action["grip_quat"])
+                           for side, action in actions.items())
             now = time.monotonic()
             if tracking:
                 last_tracking_time = now
@@ -503,97 +574,32 @@ def run(args, cleanup) -> int:
                 connect_teleop_with_retry()
                 print("XR teleop reconnected. Waiting for tracked controller frames...", flush=True)
                 last_tracking_time = time.monotonic()
-                was_engaged = False
+                targets.reset_clutches()
                 last_tracking = None
                 continue
-            pose_valid = tracking and valid_pose_frame(xr_action["grip_pos"], xr_action["grip_quat"])
-            squeeze = float(xr_action["squeeze"])
-            trigger = float(xr_action.get("trigger", 0.0))
-            clutch_level = clutch_value(xr_action, args.clutch_axis)
-            if tracking and not pose_valid:
-                tracking = False
-                engaged = False
-                if step % max(1, int(args.control_hz)) == 0:
-                    print(
-                        "tracked controller has invalid grip pose; holding previous target "
-                        f"pos={np.asarray(xr_action['grip_pos']).tolist()} quat={np.asarray(xr_action['grip_quat']).tolist()}",
-                        file=sys.stderr,
-                        flush=True,
-                    )
-            else:
-                engaged = pose_valid and clutch_level >= args.clutch_threshold
-
-            if engaged and not was_engaged:
-                measured_left, measured_right = fk(model, data, ik.L_hand_id, ik.R_hand_id, q)
-                measured_active = measured_right if args.hand_side == "right" else measured_left
-                clutch.engage(xr_action["grip_pos"], xr_action["grip_quat"], measured_active)
-                print(f"clutch engaged at step {step}")
-
-            if engaged:
-                pos, quat = scaled_rebase(clutch, xr_action["grip_pos"], xr_action["grip_quat"], args.xr_pos_scale)
-                active_target = make_transform(pos, quat, Rotation)
-                active_target = clamp_translation(active_target, active_home, args.max_delta_m)
-                if args.hand_side == "right":
-                    right_target = active_target
-                else:
-                    left_target = active_target
-
-                q_next, _ = ik.solve_ik(left_target, right_target, q)
-                q_next = np.asarray(q_next, dtype=float)
-                if np.all(np.isfinite(q_next)):
-                    q = q_next
-                else:
-                    print(f"non-finite IK result at step {step}; holding previous command", file=sys.stderr)
-
+            q, hand_status = targets.update(actions, tracked, q)
+            engaged = any(targets.engaged.values())
             q_g1 = q[reorder]
             robot.send_action(action_from_arm_q(q_g1, joint_index, arm_index))
             if args.verification_report:
                 obs = robot.get_observation()
                 evidence.append({"tracking": bool(tracking), "engaged": bool(engaged),
+                                 "hands": hand_status,
                                  "command": q_g1.tolist(),
                                  "measured": [float(obs[f"{j.name}.q"]) for j in arm_index]})
-            arm_norm = float(np.linalg.norm(q_g1))
-
             if tracking or tracking != last_tracking or step % max(1, int(args.control_hz)) == 0:
-                active_target = right_target if args.hand_side == "right" else left_target
-                raw_pos = np.asarray(xr_action["grip_pos"], dtype=float)
-                raw_delta = 0.0 if last_raw_grip_pos is None else float(np.linalg.norm(raw_pos - last_raw_grip_pos))
-                q_delta = 0.0 if last_q_g1 is None else float(np.linalg.norm(q_g1 - last_q_g1))
-                target_delta = float(np.linalg.norm(active_target[:3, 3] - active_home[:3, 3]))
-                line = (
-                    "step={step:04d} tracking={tracking} engaged={engaged} "
-                    "squeeze={squeeze:.3f} trigger={trigger:.3f} clutch={clutch:.3f} "
-                    "target=({x:+.3f},{y:+.3f},{z:+.3f}) q0={q0:+.3f} |q|={qnorm:.3f}"
-                ).format(
-                    step=step,
-                    tracking=tracking,
-                    engaged=engaged,
-                    squeeze=squeeze,
-                    trigger=trigger,
-                    clutch=clutch_level,
-                    x=float(active_target[0, 3]),
-                    y=float(active_target[1, 3]),
-                    z=float(active_target[2, 3]),
-                    q0=float(q_g1[0]),
-                    qnorm=arm_norm,
-                )
-                if args.debug_xr:
-                    line += (
-                        " raw=({rx:+.3f},{ry:+.3f},{rz:+.3f}) "
-                        "raw_d={raw_delta:.4f} target_d={target_delta:.4f} q_d={q_delta:.4f}"
-                    ).format(
-                        rx=float(raw_pos[0]),
-                        ry=float(raw_pos[1]),
-                        rz=float(raw_pos[2]),
-                        raw_delta=raw_delta,
-                        target_delta=target_delta,
-                        q_delta=q_delta,
-                    )
-                print(line)
-                last_raw_grip_pos = raw_pos.copy()
+                for side in actions:
+                    state = hand_status[side]
+                    xyz = ",".join(f"{v:+.3f}" for v in state["target"])
+                    line = (f"step={step:04d} {side} tracking={state['tracking']} engaged={state['engaged']} "
+                            f"squeeze={state['squeeze']:.3f} trigger={state['trigger']:.3f} "
+                            f"clutch={state['clutch']:.3f} target=({xyz})")
+                    if args.debug_xr:
+                        delta = 0. if last_q_g1 is None else float(np.linalg.norm(q_g1 - last_q_g1))
+                        line += f" raw={np.asarray(actions[side]['grip_pos']).tolist()} q_d={delta:.4f}"
+                    print(line)
                 last_q_g1 = q_g1.copy()
 
-            was_engaged = engaged
             last_tracking = tracking
             step += 1
             time.sleep(max(0.0, period_s - (time.perf_counter() - t0)))

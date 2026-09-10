@@ -10,7 +10,7 @@ sequence and historical record, not the source-code ownership structure.
 | Track | Implemented and Verified | Remaining |
 |---|---|---|
 | 1. G1-23 in LeRobot | Native embodiment/IK, sparse mapping, derived profiles, shared configurable G1 interface; reviewed geometry/IK and contract tests | Live command/feedback acceptance, runtime feedforward decision, hardware support and contribution preparation |
-| 2. XR for LeRobot | Embodiment-selectable bridge; headless mock motion and real CloudXR/OpenXR for both variants; prior G1-29 headset motion | G1-23 headset acceptance, G1-29 headset regression, broader lifecycle/bilateral testing, camera display in headset |
+| 2. XR for LeRobot | Both-arm bridge; headless bilateral motion and real CloudXR/OpenXR for both variants; user-confirmed right-arm headset motion on both | Simultaneous two-controller headset acceptance, lifecycle testing, camera display in headset |
 | 3. G1 simulation | Live G1-29 and native supported-arm G1-23 simulator; model/IK/motor comparisons and basic DDS/hold checks | Systematic DDS/actuator timing and trajectory acceptance, camera capture |
 
 User visual review of the geometry, IK, and motor-comparison checkpoint is complete.
@@ -80,14 +80,16 @@ not a claim that other providers or all LeRobot robots have been tested.
 
 - External CloudXR startup, controller smoke test, and existing XR-to-G1 bridge.
 - Clutch/engagement, ready-pose behavior, diagnostics, and pose/button instrumentation.
-- User-confirmed G1-29 right-controller engagement and movement in simulation.
+- User-confirmed G1-29 and G1-23 right-controller engagement and movement in simulation.
+- Default dual-arm input (`--hand-side both`): one session, independent clutches,
+  one bilateral IK solve and DDS command; headless simultaneous motion verified on both variants.
 - Ergonomic service order: simulator, bridge, CloudXR, then put on/connect the headset.
 
 ### Remaining
 
 1. Preserve the implemented embodiment-selectable bridge and three-launcher headless
-   regression. Both variants have mock left/right motion and real CloudXR/OpenXR evidence.
-2. Extend scripted coverage, then verify G1-23 headset operation with
+   regression. Both variants have separate and simultaneous mock motion and real CloudXR/OpenXR evidence.
+2. Verify simultaneous two-controller headset operation on both variants with
    startup diagnostics, engagement/release, invalid tracking, loss, and reconnects.
 3. Retain G1-29 regression evidence and record bilateral/controller lifecycle coverage
    explicitly. Right-controller success is not exhaustive bilateral acceptance.

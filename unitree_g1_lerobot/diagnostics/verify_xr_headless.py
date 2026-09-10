@@ -84,16 +84,19 @@ def main():
             if len(samples) < 20 or not any(s["engaged"] for s in samples):
                 raise AssertionError(f"No sustained mock XR engagement: {report}")
             n = 7 if variant == "g1_29" else 5
-            side = slice(0, n) if result["hand_side"] == "left" else slice(n, 2*n)
             samples = samples[len(samples)//4:]
-            command = np.array([s["command"] for s in samples])[:, side]
-            measured = np.array([s["measured"] for s in samples])[:, side]
-            assert np.isfinite(command).all() and np.isfinite(measured).all()
-            assert np.max(np.ptp(command, axis=0)) > 0.01, report
-            assert np.max(np.ptp(measured, axis=0)) > 0.01, report
-            print(f"PASS {variant} {result['hand_side']}: mock XR/IK/DDS motion, "
-                  f"command span={np.max(np.ptp(command, axis=0)):.3f} rad, "
-                  f"feedback span={np.max(np.ptp(measured, axis=0)):.3f} rad", flush=True)
+            sides = ("left", "right") if result["hand_side"] == "both" else (result["hand_side"],)
+            for hand in sides:
+                side = slice(0, n) if hand == "left" else slice(n, 2*n)
+                command = np.array([s["command"] for s in samples])[:, side]
+                measured = np.array([s["measured"] for s in samples])[:, side]
+                assert np.isfinite(command).all() and np.isfinite(measured).all()
+                assert np.max(np.ptp(command, axis=0)) > 0.01, report
+                assert np.max(np.ptp(measured, axis=0)) > 0.01, report
+                assert any(s["hands"][hand]["engaged"] for s in samples), report
+                print(f"PASS {variant} {result['hand_side']}/{hand}: mock XR/IK/DDS motion, "
+                      f"command span={np.max(np.ptp(command, axis=0)):.3f} rad, "
+                      f"feedback span={np.max(np.ptp(measured, axis=0)):.3f} rad", flush=True)
 
         try:
             sim = start("sim", "run_g1_mujoco_dds_sim.sh", "--duration-s", "180")
@@ -104,7 +107,7 @@ def main():
             assert mismatch[0].wait(timeout=30) == 2
             assert "Simulator embodiment mismatch" in mismatch[1].read_text()
             print(f"PASS {variant}: mismatched bridge rejected before control", flush=True)
-            real, real_report = bridge("real-openxr", "right", mock=False)
+            real, real_report = bridge("real-openxr", "both", mock=False)
             wait_text(real, "Steady-state listening")
             cloud = start("cloudxr", "run_isaac_teleop.sh", "--duration-s", "100")
             wait_text(cloud, "CloudXR ready")
@@ -117,6 +120,9 @@ def main():
             left, left_report = bridge("mock-left", "left")
             finish(left)
             check_motion(left_report)
+            both, both_report = bridge("mock-both", "both")
+            finish(both)
+            check_motion(both_report)
             assert sim[0].poll() is None and cloud[0].poll() is None
             os.killpg(cloud[0].pid, signal.SIGTERM)
             finish(cloud)

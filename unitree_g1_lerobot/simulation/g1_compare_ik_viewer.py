@@ -37,9 +37,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--motion-profile",
-        choices=("static", "basic", "step4_sweep"),
-        default="step4_sweep",
-        help="Scripted target motion. basic preserves the Step 3 mapped-verifier motion.",
+        choices=("static", "basic", "cartesian_orientation_sweep"),
+        default="cartesian_orientation_sweep",
+        help="Scripted target motion. basic uses the original mapped-model motion.",
     )
     args = parser.parse_args()
     if not all(np.isfinite(v) for v in (args.camera_azimuth, args.camera_elevation, args.camera_distance)) or args.camera_distance <= 0:
@@ -297,7 +297,7 @@ def main() -> int:
     phase_rotations = {}
     if args.save_phase_frames:
         args.save_phase_frames.mkdir(parents=True, exist_ok=True)
-    cycle_s = {"static": 1.0 / args.control_hz, "basic": 5.0, "step4_sweep": 24.0}[args.motion_profile]
+    cycle_s = {"static": 1.0 / args.control_hz, "basic": 5.0, "cartesian_orientation_sweep": 24.0}[args.motion_profile]
     deadline_frames = int(args.duration_s * args.control_hz) if args.duration_s > 0.0 else int(cycle_s * args.control_hz)
     deadline_frames = max(1, deadline_frames)
     print(

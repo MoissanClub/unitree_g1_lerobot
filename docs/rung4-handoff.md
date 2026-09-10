@@ -10,9 +10,26 @@ acceptance; Track 2 headset acceptance follows. Existing rung names remain share
 acceptance gates, not separate implementation tracks.
 
 The three launchers now accept `--embodiment` and `--headless`. Both variants passed
-real CloudXR/OpenXR startup and separate mock left/right motion with measured feedback;
-headset acceptance remains pending. The project suite passed 30 tests with DDS enabled,
-with the GUI-only test skipped.
+real CloudXR/OpenXR startup and separate plus simultaneous mock left/right motion with
+measured feedback. The user confirmed right-arm headset control on both embodiments.
+The bridge now defaults to `--hand-side both`, with independent clutches in one XR
+session and one combined IK/DDS update. Next visual acceptance is simultaneous
+two-controller motion, independent release, tracking loss, and re-engagement on both
+embodiments. Single-hand modes remain available explicitly.
+
+Package modules now use descriptive names: `xr.xr_to_g1_mujoco`,
+`diagnostics.verify_g1_ik`, and `diagnostics.verify_g1_ik_mujoco`. Root shell launchers
+are unchanged. The IK comparison motion profile is `cartesian_orientation_sweep`.
+Do not restore planning-stage numbers in package filenames, comments, or identifiers.
+
+Dual-arm headless verification logs: `/tmp/g1-xr-headless-29tjmzcw` (local, temporary).
+Both-arm runs measured peak-to-peak joint motion of 0.460/0.505 rad (left/right) for
+G1-29 and 0.476/0.509 rad for G1-23. Separate single-hand regressions, actual dual-stream
+OpenXR startup, mismatched-embodiment rejection, and clean shutdown also passed.
+These are motion-presence checks, not Cartesian accuracy or hardware-safety acceptance.
+Unit tests additionally cover per-hand release/tracking loss, invalid poses/buttons,
+re-engagement origins, orientation targets, non-identity joint ordering, invalid IK
+results, and reading both controller streams in one session step.
 
 **Open finding:** repeated DDS sessions in one interpreter can crash in a native
 publication-matched callback. LeRobot's missing explicit channel cleanup and the SDK's

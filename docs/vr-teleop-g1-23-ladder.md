@@ -42,7 +42,7 @@ establish that transport, timing, and downstream behavior are correct.
 |---|---|
 | **LeRobot** | Provides the robot/configuration interfaces and dataset ecosystem; this project extends the existing G1 integration. |
 | **Isaac Teleop** for XR | Already an accepted, documented LeRobot dependency with an `XRController` `Teleoperator` subclass. Adding a *robot target* to an existing device beats proposing a new device abstraction. |
-| **G1-23** | Five-joint arms now use the embodiment-selectable XR/IK workflow. Headless mock motion and real OpenXR startup pass; headset acceptance remains pending. |
+| **G1-23** | Five-joint arms use the embodiment-selectable XR/IK workflow. Right-arm headset control is user-confirmed. Headless bilateral motion and real OpenXR startup pass; simultaneous two-controller headset acceptance remains pending. |
 | **Use `xr_teleoperate` as a reference** | Derive embodiment/control data from pinned sources while preserving LeRobot interfaces and shared implementation. |
 
 ### What already exists vs. what must be built
@@ -231,7 +231,11 @@ headroom. This remains supported-arm benchmark evidence, not live DDS acceptance
    and the intended response when commands stop or become stale.
 4. **XR integration and regression:** embodiment selection and three-launcher headless
    checks are implemented for both variants, including mock arm motion and real
-   CloudXR/OpenXR startup. Verify actual
+   CloudXR/OpenXR startup. The user confirmed right-arm headset control on both variants.
+   The bridge now defaults to `--hand-side both`: two controller streams in one session,
+   independent clutches and validity checks, one bilateral IK solve and DDS command,
+   and frozen joint commands for inactive arms. Separate and simultaneous mock motion
+   pass with measured simulator feedback on both variants. Verify actual simultaneous
    headset control, startup diagnostics, engagement/release, and tracking loss/disconnect
    behavior. Verify supported arm control paths and retain working G1-29 behavior.
    Document the five-joint arm's position/orientation compromise and test results.
@@ -414,7 +418,7 @@ next-action list. Upstream issue reporting remains separate from Rung 4 acceptan
 
 - [Rung 0 install notes](Rung0_isaac-teleop-install-notes.md) — rung 0 install
 - [Rung 2 install notes](Rung2_lerobot-g1-mujoco-install-notes.md) — rung 2 install
-- `unitree_g1_lerobot/diagnostics/rung2a_ik_only.py`, `unitree_g1_lerobot/diagnostics/rung2b_ik_to_mujoco.py` — validation scripts
+- `unitree_g1_lerobot/diagnostics/verify_g1_ik.py`, `unitree_g1_lerobot/diagnostics/verify_g1_ik_mujoco.py` — validation scripts
 
 ## Production Teleop Design Note
 
@@ -428,7 +432,7 @@ future XR inputs can feed the same wrist-target contract.
 ## Rung 3 Runtime Model
 
 CloudXR is external for the current rung 3 test: `run_isaac_teleop.sh` starts the runtime,
-and `python -m unitree_g1_lerobot.xr.rung3_xr_to_g1_mujoco --external-cloudxr` attaches to the existing OpenXR runtime.
+and `python -m unitree_g1_lerobot.xr.xr_to_g1_mujoco --external-cloudxr` attaches to the existing OpenXR runtime.
 MuJoCo can be embedded or external. Without `--external-g1-sim`, the script constructs
 `UnitreeG1(UnitreeG1Config(is_simulation=True))` and `robot.connect()` creates the G1-29
 simulation in the bridge process. With that flag, the standalone simulator owns physics

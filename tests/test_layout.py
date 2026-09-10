@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -12,6 +13,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LayoutTests(unittest.TestCase):
+    def test_package_uses_descriptive_names(self):
+        stage_name = re.compile(r"rung|step[ _-]?\d", re.IGNORECASE)
+        for source in (ROOT / "unitree_g1_lerobot").rglob("*.py"):
+            with self.subTest(source=source.relative_to(ROOT)):
+                self.assertIsNone(stage_name.search(source.stem))
+                self.assertIsNone(stage_name.search(source.read_text()))
+
     def test_robot_support_does_not_load_xr_or_simulation(self):
         subprocess.run(
             [sys.executable, "-c", "\n".join([
@@ -31,7 +39,7 @@ class LayoutTests(unittest.TestCase):
             "simulation.g1_compare_ik_viewer",
             "simulation.g1_mujoco_dds_sim",
             "diagnostics.g1_startup_diagnostic",
-            "xr.rung3_xr_to_g1_mujoco",
+            "xr.xr_to_g1_mujoco",
             "xr.xr_controller_cloudxr_smoke_test",
         ):
             with self.subTest(module=module):

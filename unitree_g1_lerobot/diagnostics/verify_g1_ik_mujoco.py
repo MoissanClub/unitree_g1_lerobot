@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rung 2b - guarded G1 IK to LeRobot G1 MuJoCo validation.
+"""Guarded G1 IK to LeRobot G1 MuJoCo validation.
 
 It patches the Hub-hosted MuJoCo environment at runtime so DDS loopback works
 and image publishing is disabled for reliable headless validation.

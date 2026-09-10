@@ -6,6 +6,12 @@ launchers remain the operator interface. Python entry points use `python -m` fro
 repository root. This is a checkout-based integration workspace, not a new distribution
 that replaces or vendors LeRobot.
 
+Package filenames, comments, and identifiers describe functionality, not planning stages.
+The XR entry point is `xr.xr_to_g1_mujoco`; isolated IK and simulated execution checks
+are `diagnostics.verify_g1_ik` and `diagnostics.verify_g1_ik_mujoco`. The comparison
+viewer's repeating motion profile is `cartesian_orientation_sweep`. Root operator
+launcher names are unchanged; rung labels remain only in planning documentation.
+
 ## Ownership
 
 The [project plan](project-plan.md) organizes work in three tracks. Track 1 is G1-23
@@ -22,6 +28,11 @@ headset display/streaming belongs to Track 2. Their frame contract is shared wor
   simulation connection helper; `native_g1.py` supplies supported-arm G1-23 physics/DDS
   and `native_g1_viewer.py` supplies its viewer-first startup verification.
 - `xr/`: controller input, clutch handling, CloudXR attachment, and XR-to-robot orchestration.
+  `both_controllers.py` extends the existing LeRobot XR adapter with two output streams
+  from one source/session, reusing its lifecycle and base-frame transform. The bridge
+  maintains per-hand tracking, clutch, and targets, then solves bilateral IK once and
+  publishes one combined command. Named arm masks are converted to Pinocchio order;
+  inactive arms retain their last command despite IK filtering/regularization.
 - `diagnostics/`: startup motions, bridge diagnostic requests, and rung smoke tests.
 - `assets/g1/`: robot assets, outside the code package; asset paths resolve from the
   repository location rather than the terminal working directory.

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Rung 2a - validate LeRobot's Unitree G1 IK stack.
+Validate LeRobot's Unitree G1 IK stack without simulation or hardware.
 
 No simulator, no XR headset, no robot hardware. This isolates one failure domain:
-the inverse-kinematics stack. Run it before rung 2b so that a MuJoCo failure later
+the inverse-kinematics stack. Run it before verify_g1_ik_mujoco so that a MuJoCo failure later
 cannot be confused with an IK failure.
 
 Exercises:
@@ -17,7 +17,7 @@ Requires:
   conda install -c conda-forge "pinocchio>=3.0.0,<4.0.0"
   pip install -e ".[dataset]" casadi          # NOT [kinematics] - it clobbers pinocchio
 
-Usage:  python -m unitree_g1_lerobot.diagnostics.rung2a_ik_only
+Usage:  python -m unitree_g1_lerobot.diagnostics.verify_g1_ik
 """
 
 import numpy as np
@@ -169,7 +169,7 @@ ok = static_t * 1000 < PASS_MM
 print(f"  static residual {static_t * 1000:.4f} mm  (budget {PASS_MM} mm)")
 print(f"  joint ordering  {'consistent' if order_ok else 'MISMATCHED'}")
 print()
-print("  PASS - the G1 IK stack is working; proceed to rung 2b"
+print("  PASS - the G1 IK stack is working; proceed to verify_g1_ik_mujoco"
       if ok else
       "  FAIL - static residual too large; the solver is not converging.\n"
       "         Check pinocchio came from conda-forge and has CasADi bindings.")

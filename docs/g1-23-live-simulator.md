@@ -117,10 +117,12 @@ connect/disconnect in a long-lived interpreter.
 Verified: viewer-first startup, interactive confirmation, both-arm movement from a
 separate DDS sender, joint feedback, identity mismatch rejection, command-loss holding,
 and embedded connect/disconnect. Systematic per-joint acceptance, scripted Cartesian
-IK/DDS sweeps, timing thresholds, and G1-23 headset acceptance remain Rung 4 work.
+IK/DDS sweeps, timing thresholds, and bilateral headset acceptance remain Rung 4 work.
 The XR launcher now accepts `--embodiment g1_23`. Both variants pass headless
-simulated-controller motion and real CloudXR/OpenXR startup checks; headset acceptance
-is still pending. See [headless session commands](../README.md#embodiment-selection-and-headless-verification).
+separate and simultaneous simulated-controller motion and real CloudXR/OpenXR startup checks.
+Right-arm headset control is user-confirmed on both. The bridge defaults to `--hand-side both`;
+simultaneous two-controller headset acceptance is still pending.
+See [headless session commands](../README.md#embodiment-selection-and-headless-verification).
 
 ### G1-29 Regression Check
 
