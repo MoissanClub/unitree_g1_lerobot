@@ -34,6 +34,12 @@ headset display/streaming belongs to Track 2. Their frame contract is shared wor
   publishes one combined command. Named arm masks are converted to Pinocchio order;
   inactive arms retain their last command despite IK filtering/regularization.
 - `diagnostics/`: startup motions, bridge diagnostic requests, and rung smoke tests.
+- `simulation/robot_camera.py`: opt-in rendering in a child process, fed bounded state
+  snapshots after physics steps. `simulation/camera_frames.py` defines dependency-light
+  latest-frame IPC; `diagnostics/view_robot_camera.py` consumes it without robot control.
+  See the [camera frame contract](camera-streaming.md). `xr/camera_display.py` uploads
+  frames to an SDK VizSession quad. `xr/video_controller.py` owns graphics and input
+  in one worker process/shared OpenXR session, separate from the parent IK/DDS loop.
 - `assets/g1/`: robot assets, outside the code package; asset paths resolve from the
   repository location rather than the terminal working directory.
 - `configs/`: runtime configuration. `CLOUDXR_ENV_FILE` still overrides the default

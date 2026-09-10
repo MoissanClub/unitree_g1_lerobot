@@ -17,7 +17,10 @@ ROOT = Path(__file__).resolve().parents[2]
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--embodiment", choices=("g1_29", "g1_23"), action="append")
+    parser.add_argument("--camera", action="store_true", help="Also verify local robot-camera frames while all three services run headlessly.")
+    parser.add_argument("--video", action="store_true", help="Also submit camera frames through the real OpenXR graphics session.")
     args = parser.parse_args()
+    args.camera = args.camera or args.video
     # Refuse to interfere with an existing CloudXR session.
     try:
         connection = socket.create_connection(("127.0.0.1", 48322), timeout=0.5)
@@ -39,7 +42,7 @@ def main():
         def start(label, script, *options):
             path = output / f"{variant}-{label}.log"
             with path.open("w") as log:
-                selection = [] if script == "run_isaac_teleop.sh" else ["--embodiment", variant]
+                selection = ["--embodiment", variant] if script in ("run_g1_mujoco_dds_sim.sh", "run_xr_g1_mujoco.sh") else []
                 process = subprocess.Popen([str(ROOT / script), *selection,
                     "--headless", *options], cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
                     stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
@@ -79,9 +82,23 @@ def main():
                     options.append("--no-gravity-compensation")
             else:
                 options.append("--skip-startup-diagnostic")
+            if args.video:
+                options.extend(["--video", "--camera-channel", str(channel)])
             return start(label, "run_xr_g1_mujoco.sh", *options), report
 
+        def check_video(report):
+            if not args.video:
+                return
+            result = json.loads(report.read_text())
+            assert result["video_enabled"], report
+            stats = [s["video"] for s in result["samples"] if s.get("video", {}).get("camera_uploads", 0)]
+            assert stats and max(s["camera_uploads"] for s in stats) >= 20, report
+            assert max(s["render_requested"] for s in stats) >= 20, report
+            print(f"PASS {variant}: OpenXR graphics requested rendering and received "
+                  f"{max(s['camera_uploads'] for s in stats)} camera uploads ({report.stem})", flush=True)
+
         def check_motion(report):
+            check_video(report)
             result = json.loads(report.read_text())
             assert result["gravity_compensation"] == (result["hand_side"] != "right"), report
             samples = result["samples"]
@@ -103,7 +120,9 @@ def main():
                       f"feedback span={np.max(np.ptp(measured, axis=0)):.3f} rad", flush=True)
 
         try:
-            sim = start("sim", "run_g1_mujoco_dds_sim.sh", "--duration-s", "180")
+            channel = output / f"{variant}.rgb"
+            camera_options = ["--camera", "--camera-channel", str(channel)] if args.camera else []
+            sim = start("sim", "run_g1_mujoco_dds_sim.sh", "--duration-s", "180", *camera_options)
             wait_text(sim, "Startup diagnostic complete" if variant == "g1_29" else "entering steady-state listening")
             wrong = "g1_23" if variant == "g1_29" else "g1_29"
             mismatch = start("mismatch", "run_xr_g1_mujoco.sh", "--embodiment", wrong,
@@ -117,6 +136,7 @@ def main():
             wait_text(cloud, "CloudXR ready")
             wait_text(real, "XR teleop connected")
             finish(real)
+            check_video(real_report)
             assert len(json.loads(real_report.read_text())["samples"]) >= 10
             right, right_report = bridge("mock-right", "right")
             finish(right)
@@ -124,14 +144,35 @@ def main():
             left, left_report = bridge("mock-left", "left")
             finish(left)
             check_motion(left_report)
+            if args.camera:
+                camera_report = output / f"{variant}-camera.json"
+                camera = start("camera", "view_g1_camera.sh", "--camera-channel", str(channel),
+                               "--duration-s", "12", "--report", str(camera_report),
+                               "--save-frame", str(output / f"{variant}-camera.png"))
             both, both_report = bridge("mock-both", "both")
             finish(both)
             check_motion(both_report)
+            if args.camera:
+                finish(camera)
+                samples = json.loads(camera_report.read_text())["samples"]
+                assert len(samples) >= 30, camera_report
+                assert all(s["embodiment"] == variant and s["camera_id"] == "robot_head" for s in samples)
+                assert all(b["sequence"] > a["sequence"] for a, b in zip(samples, samples[1:]))
+                assert samples[-1]["simulation_time_s"] > samples[0]["simulation_time_s"]
+                assert max(s["pixel_delta"] for s in samples) > .1, "No visible camera motion"
+                assert min(s["pixel_std"] for s in samples) > 5, "Blank camera frame"
+                age = float(np.percentile([s["age_ms"] for s in samples], 95))
+                assert age < 500, f"Camera too stale: p95={age}ms"
+                fps = (len(samples)-1) / ((samples[-1]["captured_monotonic_ns"]-samples[0]["captured_monotonic_ns"])/1e9)
+                assert fps >= 5, f"Camera too slow: {fps} fps"
+                print(f"PASS {variant}: camera {fps:.1f} fps, p95 frame age {age:.0f} ms, live pixels and simulation timestamps", flush=True)
             assert sim[0].poll() is None and cloud[0].poll() is None
             os.killpg(cloud[0].pid, signal.SIGTERM)
             finish(cloud)
             os.killpg(sim[0].pid, signal.SIGINT)
             finish(sim)
+            if args.camera:
+                assert not channel.exists(), "Camera channel leaked after simulator shutdown"
             print(f"PASS {variant}: all three headless launchers, real CloudXR/OpenXR, clean shutdown", flush=True)
         finally:
             for process in reversed(processes):

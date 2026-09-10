@@ -30,6 +30,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-frame", type=Path, help="Save the native G1-23 viewer's latest frame.")
     parser.add_argument("--hz", type=float, default=250.0)
     parser.add_argument("--view-fps", type=float, default=20.0)
+    parser.add_argument("--camera", action="store_true", help="Publish a robot-mounted mono camera independently of the Tk viewer.")
+    parser.add_argument("--camera-channel", type=Path, help="Local latest-frame IPC path (default: /tmp/lerobot-camera-UID.rgb).")
+    parser.add_argument("--camera-width", type=int, default=640)
+    parser.add_argument("--camera-height", type=int, default=480)
+    parser.add_argument("--camera-fps", type=float, default=20.)
+    parser.add_argument("--camera-pitch", type=float, default=35., help="Downward camera pitch in degrees relative to torso.")
+    parser.add_argument("--camera-fovy", type=float, default=90.)
     parser.add_argument("--no-view", action="store_true", help="Run without the Tk/X viewer.")
     parser.add_argument("--headless", action="store_true", help="No viewer or confirmation prompts; still run diagnostics.")
     parser.add_argument("--skip-startup-diagnostic", action="store_true", help="Skip the raise-arm startup diagnostic.")
@@ -43,7 +50,31 @@ def parse_args() -> argparse.Namespace:
         parser.error("Rates and diagnostic duration must be positive and finite; duration must be nonnegative")
     if args.embodiment == "g1_23" and args.hz != 250:
         parser.error("Native G1-23 uses 250 Hz DDS/control with 500 Hz physics")
+    from .robot_camera import CameraConfig
+    try:
+        CameraConfig(width=args.camera_width, height=args.camera_height, fps=args.camera_fps,
+                     pitch_deg=args.camera_pitch, fovy_deg=args.camera_fovy)
+    except ValueError as exc:
+        parser.error(str(exc))
     return args
+
+
+def start_camera(model, data, owner, method, args):
+    if not args.camera:
+        return None
+    from .robot_camera import CameraConfig, CameraPublisher
+    camera = CameraPublisher(model, data, CameraConfig(width=args.camera_width,
+        height=args.camera_height, fps=args.camera_fps, pitch_deg=args.camera_pitch,
+        fovy_deg=args.camera_fovy), args.embodiment, args.camera_channel)
+    original = getattr(owner, method)
+
+    def step_with_snapshot(*positional, **keywords):
+        result = original(*positional, **keywords)
+        camera.offer(data)
+        return result
+
+    setattr(owner, method, step_with_snapshot)
+    return camera
 
 
 def patch_unitree_dds_config() -> None:
@@ -239,14 +270,18 @@ def main() -> int:
                 raise SystemExit(f"Cannot open Tk/X on DISPLAY={os.environ.get('DISPLAY')!r}. Use ssh -Y or --no-view. {exc}") from exc
         print("Starting native g1_23 on loopback DDS: 10 dynamic arm joints; pelvis, legs and waist supported.", flush=True)
         env = None
+        camera = None
         try:
             env = NativeG1Simulation()
+            camera = start_camera(env.plant.model, env.plant.data, env, "step", args)
             run_native(env, args, root)
         except KeyboardInterrupt:
             print("Stopping G1-23 simulator", flush=True)
         finally:
             if env is not None:
                 env.close()
+            if camera is not None:
+                camera.close()
             if root is not None:
                 try:
                     root.destroy()
@@ -270,7 +305,10 @@ def main() -> int:
         raise
     print("G1 MuJoCo DDS sim is running. Ctrl+C to stop.")
 
+    camera = None
     try:
+        inner = env.simulator.sim_env
+        camera = start_camera(inner.mj_model, inner.mj_data, inner, "sim_step", args)
         if not args.no_view:
             print("Opening Tk/X viewer window before startup diagnostic")
             TkViewer(env, args.view_fps, args).run()
@@ -293,6 +331,8 @@ def main() -> int:
     except KeyboardInterrupt:
         print("\nStopping G1 MuJoCo DDS sim")
     finally:
+        if camera is not None:
+            camera.close()
         stop_identity()
         env.close()
         process_lock.close()

@@ -11,13 +11,16 @@ sequence and historical record, not the source-code ownership structure.
 |---|---|---|
 | 1. G1-23 in LeRobot | Native embodiment/IK, sparse mapping, derived profiles, shared configurable G1 interface; reviewed geometry/IK and contract tests | Live command/feedback acceptance, runtime feedforward decision, hardware support and contribution preparation |
 | 2. XR for LeRobot | Both-arm bridge; headless bilateral motion and real CloudXR/OpenXR for both variants; dual-arm headset review complete | Systematic lifecycle testing, camera display in headset |
-| 3. G1 simulation | Live G1-29 and native supported-arm G1-23 simulator; model/IK/motor comparisons and basic DDS/hold checks | Systematic DDS/actuator timing and trajectory acceptance, camera capture |
+| 3. G1 simulation | Live G1-29 and native supported-arm G1-23 simulator; reviewed benchmarks, basic DDS/hold checks, and local robot-camera capture | Systematic DDS/actuator timing and trajectory acceptance, XR camera-display integration |
 
 User visual review of the geometry, IK, and motor-comparison checkpoint is complete.
 The structural refactor passed 25 project tests and 92 LeRobot G1 regression tests.
 The native G1-23 live simulator is now implemented, with standalone and embedded
 connection tests, both-arm DDS motion, feedback, and command-loss holding verified.
-Full Rung 4 control acceptance, camera streaming, and physical-robot work remain pending.
+Full Rung 4 control acceptance, systematic video lifecycle/performance acceptance, and
+physical-robot work remain pending. Camera capture and shared graphics/input submission
+pass headless checks on both variants. The user verified video in the VR headset on
+2026-09-10; the reviewed embodiment was not specified.
 
 The XR extension passed headless three-launcher sessions for both embodiments and
 the 31-test project suite with DDS enabled (30 passed, one GUI-only test skipped).
@@ -99,9 +102,9 @@ not a claim that other providers or all LeRobot robots have been tested.
    and reconnect coverage on both variants beyond the completed visual review.
 3. Retain G1-29 regression evidence and record bilateral/controller lifecycle coverage
    explicitly. Visual review is not exhaustive controller lifecycle acceptance.
-4. After control acceptance, own the headset display/streaming integration for robot
-   camera frames supplied by Track 3 (and later hardware). Decide mono/stereo and view
-   behavior; verify framing, reconnects, frame age, and control-loop interference.
+4. Review the implemented mono headset display for Track 3 camera frames. The bridge
+   shares one graphics/input OpenXR session; headless submission passes on both variants.
+   Verify actual headset framing, reconnects, latency, and control-loop interference.
 
 **Acceptance evidence:** input/frame-semantics and clutch tests, simulated-input tests,
 observed headset control, and a separate observed camera-video test. A headset client
@@ -129,6 +132,8 @@ live command/state backend that the shared robot interface can use.
 - Shared 34-case suite: holds, payloads, steps, sweeps, fast moves, and reversals;
   reports cover tracking, rise time, overshoot, settling, sag, and torque headroom.
 - Real-viewer controls and per-panel motion checks. Preserve all verification launchers.
+- Opt-in local robot-camera capture for both embodiments, isolated rendering process,
+  bounded frame IPC, and independent preview; three-service headless camera matrix passes.
 
 ### Remaining
 
@@ -142,8 +147,9 @@ live command/state backend that the shared robot interface can use.
 3. Run device-free Cartesian/orientation trajectories through IK -> DDS -> actuators.
    Compare target pose, commanded joints, measured joints, and measured FK. Separate
    kinematic residuals from actuator errors; establish numerical acceptance thresholds.
-4. Supply live camera frames to Track 2 after control acceptance. Verify local images
-   first and measure rendering cost, frame timestamps, and simulation timing.
+4. Preserve the implemented local-camera-to-XR-display interface. Local images, frame
+   motion, age, and OpenXR submission are checked; quantify physics timing impact and
+   verify actual headset presentation. See [camera checkpoint](camera-streaming.md).
 
 **Acceptance evidence:** native models, measured motor-driven trajectories, DDS/timing
 and command-loss tests, then camera-frame tests. Geometry/IK pose replay is not physics;

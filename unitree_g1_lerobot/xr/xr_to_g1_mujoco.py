@@ -46,6 +46,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--headless", action="store_true", help="No viewer or confirmation prompts; does not mock XR.")
     parser.add_argument("--skip-startup-diagnostic", action="store_true")
     parser.add_argument("--verification-report", type=Path, help="Write numerical loop evidence on normal shutdown.")
+    parser.add_argument("--video", action=argparse.BooleanOptionalAction, default=False,
+                        help="Display the local robot-camera channel in the headset using a shared graphics/input XR session.")
+    parser.add_argument("--camera-channel", type=Path, help="Camera IPC path from the standalone simulator's --camera mode.")
+    parser.add_argument("--video-max-age-s", type=float, default=.5)
+    parser.add_argument("--video-screen-distance", type=float, default=1.5)
+    parser.add_argument("--video-screen-width", type=float, default=1.8)
     parser.add_argument("--gravity-compensation", action=argparse.BooleanOptionalAction, default=True,
                         help="Include IK-model gravity feedforward in arm commands (default: on).")
     parser.add_argument(
@@ -151,6 +157,10 @@ def parse_args() -> argparse.Namespace:
         parser.error("Control rates, timeouts and gain scales must be positive and finite")
     if not np.isfinite(args.duration_s) or args.duration_s < 0:
         parser.error("duration-s must be finite and nonnegative")
+    if args.video and not args.external_g1_sim:
+        parser.error("--video requires --external-g1-sim; start the standalone simulator with --camera")
+    if not all(np.isfinite(v) and v > 0 for v in (args.video_max_age_s, args.video_screen_distance, args.video_screen_width)):
+        parser.error("Video age and screen dimensions must be positive and finite")
     return args
 
 
@@ -369,7 +379,7 @@ def run(args, cleanup) -> int:
     patch_unitree_dds_config()
     patch_g1_hub_env_factory()
 
-    if args.external_cloudxr and not args.mock_xr:
+    if args.external_cloudxr and (not args.mock_xr or args.video):
         os.environ["LEROBOT_CLOUDXR_SKIP_AUTOLAUNCH"] = "1"
         runtime_env = Path.home() / ".cloudxr" / "run" / "cloudxr.env"
         if runtime_env.is_file():
@@ -380,7 +390,7 @@ def run(args, cleanup) -> int:
             return 2
 
     cloudxr_env_file = args.cloudxr_env_file
-    if cloudxr_env_file is None and not args.external_cloudxr and not args.mock_xr:
+    if cloudxr_env_file is None and not args.external_cloudxr and (not args.mock_xr or args.video):
         default_env = lerobot_root / "examples" / "isaac_teleop_to_so101" / "default.env"
         cloudxr_env_file = str(default_env) if default_env.is_file() else None
 
@@ -462,7 +472,7 @@ def run(args, cleanup) -> int:
     print(f"Steady-state listening: {args.embodiment}; waiting for XR input.")
     deadline = float("inf") if args.duration_s == 0 else time.monotonic() + args.duration_s
 
-    if args.mock_xr:
+    if args.mock_xr and not args.video:
         teleop = MockXRController(args.hand_side, args.clutch_threshold)
     else:
         from examples.isaac_teleop_to_so101.isaac_teleop import XRController, XRControllerConfig
@@ -471,14 +481,23 @@ def run(args, cleanup) -> int:
         if args.hand_side == "both":
             from unitree_g1_lerobot.xr.both_controllers import BothXRControllers
             controller_class = BothXRControllers
-        teleop = controller_class(
-            XRControllerConfig(
+        controller_config = XRControllerConfig(
                 hand_side="right" if args.hand_side == "both" else args.hand_side,
                 clutch_threshold=args.clutch_threshold,
                 auto_launch_cloudxr=not args.external_cloudxr,
                 cloudxr_env_file=cloudxr_env_file,
             )
-        )
+        if args.video:
+            from unitree_g1_lerobot.xr.camera_display import VideoConfig
+            from unitree_g1_lerobot.xr.video_controller import VideoXRController
+            video_config = VideoConfig(max_age_s=args.video_max_age_s,
+                distance_m=args.video_screen_distance, screen_width_m=args.video_screen_width,
+                expected_source=args.embodiment,
+                **({"channel": str(args.camera_channel)} if args.camera_channel else {}))
+            teleop = VideoXRController(controller_config, video_config, args.hand_side,
+                MockXRController(args.hand_side, args.clutch_threshold) if args.mock_xr else None)
+        else:
+            teleop = controller_class(controller_config)
 
         print()
         print("Headset browser:")
@@ -500,9 +519,9 @@ def run(args, cleanup) -> int:
         while True:
             if time.monotonic() >= deadline:
                 raise TimeoutError("Run duration expired while waiting for CloudXR")
-            if args.external_cloudxr and not args.mock_xr and runtime_env.is_file():
+            if args.external_cloudxr and (not args.mock_xr or args.video) and runtime_env.is_file():
                 load_env_file(runtime_env)
-            if args.external_cloudxr and not args.mock_xr and args.wait_for_cloudxr:
+            if args.external_cloudxr and (not args.mock_xr or args.video) and args.wait_for_cloudxr:
                 socket_path = Path(os.environ.get("NV_CXR_RUNTIME_DIR", str(runtime_env.parent))) / "ipc_cloudxr"
                 if not socket_path.is_socket():
                     print("Waiting for CloudXR runtime; holding ready pose and servicing startup diagnostics.")
@@ -545,7 +564,19 @@ def run(args, cleanup) -> int:
                 step += 1
                 time.sleep(max(0.0, period_s - (time.perf_counter() - t0)))
                 continue
-            xr_action = teleop.get_action()
+            try:
+                xr_action = teleop.get_action()
+            except RuntimeError as exc:
+                if not (args.video and args.wait_for_cloudxr and getattr(exc, "reconnectable", False)):
+                    raise
+                print(f"{exc}; reconnecting XR video and holding ready pose.", flush=True)
+                teleop.disconnect()
+                startup_diagnostics.publish_or_ready_for(robot, ready_action, args.cloudxr_retry_s)
+                connect_teleop_with_retry()
+                q = q_ready.copy()
+                targets = ArmTargets(ik, arm_index, dict(left=left_ready, right=right_ready), args)
+                last_tracking_time = time.monotonic()
+                continue
             if args.hand_side == "both":
                 actions = {side: {key: xr_action[f"{side}.{key}"]
                                  for key in ("grip_pos", "grip_quat", "squeeze", "trigger")}
@@ -561,6 +592,7 @@ def run(args, cleanup) -> int:
                 last_tracking_time = now
             elif (
                 args.wait_for_cloudxr
+                and not args.video
                 and args.tracking_timeout_s > 0.0
                 and now - last_tracking_time >= args.tracking_timeout_s
             ):
@@ -586,6 +618,7 @@ def run(args, cleanup) -> int:
                 obs = robot.get_observation()
                 evidence.append({"tracking": bool(tracking), "engaged": bool(engaged),
                                  "hands": hand_status,
+                                 **({"video": dict(teleop.video_stats)} if args.video else {}),
                                  "command": q_g1.tolist(),
                                  "measured": [float(obs[f"{j.name}.q"]) for j in arm_index]})
             if tracking or tracking != last_tracking or step % max(1, int(args.control_hz)) == 0:
@@ -612,6 +645,7 @@ def run(args, cleanup) -> int:
             args.verification_report.parent.mkdir(parents=True, exist_ok=True)
             args.verification_report.write_text(json.dumps({"embodiment": args.embodiment,
                 "hand_side": args.hand_side, "mock_xr": args.mock_xr,
+                "video_enabled": args.video,
                 "gravity_compensation": args.gravity_compensation, "samples": evidence}) + "\n")
 
     return 0

@@ -131,6 +131,12 @@ See [headless session commands](../README.md#embodiment-selection-and-headless-v
 
 ### G1-29 Regression Check
 
+Local robot-camera capture is now available independently of the spectator viewer:
+add `--camera` to either embodiment's standalone simulator and use `./view_g1_camera.sh`
+as a separate consumer. Capture also works with `--headless`. The three-launcher
+camera matrix passed on both variants; this does not yet deliver video to the headset.
+See [camera checkpoint](camera-streaming.md) for optics, IPC, and verification commands.
+
 Also tested with the existing backend:
 
 ```bash

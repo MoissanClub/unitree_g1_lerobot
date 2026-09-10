@@ -13,7 +13,8 @@ and simulation work tracks. Simulation and physical-robot acceptance are distinc
 
 The tracks share interfaces and acceptance tests, not duplicate control implementations.
 G1-23 now runs as a native supported-arm DDS simulator. Robot-camera streaming to the
-headset, systematic controller lifecycle testing, and physical-robot validation remain pending.
+headset is implemented and user-verified in the VR headset;
+systematic controller lifecycle testing, and physical-robot validation remain pending.
 
 **Roadmap:** [three-track project plan](docs/project-plan.md).
 **Resume:** [handoff](docs/rung4-handoff.md).
@@ -66,8 +67,9 @@ The working G1-29 session sequence is: simulator, bridge, CloudXR, then headset:
 
 The simulator and bridge have confirmation-based startup diagnostics. CloudXR starts
 without robot motion or confirmation and can run independently. Put on the headset after
-the services are ready. Current headset support supplies controller input only; the
-robot image is a workstation Tk/X view, not video streamed to the headset.
+the services are ready. Add `--camera` to the simulator and `--video` to the bridge
+for robot-camera presentation through the shared graphics/controller OpenXR session.
+The CloudXR command is unchanged. The user confirmed video in the VR headset.
 
 The bridge now defaults to `--hand-side both`: each controller moves its corresponding
 arm while its trigger or squeeze is held above 0.5. Release or tracking loss freezes
@@ -130,6 +132,12 @@ The G1-23 simulator
 still compensates gravity during its own startup and stale-command hold.
 
 ## Track 3: Simulation for G1
+
+Local robot-camera capture is available for both embodiments: add `--camera` to the
+simulator and run `./view_g1_camera.sh` in a separate `ssh -Y` terminal. It also works
+with a headless simulator. Add `--video` to the external-simulator XR bridge for headset
+presentation as a mono virtual monitor. See
+[camera commands, frame contract, and verification](docs/camera-streaming.md).
 
 Start the native G1-23 simulator from `ssh -Y`, without a headset:
 

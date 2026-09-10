@@ -39,6 +39,7 @@ class LayoutTests(unittest.TestCase):
             "simulation.g1_compare_ik_viewer",
             "simulation.g1_mujoco_dds_sim",
             "diagnostics.g1_startup_diagnostic",
+            "diagnostics.view_robot_camera",
             "xr.xr_to_g1_mujoco",
             "xr.xr_controller_cloudxr_smoke_test",
         ):
@@ -63,6 +64,7 @@ class LayoutTests(unittest.TestCase):
                 "run_compare_g1_29_g1_23_urdf_mesh.sh",
                 "run_g1_mujoco_dds_sim.sh",
                 "run_xr_g1_mujoco.sh",
+                "view_g1_camera.sh",
                 "run_compare_g1_29_motor_configs_no_gravity_compensation.sh",
                 "compare_motor_config.sh",
                 "run_compare_g1_29_motor_configs_with_gravity_compensation.sh",

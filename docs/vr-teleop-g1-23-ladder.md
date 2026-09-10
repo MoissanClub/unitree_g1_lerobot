@@ -51,13 +51,13 @@ establish that transport, timing, and downstream behavior are correct.
 Isaac Teleop XR  →  LeRobot  →  SO-101          ✅ ships today
 Isaac Teleop XR  →  Isaac ROS/Jetson  →  G1     ✅ ships today (NVIDIA's own stack, not LeRobot)
 Isaac Teleop XR  →  LeRobot  →  G1-29 sim       ✅ user-confirmed controller input
-Isaac Teleop XR  →  LeRobot  →  G1-23 sim       ⬜ live integration pending
-Robot camera    →  VR headset                  ⬜ not implemented/verified
+Isaac Teleop XR  →  LeRobot  →  G1-23 sim       ✅ user-confirmed dual-arm control
+Robot camera    →  VR headset                  ✅ basic headset video user-verified
 ```
 
-The current integration uses Isaac Teleop as an **input source**: it receives controller
-poses through CloudXR. It does not implement the return path from robot camera frames
-to a headset display. Whether the control target is MuJoCo or real hardware is a separate
+The integration uses Isaac Teleop as an **input source** for controller poses through
+CloudXR and, with `--video`, as an OpenXR graphics path for robot-camera frames.
+Actual headset video reception is user-verified. Whether the control target is MuJoCo or real hardware is a separate
 concern from the input binding.
 `XRController.get_action()` returns `{grip_pos, grip_quat, squeeze, trigger}` already
 rebased into the robot frame. The interface between input and retargeting is a **4×4
@@ -77,7 +77,7 @@ input device.
 | **2b** | 2a → MuJoCo | Robot interface + sim | **none** | ✅ done |
 | **3** | Join 1' + 2b | **The glue — the actual contribution** | headset | ✅ done |
 | **4** | G1-29 sim → G1-23 sim | Embodiment, physics, DDS, XR control | none first, then headset | 🟡 native live backend tested; full control acceptance pending |
-| **4V** | Robot camera → VR headset | Live visual feedback alongside control | headset | ⬜ planned after rung 4 control acceptance |
+| **4V** | Robot camera → VR headset | Live visual feedback alongside control | headset | 🟡 basic headset video verified; lifecycle/performance acceptance pending |
 | **5a** | G1-29 sim → real G1-29 | Hardware transport and control baseline | + G1-29 | ⬜ planned first if hardware is available |
 | **5b** | G1-23 sim → real G1-23 | Five-joint embodiment on hardware | + G1-23 | ⬜ after hardware baseline |
 | **6** | Gripper → BrainCo hand | Tactile integration | + BrainCo | ⬜ todo |
@@ -261,11 +261,16 @@ the lower rotation weight encodes.
 
 ### Rung 4V - Robot Camera Feedback in the Headset
 
-**Status: not implemented or verified.** Existing MuJoCo viewers render to Tk/X on the
-workstation. The standalone simulator uses `publish_images=False`; the bridge's embedded
-simulator also disables offscreen rendering and supplies no cameras. There is no local
-camera-frame-to-XR-display pipeline. A connected client showing "Running" is not evidence
-of robot video delivery.
+**Status: capture and OpenXR image submission implemented; basic headset video user-verified
+on 2026-09-10.** The reviewed embodiment was not specified; headless checks cover both.
+Systematic reconnect and latency acceptance remain open. The standalone
+simulator's opt-in `--camera` launches isolated robot-camera rendering and bounded latest-frame
+IPC for both embodiments. `view_g1_camera.sh` provides a separate local preview, including
+from a headless simulator. The old Hub image publisher remains disabled; the bridge's
+embedded simulation has no new camera mode. Bridge `--video` displays the camera through
+an SDK VizSession mono quad sharing OpenXR handles with both controllers.
+See [local camera verification](camera-streaming.md). A connected client showing "Running"
+is not evidence of robot video delivery.
 
 The user has completed dual-arm headset visual review and selected camera streaming
 for the next session. Numerical control and exhaustive lifecycle checks remain open,
@@ -276,16 +281,19 @@ Implement this before moving to physical-robot work, so
 rendering/streaming problems can be isolated from IK, DDS, and actuator problems. Preserve
 the existing control path while adding a separate visual-feedback path:
 
-1. Capture live frames from a defined robot camera in the simulator and verify them locally.
-2. Choose the supported XR display/streaming integration and implement frame delivery to
-   the headset. CloudXR controller connectivity alone is not a video implementation.
+1. **Done:** capture live frames from a defined robot camera in each standalone simulator
+   and verify them locally, including a three-launcher headless matrix and image inspection.
+2. **Implemented:** SDK graphics/input shared session, isolated video worker, bounded
+   controller mailbox, stale camera placeholder and no-video mode. Verify actual delivery
+   in the headset; render requests/uploads alone do not prove headset reception.
 3. Verify in-headset that the image is the robot camera, updates during motion, has correct
    orientation/framing, and survives reconnects without blocking control.
 4. Measure frame rate, frame age/latency, and the effect on simulation/control timing.
 
-Mono versus stereo, fixed camera versus head-coupled view, transport details, and numerical
-acceptance thresholds are decisions for the next planning session. No specific video API
-or protocol is assumed by this plan. This milestone should serve both G1 variants and
+The initial implementation uses a fixed torso-mounted mono camera, local frame IPC,
+and a head-following virtual monitor through the installed SDK VizSession API.
+Stereo, head-coupled optics, and numerical acceptance thresholds remain future work.
+This milestone serves both G1 variants and must
 remain separate from robot IK code for an eventual upstream contribution.
 
 ### Rung 5a - Physical G1-29 Baseline

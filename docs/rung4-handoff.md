@@ -2,6 +2,17 @@
 
 ## Next Session: Camera Streaming
 
+**Local camera checkpoint implemented:** simulator `--camera` now publishes a torso-mounted
+mono RGB8 stream on both embodiments; `./view_g1_camera.sh` previews it independently.
+The renderer runs in a child process on copied state, with bounded nonblocking IPC.
+The three-launcher headless camera matrix passed on both variants, and saved images
+were inspected for both hands and correct orientation. See [camera checkpoint](camera-streaming.md).
+SDK XR image submission/shared-session integration is now implemented: add `--video`
+to the external-simulator bridge. The user verified video in the VR headset on 2026-09-10.
+Next is systematic reconnect and performance acceptance,
+not rebuilding camera capture. See the camera document for the complete three-command sequence.
+The original sequence below remains context; local capture/frame handoff are now implemented.
+
 **User direction:** dual-arm headset visual review is complete. Resume with robot-camera
 streaming to the headset (Rung 4V), not another model/IK/motor comparison or backend bring-up.
 Systematic numerical DDS/actuator and controller-lifecycle acceptance remains open, but
@@ -59,10 +70,11 @@ confirmation; `--headless` suppresses viewers/confirmations for automated checks
    motion, reconnect behavior, and continued bilateral control. Measure frame rate,
    frame age, and physics/control timing with video off versus on.
 
-**Decisions not yet made:** mono versus stereo, fixed robot camera versus head-coupled
-view, display composition, resolution/frame-rate targets, and the supported transport/API.
-A fixed mono view is a reasonable first proposed checkpoint, not an agreed requirement.
-Inspect SDK capabilities first; ask only for consequential tradeoffs. Keep physical
+**Implemented checkpoint:** fixed torso-mounted mono camera, 640x480 at up to 20 FPS,
+same-host bounded frame IPC, and a head-following monitor via SDK VizSession. Its graphics
+handles are shared with controller input in an isolated worker. The original sequence
+above records the implementation plan; capture and submission are now complete.
+Stereo/head-coupled optics and numerical acceptance targets remain future decisions. Keep physical
 robot work out of this session. G1-23 remains supported-arm simulation, not full-body balance.
 
 ### Files and Environment
@@ -77,7 +89,9 @@ robot work out of this session. G1-23 remains supported-arm simulation, not full
 - XR Python/SDK: `/home/dwei/.venvs/isaacteleop/bin/python` and its Python 3.12 site-packages.
 - Adjacent LeRobot: `/home/dwei/lerobot-sim/lerobot`; preserve its existing changes and patch workflow.
 
-Camera delivery is currently **not implemented or verified**. Keep the DDS native teardown
+Headset image submission is implemented; **actual headset video is user-verified**.
+Local capture and headless graphics/input submission are verified.
+Keep the DDS native teardown
 finding open; use fresh processes for independent sessions, avoid concurrent test publishers,
 and do not claim headset video success based only on CloudXR service readiness.
 
@@ -239,7 +253,7 @@ diagnostics, and CloudXR responsibilities separate for possible LeRobot contribu
 The user prefers continued implementation with minimal intervention; ask only when
 a real tradeoff or required external observation blocks progress.
 
-Robot-camera delivery to the headset remains unimplemented/unverified **Rung 4V**,
+Robot-camera submission is implemented; in-headset acceptance remains open **Rung 4V**,
 and is now the next-session priority following visual headset review. Physical G1-29 baseline is
 Rung 5a, followed by G1-23 work. A connected headset showing "Running" is not evidence
 of camera streaming. Refer to the [ladder](vr-teleop-g1-23-ladder.md) for acceptance.
