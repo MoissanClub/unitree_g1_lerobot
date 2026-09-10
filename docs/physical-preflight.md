@@ -129,3 +129,117 @@ control ownership, contract review, and the LeRobot hardware connection remain u
 This checks subscriber-only SDK access and cleanup on initialization failure, tick wrap/
 regression/stall, stale and invalid feedback, mode changes, sparse G1-23 mapping, and report
 semantics. It does not connect to DDS or operate a robot.
+
+## LeRobot physical object initialization
+
+`verify_g1_lerobot_initialization.sh` runs the real patched LeRobot constructor with
+`is_simulation=False`, `controller=None`, empty cameras, and gravity compensation off.
+It checks G1-29 and G1-23 physical backend selection, exact joint/arm mappings against
+this project's motor profiles, feature schemas, disconnected state, sparse gains, and
+G1-23's retained hardware capability guard. A third test serializes/deserializes the
+physical configuration and constructs the object through LeRobot's robot factory.
+
+```bash
+LEROBOT_ROOT=/path/to/patched/lerobot G1_INIT_PYTHON=/path/to/python3.12 \
+  ./verify_g1_lerobot_initialization.sh
+```
+
+Use the pinned checkout and patch recorded in `configs/physical_preflight_audit.json`.
+The runner verifies audited file hashes and imported source location; a missing or
+incompatible checkout or dependency fails the dedicated command. Generic test discovery
+skips this integration suite unless `LEROBOT_ROOT` is set. Python 3.12 or newer is needed
+for the pinned source; install the LeRobot robot-stack dependencies and Unitree SDK in
+that interpreter. The existing Python 3.10 `g1brainco` environment can run passive DDS
+preflight but cannot import this LeRobot revision.
+
+The constructor/configuration/feature code and package checks run unmodified. Test guards
+fail on transport initialization, publisher/subscriber construction, socket creation via
+ZMQ, DDS domain creation, thread starts, or calls to connect/reset/send/disconnect.
+Calibration files are isolated in a temporary directory. Object destruction occurs while
+guards remain installed, so an unexpected destructor disconnect is also detected.
+This verifies construction with disabled controllers/cameras/gravity IK; it does not test
+those optional subsystems or the physical connection/ownership path. It sends no robot
+commands and requires no robot connection.
+
+## Verified LeRobot read-only connection
+
+The LeRobot patch now adds an explicit `UnitreeG1Config(read_only=True)` path. This is
+physical **DDS observation through the real LeRobot class**, not the existing ZMQ command
+backend. `read_only=False` retains the existing behavior described in the lifecycle audit.
+Read-only mode requires `is_simulation=False`, an explicit non-loopback
+`network_interface`, no controller, no cameras, and gravity compensation off.
+
+`connect()` creates only an HG lowstate subscriber and waits up to `state_timeout_s`
+(default 5 s). It rejects invalid active-joint feedback and changes in mode fields,
+regressing/stalled ticks, and excessive feedback gaps. `get_observation()` exposes the
+normal LeRobot observation dictionary and rejects stale state using `max_state_age_s`
+(default 0.1 s). `send_action()`, `publish_lowcmd()`, and `reset()` raise in this mode.
+`disconnect()` closes the subscriber without publishing zero torque or changing robot
+control mode. Reconnecting the same object is rejected; use a fresh process for each
+session because SDK channel initialization and native teardown remain process-level concerns.
+G1-23 may be observed passively, but its command-capable hardware guard stays false.
+
+The direct API is:
+
+```python
+from unitree_g1_lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config
+
+robot = UnitreeG1(UnitreeG1Config(
+    embodiment="g1_29", is_simulation=False, read_only=True,
+    network_interface="enP8p1s0", controller=None,
+    cameras={}, gravity_compensation=False,
+))
+try:
+    robot.connect()
+    observation = robot.get_observation()
+finally:
+    robot.disconnect()
+```
+
+For a bounded verification with a durable report and guards against creating command
+publishers or ZMQ sockets:
+
+```bash
+G1_INIT_PYTHON=/tmp/g1-lerobot-init-env/bin/python \
+LD_LIBRARY_PATH=/home/dwei/demos/.deps/cyclonedds-install/lib \
+  ./verify_g1_lerobot_connection.sh \
+  --lerobot-root /tmp/g1-stage0-lerobot --network-interface enP8p1s0 \
+  --embodiment g1_29 --duration-s 5 \
+  --output artifacts/physical/g1_29/lerobot-connect-002.json
+```
+
+The `/tmp` paths are this session's isolated test environment/checkout, not permanent
+installation locations. Python 3.12.14, torch 2.11.0+cpu, draccus 0.11.6,
+unitree_sdk2py 1.0.1, and cyclonedds 0.10.2 were used. No production robot environment
+was replaced. Full environment versions are saved locally beside the report.
+
+**Hardware result, 2026-09-11:** the actual constructor, `connect()`,
+`get_observation()`, and `disconnect()` passed on `enP8p1s0` for expected G1-29.
+There were 839 observation calls and 838 distinct tick snapshots during five seconds;
+all 29 expected joint positions were present. Maximum sampled receive gap was 13.16 ms
+and final sampled age 11.00 ms against the 100 ms bound. There were zero command-transport
+attempts and no report errors. One SDK `[Reader] take sample error` warning was printed;
+its cause remains unresolved. The process exited 0. Report:
+`artifacts/physical/g1_29/lerobot-connect-001.json` (local, ignored).
+These approximately 168 Hz snapshots measure diagnostic polling, not the DDS receive rate.
+Command topics were not monitored by this LeRobot verification.
+
+The current audit hashes include this read-only extension. The earlier passive hardware
+report used the prior patch at project commit `59cde76`; its recorded hashes are preserved.
+This run verifies the passive LeRobot lifecycle, not command acquisition, ZMQ server
+operation, balance ownership, physical joint identity, or the Stage 1 stop contract.
+
+Offline lifecycle tests additionally inject receiver startup failure, missing/stale/invalid
+feedback, mode changes, forbidden commands, and repeated disconnect/reconnect:
+
+```bash
+LEROBOT_ROOT=/tmp/g1-stage0-lerobot \
+LD_LIBRARY_PATH=/home/dwei/demos/.deps/cyclonedds-install/lib \
+  /tmp/g1-lerobot-init-env/bin/python -m unittest discover \
+  -s tests -p test_lerobot_readonly_connection.py -v
+```
+
+When updating a checkout with the older embodiment patch already applied, reverse that
+exact older patch before applying the current patch. Preserve unrelated changes and use
+`git apply --reverse --check` first; the helper deliberately refuses incompatible trees.
+A fresh checkout at the pinned revision can use `apply_lerobot_embodiment_patch.sh` directly.
