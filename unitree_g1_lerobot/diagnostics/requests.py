@@ -17,12 +17,14 @@ class StartupDiagnosticRequests:
         raise_action: dict[str, float],
         lower_action: dict[str, float],
         hz: float,
+        embodiment: str = "g1_29",
     ) -> None:
         self.request_file = request_file
         self.ack_file = ack_file
         self.raise_action = raise_action
         self.lower_action = lower_action
         self.hz = hz
+        self.embodiment = embodiment
         self.active_id: str | None = None
 
     def read_request(self) -> dict | None:
@@ -45,12 +47,15 @@ class StartupDiagnosticRequests:
         request = self.read_request()
         if not request or request.get("mode") != "lower_hold":
             return False
+        if request.get("embodiment", "g1_29") != self.embodiment:
+            raise ValueError("Startup diagnostic embodiment does not match bridge")
 
         request_id = str(request.get("id", ""))
         if request_id != self.active_id:
             self.active_id = request_id
             print("Startup diagnostic request: lowering both arms until user confirmation.", flush=True)
             publish_ready_for(robot, self.raise_action, 1.0, self.hz)
+            publish_ready_for(robot, self.lower_action, 3.0, self.hz)
             self.write_ack(request_id)
 
         robot.send_action(self.lower_action)

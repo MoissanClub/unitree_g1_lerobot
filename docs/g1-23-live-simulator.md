@@ -104,11 +104,23 @@ Embedded mode is headless and steps physics through LeRobot's existing state thr
 It cannot run alongside the standalone native simulator on the same local session.
 Hardware connection remains blocked.
 
+Repeated DDS sessions in one Python process exposed a native crash in the
+publication-matched callback under the combined test suite. Callback lifetime or
+teardown order is suspected, but ownership among LeRobot, the Unitree SDK, and
+CycloneDDS bindings remains unresolved. DDS integration tests use fresh subprocesses,
+matching the launchers; this is containment, not a root-cause fix. See
+[Finding 10](vr-teleop-g1-23-ladder.md#finding-10-dds-session-teardown) for the debugger
+evidence, LeRobot's missing explicit channel cleanup, and the SDK-only reproducer plan.
+Restart the simulator/bridge process between sessions instead of relying on repeated
+connect/disconnect in a long-lived interpreter.
+
 Verified: viewer-first startup, interactive confirmation, both-arm movement from a
 separate DDS sender, joint feedback, identity mismatch rejection, command-loss holding,
 and embedded connect/disconnect. Systematic per-joint acceptance, scripted Cartesian
-IK/DDS sweeps, timing thresholds, and G1-23 headset integration remain Rung 4 work.
-The XR launcher is still G1-29-specific; do not attach it to this G1-23 simulator yet.
+IK/DDS sweeps, timing thresholds, and G1-23 headset acceptance remain Rung 4 work.
+The XR launcher now accepts `--embodiment g1_23`. Both variants pass headless
+simulated-controller motion and real CloudXR/OpenXR startup checks; headset acceptance
+is still pending. See [headless session commands](../README.md#embodiment-selection-and-headless-verification).
 
 ### G1-29 Regression Check
 

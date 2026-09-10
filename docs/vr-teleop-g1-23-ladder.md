@@ -42,7 +42,7 @@ establish that transport, timing, and downstream behavior are correct.
 |---|---|
 | **LeRobot** | Provides the robot/configuration interfaces and dataset ecosystem; this project extends the existing G1 integration. |
 | **Isaac Teleop** for XR | Already an accepted, documented LeRobot dependency with an `XRController` `Teleoperator` subclass. Adding a *robot target* to an existing device beats proposing a new device abstraction. |
-| **G1-23** | Extend the tested G1-29 XR/IK workflow to five-joint arms. LeRobot documents both variants; this checkout's main IK/control path is G1-29-specific. |
+| **G1-23** | Five-joint arms now use the embodiment-selectable XR/IK workflow. Headless mock motion and real OpenXR startup pass; headset acceptance remains pending. |
 | **Use `xr_teleoperate` as a reference** | Derive embodiment/control data from pinned sources while preserving LeRobot interfaces and shared implementation. |
 
 ### What already exists vs. what must be built
@@ -229,7 +229,9 @@ headroom. This remains supported-arm benchmark evidence, not live DDS acceptance
    joint positions, measured joint positions, and hand poses computed from measurements.
    Separate IK residuals from actuator errors. Verify tracking, control timing, stability,
    and the intended response when commands stop or become stale.
-4. **XR integration and regression:** select G1-23 in the existing bridge and verify
+4. **XR integration and regression:** embodiment selection and three-launcher headless
+   checks are implemented for both variants, including mock arm motion and real
+   CloudXR/OpenXR startup. Verify actual
    headset control, startup diagnostics, engagement/release, and tracking loss/disconnect
    behavior. Verify supported arm control paths and retain working G1-29 behavior.
    Document the five-joint arm's position/orientation compromise and test results.
@@ -355,8 +357,35 @@ back `True` — one line that retired a whole class of hypothesis.
 | 7 | LeRobot | `G1_29_ArmIK` requires `casadi` and `pinocchio.casadi`, but LeRobot does not declare or document that dependency |
 | 8 | LeRobot Hub | `lerobot/unitree-g1-mujoco` has undeclared deps (`loguru`) |
 | 9 | **Unitree** | `<Tracing>` in the default DDS config aborts on glibc 2.39 / Ubuntu 24.04 |
+| 10 | LeRobot / Unitree SDK / CycloneDDS bindings (ownership unresolved) | Repeated DDS sessions in one Python process can crash during publication-matched callback cleanup; process isolation is a workaround, not a root-cause fix |
 
 Items 5, 6 and 9 also exist in `xr_teleoperate` — 5 and 6 were copied verbatim into LeRobot.
+
+### Finding 10: DDS Session Teardown
+
+**Observed:** the combined regression suite reproduced a native crash after repeated
+DDS sessions in one Python process. GDB showed CycloneDDS's cleanup thread invoking
+a publication-matched callback and crashing in Python's `ctypes` callback machinery
+(`closure_fcn`, reached through `status_cb_publication_matched_invoke`). This locates
+the failure; it does not establish that CycloneDDS's transport engine is at fault.
+
+**Code evidence:** LeRobot's `UnitreeG1.disconnect()` stops its threads but does not
+explicitly close its DDS publisher/subscriber. The Unitree SDK registers the writer's
+publication-matched listener, and its writer `Close()` relies on deleting the Python
+`DataWriter` reference. The CycloneDDS Python binding retains listener references to
+prevent callbacks into freed Python memory. Together these point to a callback-lifetime
+or teardown-order problem; the exact owner and causal sequence remain unproven.
+
+**Current containment:** DDS integration tests run in fresh subprocesses, matching the
+three-launcher workflow. Headless sessions passed for both G1-29 and G1-23. Restart
+processes between sessions rather than assuming repeated connect/disconnect in one
+interpreter is reliable. The underlying SDK/binding issue has not been fixed.
+
+**Next investigation:** build a minimal Unitree-SDK-only reproducer without LeRobot,
+MuJoCo, or IK, comparing explicit channel cleanup with garbage-collection cleanup.
+Then compare with direct CycloneDDS Python usage to distinguish LeRobot cleanup,
+SDK listener ownership, and binding/native-library behavior before assigning upstream
+responsibility.
 
 **These were found by running the stack, not by reading it.** That is the argument for
 offering hardware validation to maintainers: a G1 EDU with a non-Unitree tactile hand in a
@@ -368,11 +397,15 @@ since the hardware is running anyway.
 ## Immediate next actions
 
 1. Tracks 3 + 1: extend the tested G1-23 live backend to systematic per-joint and scripted DDS acceptance.
-2. Track 2: select the existing embodiment control and finish G1-23 XR acceptance, retaining G1-29 regression.
+2. Track 2: finish headset acceptance for the implemented embodiment-selectable bridge, retaining G1-29 regression.
 3. Tracks 3 + 2: capture and deliver robot camera frames for Rung 4V.
 4. Tracks 1 + 2: establish physical G1-29 baseline when available, then physical G1-23.
 
 Track-level completed/remaining work is maintained in the [project plan](project-plan.md).
+
+Track 1/3 reliability follow-up: isolate Finding 10 with an SDK-only reproducer and
+explicit channel cleanup before assigning upstream responsibility. Keep the passing
+fresh-process headless workflow while this remains open.
 
 Earlier rung notes retain historical bring-up observations; they are not the current
 next-action list. Upstream issue reporting remains separate from Rung 4 acceptance.

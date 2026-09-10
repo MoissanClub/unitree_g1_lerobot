@@ -8,7 +8,7 @@ and simulation work tracks. Simulation and physical-robot acceptance are distinc
 | Track | Code Owner | Current Status | Next Milestone |
 |---|---|---|---|
 | 1. Add G1-23 to the LeRobot stack | `unitree_g1_lerobot/robots/` | Configurable G1 class and native backend connected; basic DDS command/feedback tested | Systematic per-joint and IK/DDS acceptance |
-| 2. XR support for LeRobot | `unitree_g1_lerobot/xr/` | G1-29 right-controller-to-simulation motion user-confirmed | Bind the existing XR bridge to embodiment selection; verify G1-23 control and G1-29 regression |
+| 2. XR support for LeRobot | `unitree_g1_lerobot/xr/` | Embodiment-selectable bridge; both variants pass headless mock-motion and real CloudXR/OpenXR checks | G1-23 headset acceptance and G1-29 headset regression |
 | 3. Simulation for G1 | `unitree_g1_lerobot/simulation/` | Live G1-29 and supported-arm G1-23 backends; reviewed model/IK/motor benchmarks | Broader DDS/actuator timing and scripted trajectory acceptance |
 
 The tracks share interfaces and acceptance tests, not duplicate control implementations.
@@ -71,6 +71,53 @@ robot image is a workstation Tk/X view, not video streamed to the headset.
 See the [operator guide](docs/operator-guide.md) for one-time setup, headset connection,
 diagnostic behavior, embedded/external simulator modes, and troubleshooting.
 
+### Embodiment Selection and Headless Verification
+
+All three launchers accept `--embodiment g1_29|g1_23` (default: `g1_29`). For a
+headless session, start these in separate terminals in the order shown:
+
+```bash
+# Terminal A:
+./run_g1_mujoco_dds_sim.sh --embodiment g1_23 --headless
+
+# Terminal C, after the simulator finishes its diagnostic:
+./run_xr_g1_mujoco.sh --embodiment g1_23 --headless --external-g1-sim --external-cloudxr --wait-for-cloudxr
+
+# Terminal B, after the bridge reports steady-state listening:
+./run_isaac_teleop.sh --embodiment g1_23 --headless
+```
+
+Use `g1_29` in all three commands for that variant. Run only one live simulator at a
+time. The bridge selects registered IK, joints, gains, and the embedded simulator
+factory; external simulator identity is checked before sending commands. CloudXR
+uses the embodiment only to validate its bridge-owned lowering diagnostic, not to
+configure controller acquisition.
+
+`--headless` removes local viewers and confirmation prompts, but still runs startup
+diagnostics and uses real XR input. It does not imply `--mock-xr`. Omit it for visual
+confirmation; the simulator needs `ssh -Y` to open its Tk window. All three launchers
+accept `--duration-s N` for bounded runs. The bridge's duration includes XR waiting
+after startup diagnostics; CloudXR's duration begins after service readiness.
+
+Reproduce automated checks for both variants from an idle simulation/CloudXR session:
+
+```bash
+conda run --no-capture-output -n lerobot-g1 python -m unitree_g1_lerobot.diagnostics.verify_xr_headless
+```
+
+The harness removes `DISPLAY`/`WAYLAND_DISPLAY`, runs actual launchers, exercises
+both arms separately with deterministic controller translation/orientation, checks
+command/feedback motion, and starts real CloudXR and headless OpenXR sessions. It
+also rejects mismatched embodiments; right-arm checks use feedforward OFF and
+left-arm checks use selected IK-model gravity feedforward ON. The bridge is started
+before CloudXR to exercise its waiting/diagnostic path. The harness
+prints a temporary directory containing logs and JSON evidence and stops its processes.
+This is not headset tracking, simultaneous two-controller acceptance, or video verification.
+
+Bridge gravity feedforward remains OFF by default, preserving G1-29 behavior. Add
+`--gravity-compensation` to enable selected IK-model feedforward. The G1-23 simulator
+still compensates gravity during its own startup and stale-command hold.
+
 ## Track 3: Simulation for G1
 
 Start the native G1-23 simulator from `ssh -Y`, without a headset:
@@ -82,7 +129,7 @@ Start the native G1-23 simulator from `ssh -Y`, without a headset:
 The Tk view opens before both arms raise. Verify the motion and press Enter in the
 terminal to proceed to steady-state DDS listening. Only the arms are dynamic; pelvis,
 legs, and waist are supported. See [live simulator details](docs/g1-23-live-simulator.md).
-The existing XR bridge is still G1-29-specific; do not attach it to G1-23 yet.
+Use the matching `--embodiment g1_23` on the XR bridge; headset acceptance is pending.
 
 Preserve the separate geometry, IK, and motor-physics verification artifacts:
 
@@ -128,7 +175,28 @@ The structural refactor passed 25 project tests (including real viewers) and 92
 existing LeRobot G1 robot/configuration/teleoperator tests. Geometry, IK, and motor
 comparison visual review is complete. This is not hardware or live G1-23 acceptance.
 
-Next: Tracks 1 and 3 extend the native backend's basic DDS verification to all arm
-joints and the scripted IK/DDS/actuator loop; Track 2 then verifies headset operation. Camera feedback follows
-control acceptance, before physical G1-29 and G1-23 work. See the
+The native G1-23 extension passed a 28-test project run with DDS and viewer checks
+enabled. The G1-29 launcher/viewer smoke test passed, with startup motion skipped.
+Code/model mapping checks found no mismatch for either embodiment, and all nine
+runtime contract tests passed. These checks do not replace live motion acceptance.
+
+The XR extension passed the headless three-launcher matrix for both embodiments and
+the 31-test project suite with DDS enabled (30 passed; the GUI-only test skipped).
+DDS integration cases run in fresh processes to contain a native callback teardown
+crash. Responsibility among LeRobot, the Unitree SDK, and CycloneDDS bindings is
+not yet isolated; this is not a confirmed CycloneDDS transport bug or an SDK fix.
+See [Finding 10: evidence and next investigation](docs/vr-teleop-g1-23-ladder.md#finding-10-dds-session-teardown).
+
+The remaining user-facing Rung 4 outcome is headset control of either G1-29 or G1-23
+through the same interface:
+
+1. Preserve the implemented embodiment selection and headless launcher regression checks above.
+2. Verify every active arm joint and scripted IK -> DDS -> actuator trajectories,
+   including feedback, control timing, and stale-command behavior, before headset use.
+3. Verify both arms, engagement/release, tracking loss, and reconnection with the
+   headset on both embodiments. G1-29 needs regression testing; G1-23 needs initial
+   headset acceptance, including its five-joint orientation limitations.
+
+Robot-camera streaming is separate **Rung 4V**, after control acceptance and before
+physical G1-29 and G1-23 work. See the
 [acceptance sequence](docs/project-plan.md#cross-track-acceptance).

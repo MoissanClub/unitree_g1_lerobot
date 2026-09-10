@@ -1,7 +1,9 @@
 """Real loopback DDS checks; run with G1_TEST_DDS=1 on an idle simulator session."""
 import os
+from functools import wraps
 from pathlib import Path
 import subprocess
+import sys
 import time
 import unittest
 
@@ -10,8 +12,27 @@ from unitree_g1_lerobot.simulation.dds import (
 )
 
 
+def isolated_dds(test):
+    @wraps(test)
+    def run(self):
+        if os.environ.get("G1_DDS_TEST_CHILD") == test.__name__:
+            return test(self)
+        # SDK publication-matched callbacks can outlive Python listeners during
+        # GC between sessions. Match the real launchers' process isolation.
+        root = Path(__file__).resolve().parents[1]
+        env = dict(os.environ, G1_DDS_TEST_CHILD=test.__name__,
+                   PYTHONPATH=str(root) + os.pathsep + os.environ.get("PYTHONPATH", ""))
+        result = subprocess.run(
+            [sys.executable, "-m", "unittest", f"test_native_g1_dds.NativeG1DDSTests.{test.__name__}", "-v"],
+            cwd=root / "tests", env=env, capture_output=True, text=True, timeout=45,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+    return run
+
+
 @unittest.skipUnless(os.environ.get("G1_TEST_DDS") == "1", "requires an idle loopback DDS session")
 class NativeG1DDSTests(unittest.TestCase):
+    @isolated_dds
     def test_standalone_command_and_feedback(self):
         from unitree_g1_lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config
         from lerobot.robots.unitree_g1 import unitree_g1 as g1_module
@@ -53,6 +74,7 @@ class NativeG1DDSTests(unittest.TestCase):
             output, _ = process.communicate(timeout=10)
         self.assertEqual(process.returncode, 0, output)
 
+    @isolated_dds
     def test_embedded_backend_lifecycle(self):
         from unitree_g1_lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config
         patch_unitree_dds_config()

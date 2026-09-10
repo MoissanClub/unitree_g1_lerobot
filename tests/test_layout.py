@@ -84,7 +84,7 @@ class LayoutTests(unittest.TestCase):
                 capture_output=True, text=True, timeout=15,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn("isaacteleop.cloudxr", result.stdout)
+            self.assertIn("unitree_g1_lerobot.xr.cloudxr_session", result.stdout)
             config = ROOT / "configs/cloudxr_quest3.env"
             self.assertTrue(config.is_file())
             self.assertIn(str(config), result.stdout)

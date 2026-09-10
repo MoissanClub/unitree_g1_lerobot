@@ -164,10 +164,18 @@ cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_isaac_teleop.sh
 ```
 
-For non-interactive smoke tests, prefix any launcher with
-`SKIP_G1_STARTUP_DIAGNOSTIC=1` to skip these confirmation pauses. If Terminal B
-cannot see the XR bridge within a few seconds, it falls back to the direct DDS
-lower-arm diagnostic.
+For noninteractive runs, use `--headless` on all three launchers: startup motion
+still runs, but there is no viewer or confirmation prompt. Use
+`--skip-startup-diagnostic` or `SKIP_G1_STARTUP_DIAGNOSTIC=1` only when intentionally
+skipping the motion. If Terminal B receives no matching bridge acknowledgement
+within 20 seconds, it aborts rather than starting a competing direct DDS sender.
+The standalone diagnostic remains available for an otherwise idle simulator.
+
+Restart the simulator and bridge processes between sessions. Repeated DDS sessions
+inside one Python interpreter exposed a native callback teardown crash; the headless
+verification uses process isolation as containment. This has not been conclusively
+assigned to LeRobot, the Unitree SDK, or CycloneDDS bindings. See
+[Finding 10](vr-teleop-g1-23-ladder.md#finding-10-dds-session-teardown).
 
 Then put on the headset. In the headset browser, open
 `https://nvidia.github.io/IsaacTeleop/client`, use the `Quest3` profile, enter the
@@ -277,8 +285,9 @@ Native live G1-23 is now available with:
 ```
 
 See [G1-23 live simulator](g1-23-live-simulator.md) for the viewer-first diagnostic,
-Enter confirmation, supported-arm scope, and tests. Do not connect the current
-G1-29-specific XR bridge to this simulator.
+Enter confirmation, supported-arm scope, and tests. Select the same `--embodiment`
+on the simulator, XR bridge, and CloudXR launcher. All three support `--headless`
+for noninteractive startup; see [headless verification](../README.md#embodiment-selection-and-headless-verification).
 
 The user has reviewed the geometry, IK, and motor-comparison artifacts. The
 configuration-based G1 structure and native supported-arm DDS backend are tested;

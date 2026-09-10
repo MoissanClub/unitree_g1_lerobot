@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Rung 3 - drive the G1 MuJoCo sim from an Isaac Teleop XR controller.
+"""Drive either G1 embodiment in MuJoCo from an Isaac Teleop XR controller.
 
 This joins rung 1' (CloudXR -> XRController.get_action) with rung 2b
-(G1_29_ArmIK -> UnitreeG1(is_simulation=True)).
+(selected arm IK -> UnitreeG1(is_simulation=True)).
 
 Default behavior is intentionally conservative: one controller drives one wrist while the
 other wrist holds the IK home pose. Hold the controller squeeze past the clutch threshold
@@ -12,6 +12,8 @@ to move; release squeeze to freeze the commanded wrist pose while repositioning.
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
+import json
 import os
 import shlex
 import sys
@@ -43,6 +45,11 @@ from unitree_g1_lerobot.diagnostics.requests import (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--embodiment", choices=("g1_29", "g1_23"), default="g1_29")
+    parser.add_argument("--headless", action="store_true", help="No viewer or confirmation prompts; does not mock XR.")
+    parser.add_argument("--skip-startup-diagnostic", action="store_true")
+    parser.add_argument("--verification-report", type=Path, help="Write numerical loop evidence on normal shutdown.")
+    parser.add_argument("--gravity-compensation", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument(
         "--lerobot-root",
         default="/home/dwei/lerobot-sim/lerobot",
@@ -139,7 +146,14 @@ def parse_args() -> argparse.Namespace:
         default="/tmp/g1_mujoco_startup_diagnostic.ack",
         help="File written after the bridge observes a startup diagnostic request.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.headless:
+        args.no_wait = True
+    if not all(np.isfinite(v) and v > 0 for v in (args.control_hz, args.cloudxr_retry_s, args.g1_state_timeout_s, args.arm_kp_scale, args.arm_kd_scale)):
+        parser.error("Control rates, timeouts and gain scales must be positive and finite")
+    if not np.isfinite(args.duration_s) or args.duration_s < 0:
+        parser.error("duration-s must be finite and nonnegative")
+    return args
 
 
 def load_env_file(path: Path) -> None:
@@ -265,16 +279,15 @@ class MockXRController:
                 [0.03 * np.sin(a), 0.03 * (1.0 - np.cos(a)), 0.02 * np.sin(0.5 * a)],
                 dtype=np.float32,
             ),
-            "grip_quat": np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32),
+            "grip_quat": np.array([np.sin(0.08 * np.sin(a)), 0.0, 0.0, np.cos(0.08 * np.sin(a))], dtype=np.float32),
             "squeeze": max(self.clutch_threshold, 0.8),
             "trigger": 0.0,
         }
 
 
-def main() -> int:
+def run(args, cleanup) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(line_buffering=True)
-    args = parse_args()
 
     lerobot_root = Path(args.lerobot_root).expanduser().resolve()
     if not lerobot_root.is_dir():
@@ -286,10 +299,8 @@ def main() -> int:
         sys.path.append(str(isaacteleop_site))
 
     from examples.isaac_teleop_to_so101.isaac_teleop.clutch import Clutch
-    from lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config
+    from unitree_g1_lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config, get_g1_embodiment
     from lerobot.robots.unitree_g1 import unitree_g1 as g1_module
-    from lerobot.robots.unitree_g1.g1_kinematics import G1_29_ArmIK
-    from lerobot.robots.unitree_g1.g1_utils import G1_29_JointArmIndex, G1_29_JointIndex
     from lerobot.utils.rotation import Rotation
 
     patch_unitree_dds_config()
@@ -300,7 +311,7 @@ def main() -> int:
         runtime_env = Path.home() / ".cloudxr" / "run" / "cloudxr.env"
         if runtime_env.is_file():
             load_env_file(runtime_env)
-        else:
+        elif not args.wait_for_cloudxr:
             print(f"External CloudXR requested, but env file is missing: {runtime_env}", file=sys.stderr)
             print("Start CloudXR first with ./run_isaac_teleop.sh", file=sys.stderr)
             return 2
@@ -310,8 +321,10 @@ def main() -> int:
         default_env = lerobot_root / "examples" / "isaac_teleop_to_so101" / "default.env"
         cloudxr_env_file = str(default_env) if default_env.is_file() else None
 
-    print("Building G1 IK")
-    ik = G1_29_ArmIK()
+    spec = get_g1_embodiment(args.embodiment)
+    joint_index, arm_index = spec.joint_index, spec.arm_index
+    print(f"Building {args.embodiment} IK; gravity compensation={args.gravity_compensation}")
+    ik = spec.make_ik()
     model = ik.reduced_robot.model
     data = model.createData()
     ik.reduced_robot.data = data
@@ -341,14 +354,15 @@ def main() -> int:
     right_target = right_ready.copy()
     active_home = right_ready if args.hand_side == "right" else left_ready
     clutch = Clutch(active_home)
-    ready_action = action_from_arm_q(q_ready[reorder], G1_29_JointIndex, G1_29_JointArmIndex)
-    lower_action = action_from_arm_q(np.asarray(q_home, dtype=float)[reorder], G1_29_JointIndex, G1_29_JointArmIndex)
+    ready_action = action_from_arm_q(q_ready[reorder], joint_index, arm_index)
+    lower_action = action_from_arm_q(np.asarray(q_home, dtype=float)[reorder], joint_index, arm_index)
     startup_diagnostics = StartupDiagnosticRequests(
         Path(args.diagnostic_request_file),
         Path(args.diagnostic_ack_file),
         ready_action,
         lower_action,
         args.control_hz,
+        embodiment=args.embodiment,
     )
     if args.dry_run_ik:
         print("dry-run IK ok")
@@ -357,19 +371,36 @@ def main() -> int:
         print(f"  ready_arm_norm: {float(np.linalg.norm(q_ready[reorder])):.4f}")
         return 0
 
-    robot = None
+    robot = UnitreeG1(UnitreeG1Config(embodiment=args.embodiment, is_simulation=True,
+                                    gravity_compensation=args.gravity_compensation))
+    cleanup.callback(robot.disconnect)
     if args.external_g1_sim:
         print("Connecting to existing G1 MuJoCo DDS sim")
-        robot = UnitreeG1(UnitreeG1Config(is_simulation=True))
         try:
-            connect_unitree_g1_external_dds(robot, g1_module, G1_29_JointIndex, args.g1_state_timeout_s)
+            connect_unitree_g1_external_dds(robot, g1_module, joint_index, args.g1_state_timeout_s)
         except TimeoutError as exc:
             print(str(exc), file=sys.stderr)
             return 2
         print(f"external G1 DDS sim connected: {robot.is_connected}")
-        scale_arm_gains(robot, G1_29_JointArmIndex, args.arm_kp_scale, args.arm_kd_scale)
-        robot.send_action(ready_action)
-        print("sent G1 ready pose")
+    else:
+        robot.connect()
+    scale_arm_gains(robot, arm_index, args.arm_kp_scale, args.arm_kd_scale)
+    if not args.skip_startup_diagnostic and os.environ.get("SKIP_G1_STARTUP_DIAGNOSTIC") != "1":
+        from unitree_g1_lerobot.diagnostics.g1_startup_diagnostic import build_actions
+        diag_args = argparse.Namespace(**vars(args), orientation_deg=35.0, hands_up_deg=90.0,
+                                       hands_up_direction="inward")
+        # Diagnostic solves must not change the steady-state IK filter history.
+        actions = build_actions(diag_args, spec.make_ik(), arm_index, joint_index)
+        print(f"Startup diagnostic ({args.embodiment}): verify both hands facing up", flush=True)
+        publish_ready_for(robot, actions["raise"], 0.8, args.control_hz)
+        publish_ready_for(robot, actions["hands-up"], 2.0, args.control_hz)
+        if not args.headless:
+            input("Press Enter after you verify the diagnostic motion of both hands facing up...")
+        else:
+            print("Headless diagnostic complete; visual confirmation skipped.")
+    robot.send_action(ready_action)
+    print(f"Steady-state listening: {args.embodiment}; waiting for XR input.")
+    deadline = float("inf") if args.duration_s == 0 else time.monotonic() + args.duration_s
 
     if args.mock_xr:
         teleop = MockXRController(args.hand_side, args.clutch_threshold)
@@ -399,8 +430,20 @@ def main() -> int:
         if not args.no_wait:
             input("After the headset client is connected, press Enter to create the OpenXR session...")
 
+    cleanup.callback(teleop.disconnect)
+
     def connect_teleop_with_retry() -> None:
         while True:
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Run duration expired while waiting for CloudXR")
+            if args.external_cloudxr and not args.mock_xr and runtime_env.is_file():
+                load_env_file(runtime_env)
+            if args.external_cloudxr and not args.mock_xr and args.wait_for_cloudxr:
+                socket_path = Path(os.environ.get("NV_CXR_RUNTIME_DIR", str(runtime_env.parent))) / "ipc_cloudxr"
+                if not socket_path.is_socket():
+                    print("Waiting for CloudXR runtime; holding ready pose and servicing startup diagnostics.")
+                    startup_diagnostics.publish_or_ready_for(robot, ready_action, args.cloudxr_retry_s)
+                    continue
             try:
                 teleop.connect()
                 return
@@ -423,23 +466,14 @@ def main() -> int:
         return 2
     print("XR teleop connected. Waiting for tracked controller frames...")
 
-    if robot is None:
-        print("Connecting UnitreeG1 MuJoCo sim")
-        robot = UnitreeG1(UnitreeG1Config(is_simulation=True))
-        robot.connect()
-        print(f"robot connected: {robot.is_connected}")
-        scale_arm_gains(robot, G1_29_JointArmIndex, args.arm_kp_scale, args.arm_kd_scale)
-        robot.send_action(ready_action)
-        print("sent G1 ready pose")
-
     period_s = 1.0 / args.control_hz
-    deadline = float("inf") if args.duration_s <= 0.0 else time.monotonic() + args.duration_s
     was_engaged = False
     last_raw_grip_pos: np.ndarray | None = None
     last_q_g1: np.ndarray | None = None
     last_tracking: bool | None = None
     last_tracking_time = time.monotonic()
     step = 0
+    evidence = []
 
     try:
         while time.monotonic() < deadline:
@@ -512,7 +546,12 @@ def main() -> int:
                     print(f"non-finite IK result at step {step}; holding previous command", file=sys.stderr)
 
             q_g1 = q[reorder]
-            robot.send_action(action_from_arm_q(q_g1, G1_29_JointIndex, G1_29_JointArmIndex))
+            robot.send_action(action_from_arm_q(q_g1, joint_index, arm_index))
+            if args.verification_report:
+                obs = robot.get_observation()
+                evidence.append({"tracking": bool(tracking), "engaged": bool(engaged),
+                                 "command": q_g1.tolist(),
+                                 "measured": [float(obs[f"{j.name}.q"]) for j in arm_index]})
             arm_norm = float(np.linalg.norm(q_g1))
 
             if tracking or tracking != last_tracking or step % max(1, int(args.control_hz)) == 0:
@@ -561,12 +600,26 @@ def main() -> int:
     except KeyboardInterrupt:
         print("\nInterrupted.")
     finally:
-        teleop.disconnect()
-        if robot is not None:
-            robot.disconnect()
-        print("disconnected")
+        print("Stopping XR control loop")
+        if args.verification_report:
+            args.verification_report.parent.mkdir(parents=True, exist_ok=True)
+            args.verification_report.write_text(json.dumps({"embodiment": args.embodiment,
+                "hand_side": args.hand_side, "mock_xr": args.mock_xr,
+                "gravity_compensation": args.gravity_compensation, "samples": evidence}) + "\n")
 
     return 0
+
+
+def main() -> int:
+    try:
+        with ExitStack() as cleanup:
+            return run(parse_args(), cleanup)
+    except KeyboardInterrupt:
+        print("Interrupted; disconnected")
+        return 0
+    except (TimeoutError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

@@ -30,6 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("raise", "orient", "hands-up", "lower"))
     parser.add_argument("--lerobot-root", default="/home/dwei/lerobot-sim/lerobot")
+    parser.add_argument("--embodiment", choices=("g1_29", "g1_23"), default="g1_29")
     parser.add_argument("--duration-s", type=float, default=2.0)
     parser.add_argument("--hz", type=float, default=30.0)
     parser.add_argument("--g1-state-timeout-s", type=float, default=10.0)
@@ -99,8 +100,9 @@ def build_actions(args: argparse.Namespace, ik, joint_arm_index, joint_index) ->
     else:
         left_wrist_roll = wrist_roll_rad
         right_wrist_roll = -wrist_roll_rad
-    q_hands_up_g1[4] = left_wrist_roll
-    q_hands_up_g1[11] = right_wrist_roll
+    names = [joint.name for joint in joint_arm_index]
+    q_hands_up_g1[names.index("kLeftWristRoll")] = left_wrist_roll
+    q_hands_up_g1[names.index("kRightWristRoll")] = right_wrist_roll
 
     return {
         "lower": action_from_arm_q(q_home[reorder], joint_index, joint_arm_index),
@@ -117,10 +119,8 @@ def run_diagnostic(args: argparse.Namespace) -> int:
         return 2
     sys.path.insert(0, str(lerobot_root))
 
-    from lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config
+    from unitree_g1_lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config
     from lerobot.robots.unitree_g1 import unitree_g1 as g1_module
-    from lerobot.robots.unitree_g1.g1_kinematics import G1_29_ArmIK
-    from lerobot.robots.unitree_g1.g1_utils import G1_29_JointArmIndex, G1_29_JointIndex
 
     messages = {
         "raise": "raising robot arm - verify the G1 arms move up in the MuJoCo viewer",
@@ -137,9 +137,9 @@ def run_diagnostic(args: argparse.Namespace) -> int:
     print(f"== Startup diagnostic: {messages[args.mode]} ==", flush=True)
 
     patch_unitree_dds_config()
-    robot = UnitreeG1(UnitreeG1Config(is_simulation=True))
+    robot = UnitreeG1(UnitreeG1Config(embodiment=getattr(args, "embodiment", "g1_29"), is_simulation=True))
     try:
-        connect_unitree_g1_external_dds(robot, g1_module, G1_29_JointIndex, args.g1_state_timeout_s)
+        connect_unitree_g1_external_dds(robot, g1_module, robot.joint_index, args.g1_state_timeout_s)
     except TimeoutError as exc:
         if args.optional:
             print(f"Startup diagnostic skipped: {exc}", file=sys.stderr, flush=True)
@@ -148,7 +148,7 @@ def run_diagnostic(args: argparse.Namespace) -> int:
         return 2
 
     try:
-        actions = build_actions(args, G1_29_ArmIK(), G1_29_JointArmIndex, G1_29_JointIndex)
+        actions = build_actions(args, robot.embodiment.make_ik(), robot.arm_index, robot.joint_index)
         if args.mode in {"orient", "hands-up"}:
             send_for(robot, actions["raise"], min(0.8, args.duration_s), args.hz)
         elif args.mode == "lower":

@@ -9,6 +9,18 @@ basic standalone/embedded DDS checks. Next is systematic Track 1 joint/IK/DDS
 acceptance; Track 2 headset acceptance follows. Existing rung names remain shared
 acceptance gates, not separate implementation tracks.
 
+The three launchers now accept `--embodiment` and `--headless`. Both variants passed
+real CloudXR/OpenXR startup and separate mock left/right motion with measured feedback;
+headset acceptance remains pending. The project suite passed 30 tests with DDS enabled,
+with the GUI-only test skipped.
+
+**Open finding:** repeated DDS sessions in one interpreter can crash in a native
+publication-matched callback. LeRobot's missing explicit channel cleanup and the SDK's
+listener lifecycle are investigation leads; responsibility is not yet isolated.
+Fresh-process tests are containment, not a root-cause fix. Continue with the SDK-only
+reproducer described in [Finding 10](vr-teleop-g1-23-ladder.md#finding-10-dds-session-teardown).
+The separate G1-29 missing-image-publisher shutdown guard is fixed in the LeRobot patch.
+
 The configurable runtime structure has now been implemented and tested after the
 benchmark review. See [architecture](architecture.md#configurable-g1-runtime-structure).
 Use `unitree_g1_lerobot.robots.unitree_g1` to register G1-23 and import the shared
@@ -24,9 +36,10 @@ scripted IK, and the supported-arm motor benchmarks are reviewed. **Rung 4 is no
 complete:** next work is systematic per-joint, Cartesian/DDS, and XR acceptance.
 Do not repeat the completed comparisons or backend bring-up as a new milestone.
 
-Last pushed benchmark baseline: `94ba97f` on `main`, pushed to
-`git@github.com:MoissanClub/unitree_g1_lerobot.git`. The structural refactor and these
-handoff updates are subsequent work; check both repository worktrees before resuming.
+The live-simulator baseline is `252e29b` on `main`; this headless XR extension is
+subsequent work. Remote: `git@github.com:MoissanClub/unitree_g1_lerobot.git`.
+Check both repository worktrees before resuming; adjacent LeRobot edits are distributed
+through this repository's versioned patch rather than pushed to the LeRobot remote.
 Project directory:
 `~/lerobot-sim/unitree_g1_lerobot`; adjacent LeRobot checkout: `../lerobot`.
 Python environment: `~/miniforge3/envs/lerobot-g1/bin/python`.
@@ -107,7 +120,9 @@ See [benchmark details](motor-config-comparison.md) for metrics and test conditi
 3. Run deterministic Cartesian/orientation targets through IK -> DDS -> actuators.
    Measure IK residuals separately from actuator tracking error. Define acceptance
    thresholds and verify control timing, command stop, and stale-command behavior.
-4. Select G1-23 in the existing XR bridge and verify startup diagnostics, engagement,
+4. The XR bridge now selects either embodiment; all three launchers support headless
+   mode. Mock left/right motion and real CloudXR/OpenXR sessions pass for both variants.
+   Verify actual headset startup diagnostics, engagement,
    release, tracking loss/disconnect, and headset control. Retain G1-29 regression
    evidence and document G1-23 orientation limitations.
 

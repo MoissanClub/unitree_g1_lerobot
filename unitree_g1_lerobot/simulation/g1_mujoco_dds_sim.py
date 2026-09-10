@@ -29,10 +29,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hz", type=float, default=250.0)
     parser.add_argument("--view-fps", type=float, default=20.0)
     parser.add_argument("--no-view", action="store_true", help="Run without the Tk/X viewer.")
+    parser.add_argument("--headless", action="store_true", help="No viewer or confirmation prompts; still run diagnostics.")
     parser.add_argument("--skip-startup-diagnostic", action="store_true", help="Skip the raise-arm startup diagnostic.")
     parser.add_argument("--diagnostic-duration-s", type=float, default=2.0)
     parser.add_argument("--no-diagnostic-confirm", action="store_true", help="Do not pause for visual confirmation after the startup diagnostic.")
     args = parser.parse_args()
+    if args.headless:
+        args.no_view = True
+        args.no_diagnostic_confirm = True
     if not all(np.isfinite(x) for x in (args.hz, args.view_fps, args.duration_s, args.diagnostic_duration_s)) or min(args.hz, args.view_fps, args.diagnostic_duration_s) <= 0 or args.duration_s < 0:
         parser.error("Rates and diagnostic duration must be positive and finite; duration must be nonnegative")
     if args.embodiment == "g1_23" and args.hz != 250:

@@ -43,7 +43,7 @@ index 3fbeb37fe..b0c6dc665 100644
 +        if self.controller is not None and not spec.supports_controller:
 +            raise ValueError(f"Whole-body controllers are not supported for {self.embodiment}")
 diff --git a/src/lerobot/robots/unitree_g1/unitree_g1.py b/src/lerobot/robots/unitree_g1/unitree_g1.py
-index d49aabd9d..937b4e67b 100644
+index d49aabd9d..30c0ba588 100644
 --- a/src/lerobot/robots/unitree_g1/unitree_g1.py
 +++ b/src/lerobot/robots/unitree_g1/unitree_g1.py
 @@ -32,7 +32,8 @@ from lerobot.utils.import_utils import _unitree_sdk_available, require_package
@@ -152,6 +152,15 @@ index d49aabd9d..937b4e67b 100644
              zero_gains = np.zeros(29, dtype=np.float32)
              self.publish_lowcmd(action, kp=zero_gains, kd=zero_gains, tau=zero_gains)
              logger.info("Sent zero-torque command for safe shutdown")
+@@ -473,7 +477,7 @@ class UnitreeG1(Robot):
+                     sim_env_inner = self.sim_env.simulator.sim_env
+                     if hasattr(sim_env_inner, "image_publish_process"):
+                         proc = sim_env_inner.image_publish_process
+-                        if proc.process and proc.process.is_alive():
++                        if proc is not None and proc.process and proc.process.is_alive():
+                             logger.info("Force-terminating image publish subprocess...")
+                             proc.stop_event.set()
+                             proc.process.terminate()
 @@ -499,7 +503,7 @@ class UnitreeG1(Robot):
          obs = {}
  

@@ -98,6 +98,21 @@ identity checks, stale holding, and embedded lifecycle have been tested. See
 [live simulator](g1-23-live-simulator.md). G1-23 hardware and G1-29-specific whole-body
 controllers remain blocked. Full per-joint, Cartesian/DDS, and XR acceptance is still pending.
 
+The XR bridge and all three session launchers now select either embodiment and support
+headless operation. Mock left/right motion, external identity mismatch rejection, and
+real CloudXR/OpenXR startup passed for both variants. Headset acceptance is separate.
+
+**DDS lifetime boundary:** the combined tests reproduced a native publication-matched
+callback crash across repeated sessions in one interpreter. LeRobot's disconnect path
+does not explicitly close its DDS channels; the SDK writer cleanup relies on Python
+object deletion. These are investigation leads, not proof that either layer alone or
+CycloneDDS's transport engine caused the crash. Integration tests use fresh subprocesses
+as containment, not a fix. A minimal SDK-only and then direct-binding reproducer is the
+next step; see [Finding 10](vr-teleop-g1-23-ladder.md#finding-10-dds-session-teardown).
+
+The updated LeRobot patch also guards a missing image-publisher process during G1-29
+headless shutdown. That separate cleanup bug is fixed; the callback crash remains open.
+
 Tests: `tests/test_g1_runtime.py` exercises defaults, config round-trips/factory,
 active features, sparse commands/torques, real G1-23 gravity ordering, and early backend
 guards without commanding hardware. Existing LeRobot G1 tests cover backward compatibility.
