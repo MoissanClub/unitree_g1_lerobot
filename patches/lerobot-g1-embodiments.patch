@@ -1,5 +1,5 @@
 diff --git a/src/lerobot/robots/unitree_g1/config_unitree_g1.py b/src/lerobot/robots/unitree_g1/config_unitree_g1.py
-index 3fbeb37fe..b0c6dc665 100644
+index 3fbeb37f..f3bfe362 100644
 --- a/src/lerobot/robots/unitree_g1/config_unitree_g1.py
 +++ b/src/lerobot/robots/unitree_g1/config_unitree_g1.py
 @@ -47,11 +47,12 @@ _DEFAULT_KP, _DEFAULT_KD = _build_gains()
@@ -18,15 +18,28 @@ index 3fbeb37fe..b0c6dc665 100644
  
      # Control loop timestep
      control_dt: float = 1.0 / 250.0  # 250Hz
-@@ -71,3 +72,23 @@ class UnitreeG1Config(RobotConfig):
+@@ -71,3 +72,36 @@ class UnitreeG1Config(RobotConfig):
      # Controller class name, e.g. GrootLocomotionController / HolosomaLocomotionController /
      # SonicWholeBodyController. None disables it.
      controller: str | None = None
++
++    # Passive physical DDS observation; never acquires command authority.
++    read_only: bool = False
++    network_interface: str | None = None
++    state_timeout_s: float = 5.0
++    max_state_age_s: float = 0.1
 +
 +    def __post_init__(self):
 +        import math
 +        from .g1_runtime import get_g1_embodiment
 +        super().__post_init__()
++        if self.read_only:
++            if self.is_simulation or self.controller is not None or self.cameras or self.gravity_compensation:
++                raise ValueError("Read-only mode requires physical mode, no controller/cameras/gravity IK")
++            if not self.network_interface or self.network_interface == "lo":
++                raise ValueError("Read-only mode requires an explicit physical network interface")
++            if not all(math.isfinite(v) and v > 0 for v in (self.state_timeout_s, self.max_state_age_s)):
++                raise ValueError("Read-only state timeouts must be finite and positive")
 +        spec = get_g1_embodiment(self.embodiment)
 +        self.kp = list(spec.kp if self.kp is None else self.kp)
 +        self.kd = list(spec.kd if self.kd is None else self.kd)
@@ -43,7 +56,7 @@ index 3fbeb37fe..b0c6dc665 100644
 +        if self.controller is not None and not spec.supports_controller:
 +            raise ValueError(f"Whole-body controllers are not supported for {self.embodiment}")
 diff --git a/src/lerobot/robots/unitree_g1/unitree_g1.py b/src/lerobot/robots/unitree_g1/unitree_g1.py
-index d49aabd9d..30c0ba588 100644
+index d49aabd9..f676ffe6 100644
 --- a/src/lerobot/robots/unitree_g1/unitree_g1.py
 +++ b/src/lerobot/robots/unitree_g1/unitree_g1.py
 @@ -32,7 +32,8 @@ from lerobot.utils.import_utils import _unitree_sdk_available, require_package
@@ -56,7 +69,7 @@ index d49aabd9d..30c0ba588 100644
  from .g1_utils import (
      NUM_MOTORS,
      REMOTE_AXES,
-@@ -156,6 +157,9 @@ class UnitreeG1(Robot):
+@@ -156,13 +157,16 @@ class UnitreeG1(Robot):
          logger.info("Initialize UnitreeG1...")
  
          self.config = config
@@ -66,7 +79,28 @@ index d49aabd9d..30c0ba588 100644
          self.control_dt = config.control_dt
  
          # Initialize cameras config (ZMQ-based) - actual connection in connect()
-@@ -191,7 +195,7 @@ class UnitreeG1(Robot):
+         self._cameras = make_cameras_from_configs(config.cameras)
+ 
+         # Import channel classes based on mode
+-        if config.is_simulation:
++        if config.is_simulation or config.read_only:
+             self._ChannelFactoryInitialize = _SDKChannelFactoryInitialize
+             self._ChannelPublisher = _SDKChannelPublisher
+             self._ChannelSubscriber = _SDKChannelSubscriber
+@@ -181,6 +185,12 @@ class UnitreeG1(Robot):
+         self.sim_env = None
+         self._env_wrapper = None
+         self._lowstate = None
++        self._read_only = config.read_only
++        self._read_only_subscriber = None
++        self._read_only_received_at = None
++        self._read_only_tick_at = None
++        self._read_only_error = None
++        self._read_only_used = False
+         self._lowstate_lock = threading.Lock()
+         # Guards the shared lowcmd message: the controller thread, send_action(), reset() and
+         # the shutdown path all publish through it, and a torn update still carries a valid CRC.
+@@ -191,7 +201,7 @@ class UnitreeG1(Robot):
          self._shutdown_event = threading.Event()
          self.subscribe_thread = None
  
@@ -75,7 +109,7 @@ index d49aabd9d..30c0ba588 100644
  
          # Controller loaded dynamically
          self.controller: RobotController | None = make_robot_controller(config.controller)
-@@ -214,7 +218,7 @@ class UnitreeG1(Robot):
+@@ -214,7 +224,7 @@ class UnitreeG1(Robot):
                  lowstate = G1_29_LowState()
  
                  # Capture motor states using jointindex
@@ -84,16 +118,19 @@ index d49aabd9d..30c0ba588 100644
                      lowstate.motor_state[joint].q = msg.motor_state[joint].q
                      lowstate.motor_state[joint].dq = msg.motor_state[joint].dq
                      lowstate.motor_state[joint].tau_est = msg.motor_state[joint].tau_est
-@@ -249,7 +253,7 @@ class UnitreeG1(Robot):
+@@ -248,8 +258,10 @@ class UnitreeG1(Robot):
+         kd: np.ndarray | list[float] | None = None,
          tau: np.ndarray | list[float] | None = None,
      ) -> None:  # writes robot command whenever requested
++        if self._read_only:
++            raise RuntimeError("Read-only robot cannot publish commands")
          with self._lowcmd_lock:
 -            for motor in G1_29_JointIndex:
 +            for motor in self.joint_index:
                  key = f"{motor.name}.q"
                  if key in action:
                      self.msg.motor_cmd[motor.value].q = action[key]
-@@ -287,9 +291,9 @@ class UnitreeG1(Robot):
+@@ -287,9 +299,9 @@ class UnitreeG1(Robot):
  
      @cached_property
      def action_features(self) -> dict[str, type]:
@@ -105,7 +142,7 @@ index d49aabd9d..30c0ba588 100644
  
          # Whole-body controllers (SONIC): 64-D latent token.
          controller_ft = getattr(self.controller, "action_ft", None)
-@@ -299,7 +303,7 @@ class UnitreeG1(Robot):
+@@ -299,7 +311,7 @@ class UnitreeG1(Robot):
          # Locomotion controllers (GR00T / Holosoma): arm joint targets + joystick axes.
          # TODO: have GR00T/Holosoma advertise their own action_features too, so every
          # controller declares its action space and this fallthrough can be dropped.
@@ -114,10 +151,73 @@ index d49aabd9d..30c0ba588 100644
          remote_features = dict.fromkeys(REMOTE_AXES, float)
          return {**arm_features, **remote_features}
  
-@@ -355,14 +359,14 @@ class UnitreeG1(Robot):
+@@ -354,15 +366,77 @@ class UnitreeG1(Robot):
+     def configure(self) -> None:
          pass
  
++    def _connect_read_only(self):
++        import math
++        import socket
++        import xml.etree.ElementTree as ET
++        import unitree_sdk2py.core.channel as channel
++
++        if self._read_only_used:
++            raise RuntimeError("Read-only DDS sessions require a fresh robot process")
++        self._read_only_used = True
++        socket.if_nametoindex(self.config.network_interface)
++        config = ET.fromstring(channel.ChannelConfigHasInterface)
++        for domain in config.findall("Domain"):
++            for tracing in domain.findall("Tracing"):
++                domain.remove(tracing)
++        channel.ChannelConfigHasInterface = ET.tostring(config, encoding="unicode")
++        ready = threading.Event()
++
++        def receive(msg):
++            now = time.monotonic()
++            with self._lowstate_lock:
++                if self._shutdown_event.is_set():
++                    return
++                try:
++                    if len(msg.motor_state) != 35:
++                        raise ValueError("Expected HG 35-slot feedback")
++                    if not all(math.isfinite(v) for j in self.joint_index
++                               for v in (msg.motor_state[j.value].q, msg.motor_state[j.value].dq,
++                                         msg.motor_state[j.value].tau_est)):
++                        raise ValueError("Nonfinite motor feedback")
++                    if self._lowstate is None:
++                        self._read_only_tick_at = now
++                    elif msg.tick != self._lowstate.tick:
++                        if (msg.tick - self._lowstate.tick) % (2**32) >= 2**31:
++                            raise ValueError("Robot tick regressed or feedback sources are mixed")
++                        if now - self._read_only_tick_at > self.config.max_state_age_s:
++                            raise ValueError("Robot tick stalled")
++                        self._read_only_tick_at = now
++                    if self._lowstate is not None:
++                        if (msg.mode_machine, msg.mode_pr) != (self._lowstate.mode_machine, self._lowstate.mode_pr):
++                            raise ValueError("Robot mode fields changed")
++                        if now - self._read_only_received_at > self.config.max_state_age_s:
++                            raise ValueError("Feedback gap exceeded freshness bound")
++                    self._lowstate = msg
++                    self._read_only_received_at = now
++                except (AttributeError, TypeError, ValueError, IndexError) as exc:
++                    self._read_only_error = str(exc)
++                ready.set()
++
++        try:
++            self._ChannelFactoryInitialize(0, self.config.network_interface)
++            self._read_only_subscriber = self._ChannelSubscriber(kTopicLowState, hg_LowState)
++            self._read_only_subscriber.Init(receive)
++            if not ready.wait(self.config.state_timeout_s):
++                raise TimeoutError("Timed out waiting for read-only robot feedback")
++            self.get_observation()  # Validate the first sample before reporting connection.
++        except BaseException:
++            self.disconnect()
++            raise
++
      def connect(self, calibrate: bool = True) -> None:  # connect to DDS
++        if self._read_only:
++            self._connect_read_only()
++            return
 +        if self.config.is_simulation and self.embodiment.make_simulation is None:
 +            raise NotImplementedError(f"{self.embodiment.name} live simulator backend has not been integrated")
 +        if not self.config.is_simulation and not self.embodiment.hardware_supported:
@@ -134,7 +234,7 @@ index d49aabd9d..30c0ba588 100644
          else:
              self._ChannelFactoryInitialize(0, config=self.config)
  
-@@ -411,7 +415,7 @@ class UnitreeG1(Robot):
+@@ -411,7 +485,7 @@ class UnitreeG1(Robot):
              self.kp = np.array(self.config.kp, dtype=np.float32)
              self.kd = np.array(self.config.kd, dtype=np.float32)
  
@@ -143,7 +243,7 @@ index d49aabd9d..30c0ba588 100644
              self.msg.motor_cmd[joint].mode = 1
              self.msg.motor_cmd[joint].kp = self.kp[joint.value]
              self.msg.motor_cmd[joint].kd = self.kd[joint.value]
-@@ -436,7 +440,7 @@ class UnitreeG1(Robot):
+@@ -436,7 +510,7 @@ class UnitreeG1(Robot):
                  lowstate = self._lowstate
              if lowstate is None:
                  return
@@ -152,7 +252,24 @@ index d49aabd9d..30c0ba588 100644
              zero_gains = np.zeros(29, dtype=np.float32)
              self.publish_lowcmd(action, kp=zero_gains, kd=zero_gains, tau=zero_gains)
              logger.info("Sent zero-torque command for safe shutdown")
-@@ -473,7 +477,7 @@ class UnitreeG1(Robot):
+@@ -444,6 +518,16 @@ class UnitreeG1(Robot):
+             logger.warning(f"Failed to send zero-torque on disconnect: {e}")
+ 
+     def disconnect(self):
++        if self._read_only:
++            self._shutdown_event.set()
++            try:
++                if self._read_only_subscriber is not None:
++                    self._read_only_subscriber.Close()
++            finally:
++                self._read_only_subscriber = None
++                with self._lowstate_lock:
++                    self._lowstate = None
++            return
+         # Signal threads to stop and unblock any waits
+         self._shutdown_event.set()
+ 
+@@ -473,7 +557,7 @@ class UnitreeG1(Robot):
                      sim_env_inner = self.sim_env.simulator.sim_env
                      if hasattr(sim_env_inner, "image_publish_process"):
                          proc = sim_env_inner.image_publish_process
@@ -161,7 +278,21 @@ index d49aabd9d..30c0ba588 100644
                              logger.info("Force-terminating image publish subprocess...")
                              proc.stop_event.set()
                              proc.process.terminate()
-@@ -499,7 +503,7 @@ class UnitreeG1(Robot):
+@@ -492,6 +576,13 @@ class UnitreeG1(Robot):
+ 
+     def get_observation(self) -> RobotObservation:
+         with self._lowstate_lock:
++            if self._read_only and self._read_only_error:
++                raise ValueError(self._read_only_error)
++            if self._read_only and self._lowstate is not None:
++                now = time.monotonic()
++                if (now - self._read_only_received_at > self.config.max_state_age_s
++                        or now - self._read_only_tick_at > self.config.max_state_age_s):
++                    raise TimeoutError("Read-only robot feedback is stale or tick stopped")
+             lowstate = self._lowstate
+         if lowstate is None:
+             return {}
+@@ -499,7 +590,7 @@ class UnitreeG1(Robot):
          obs = {}
  
          # Motors - q, dq, tau for all joints
@@ -170,7 +301,14 @@ index d49aabd9d..30c0ba588 100644
              name = motor.name
              idx = motor.value
              obs[f"{name}.q"] = lowstate.motor_state[idx].q
-@@ -555,7 +559,7 @@ class UnitreeG1(Robot):
+@@ -550,12 +641,14 @@ class UnitreeG1(Robot):
+         return obs
+ 
+     def send_action(self, action: RobotAction) -> RobotAction:
++        if self._read_only:
++            raise RuntimeError("Read-only robot cannot send actions")
+         action_to_publish = action
+         if self.controller is not None:
              # Controller thread owns legs/waist. Here we only update joystick inputs
              # and publish arm targets from the teleoperator.
              self._update_controller_action(action)
@@ -179,7 +317,7 @@ index d49aabd9d..30c0ba588 100644
              action_to_publish = {
                  key: value
                  for key, value in action.items()
-@@ -573,14 +577,12 @@ class UnitreeG1(Robot):
+@@ -573,14 +666,12 @@ class UnitreeG1(Robot):
              action_np = np.array(
                  [
                      action_to_publish.get(f"{joint.name}.q", self.msg.motor_cmd[joint.value].q)
@@ -196,7 +334,7 @@ index d49aabd9d..30c0ba588 100644
                  tau[joint.value] = arm_tau[local_idx]
  
          self.publish_lowcmd(action_to_publish, tau=tau)
-@@ -605,8 +607,8 @@ class UnitreeG1(Robot):
+@@ -605,8 +696,8 @@ class UnitreeG1(Robot):
  
      @property
      def _motors_ft(self) -> dict[str, type]:
@@ -207,7 +345,16 @@ index d49aabd9d..30c0ba588 100644
  
      @property
      def cameras(self) -> dict:
-@@ -633,7 +635,7 @@ class UnitreeG1(Robot):
+@@ -617,6 +708,8 @@ class UnitreeG1(Robot):
+         control_dt: float | None = None,
+         default_positions: list[float] | None = None,
+     ) -> None:  # move robot to default position
++        if self._read_only:
++            raise RuntimeError("Read-only robot cannot reset")
+         if control_dt is None:
+             control_dt = self.config.control_dt
+         if default_positions is None:
+@@ -633,7 +726,7 @@ class UnitreeG1(Robot):
              if self.config.is_simulation and self.sim_env is not None:
                  self.sim_env.reset()
                  self.publish_lowcmd(
@@ -216,7 +363,7 @@ index d49aabd9d..30c0ba588 100644
                  )
              else:
                  total_time = 3.0
-@@ -644,7 +646,7 @@ class UnitreeG1(Robot):
+@@ -644,7 +737,7 @@ class UnitreeG1(Robot):
  
                  # record current positions
                  init_dof_pos = np.zeros(NUM_MOTORS, dtype=np.float32)
@@ -225,7 +372,7 @@ index d49aabd9d..30c0ba588 100644
                      init_dof_pos[motor.value] = obs[f"{motor.name}.q"]
  
                  # Interpolate to default position
-@@ -653,7 +655,7 @@ class UnitreeG1(Robot):
+@@ -653,7 +746,7 @@ class UnitreeG1(Robot):
  
                      alpha = step / num_steps
                      action_dict = {}

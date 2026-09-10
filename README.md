@@ -22,6 +22,7 @@ systematic controller lifecycle testing, and physical-robot validation remain pe
 **Live acceptance:** `./run_verify_live_control.sh` runs headless joint and IK/DDS checks
 on both embodiments; see [coverage and reports](docs/live-control-acceptance.md).
 **Design:** [architecture and upstream boundaries](docs/architecture.md).
+**Physical Stage 0:** [read-only preflight, lifecycle audit, and offline verification](docs/physical-preflight.md).
 The [rung ladder](docs/vr-teleop-g1-23-ladder.md) preserves earlier acceptance milestones;
 Rung 4 spans all three tracks and is not complete.
 

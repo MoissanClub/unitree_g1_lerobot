@@ -1,0 +1,20 @@
+{
+  "physical_identity": "",
+  "mapping_verification": "",
+  "control_mode_evidence": "",
+  "arm_owner": "",
+  "legs_waist_balance_owner": "",
+  "physical_support": "",
+  "command_interface": "",
+  "single_publisher_verification": "",
+  "measured_state_initialization": "",
+  "ownership_transition": "",
+  "gains_and_feedforward": "",
+  "stale_feedback_response": "",
+  "lost_commands_response": "",
+  "operator_stop_procedure": "",
+  "interruption_response": "",
+  "normal_exit_handover": "",
+  "lifecycle_audit_revision": "",
+  "reviewer": ""
+}

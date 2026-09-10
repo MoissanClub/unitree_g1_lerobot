@@ -1,0 +1,11 @@
+{
+  "lerobot_revision": "3f2c29ef7e44b1ddccbcda3b6a63939e53639e9e",
+  "patch_sha256": "f31ce0f1ddfff00ad038a981565a9f4c43a347ac7b2a6f2e31a1f15603e0ebd6",
+  "files": {
+    "src/lerobot/robots/unitree_g1/unitree_g1.py": "0a7a30047abc0fbe3f1b3f195bc357831d64cc6c4d4c70687fafe757f6b6a80c",
+    "src/lerobot/robots/unitree_g1/config_unitree_g1.py": "cdb852a7a1350b0f73004bbfd431b56b49f7df392498dfd3cd917d607ff85511",
+    "src/lerobot/robots/unitree_g1/g1_runtime.py": "cff4e92f71b4ec61ff7b32c30bdfba70c2861e9b4de0b8c63a637f29826a6b6f",
+    "src/lerobot/robots/unitree_g1/unitree_sdk2_socket.py": "94810ca18b05c7afb38f3c5c7be53a35ab49011ed45b76deee170ea2b2681d3c",
+    "src/lerobot/robots/unitree_g1/run_g1_server.py": "bde797e0ac7454f2b7ad869306b75ad23def4640589d20b4a11128cc7d32f066"
+  }
+}

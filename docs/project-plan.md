@@ -5,6 +5,14 @@ tracks corresponding to the `robots/`, `xr/`, and `simulation/` package folders.
 The existing [rung ladder](vr-teleop-g1-23-ladder.md) is a cross-track acceptance
 sequence and historical record, not the source-code ownership structure.
 
+## Development Workstreams
+
+The [simulation and sim-to-real plan](sim-to-real-plan.md) records the 2026-09-11
+split into simulation follow-ups and physical embodiment testing. Simulation follows
+the existing non-physical handoff. Physical work progresses through read-only preflight,
+bounded joint motion, scripted IK verification, and XR teleoperation on G1-29, then G1-23.
+These workstreams span the three ownership tracks below and keep separate acceptance evidence.
+
 ## Status Summary
 
 | Track | Implemented and Verified | Remaining |
@@ -112,10 +120,9 @@ showing "Running" does not establish video delivery.
 
 ## Track 3: Simulation for G1
 
-**Next-session priority:** the user completed dual-arm headset visual review and chose
-camera streaming next. Follow the [camera handoff](rung4-handoff.md#next-session-camera-streaming).
-Numerical DDS/actuator and exhaustive controller-lifecycle acceptance remain open;
-beginning camera work does not mark those checks complete.
+**Next-session priority:** camera streaming is implemented and basic headset video is
+user-verified. Follow the [non-physical plan](future-non-physical-work.md) for systematic
+joint DDS and numerical IK-to-physics acceptance, then lifecycle and performance work.
 
 **Owner:** `unitree_g1_lerobot/simulation/`. Benchmark orchestration and startup checks
 are shared verification tooling under `diagnostics/`.
@@ -186,8 +193,10 @@ after verifying headset video; resume with numerical DDS/physics acceptance, not
 3. **Tracks 3 + 2: camera feedback.** Local capture and submission are tested on both
    embodiments; basic headset video is user-verified. Reconnect/timing acceptance remains
    open for **Rung 4V**.
-4. **Track 1 + Track 2: physical robots.** G1-29 baseline when available (**5a**), then
-   G1-23 (**5b**), after simulation and video acceptance. Track 3 remains the regression
+4. **Track 1 + Track 2: physical robots.** G1-29 baseline (**5a**), then G1-23 (**5b**),
+   following the stage-specific gates in the [sim-to-real plan](sim-to-real-plan.md).
+   The broader simulation backlog continues independently; relevant simulation evidence
+   and physical preparation precede each hardware stage. Track 3 remains the regression
    environment. Future hand/tactile integration remains historical **Rung 6**.
 
 The tracks can progress independently where their contracts are testable, but a
