@@ -17,6 +17,10 @@ implementation today. Keep physical robot actuation out of these experiments.
 
 ## Recommended Sequence
 
+**Implementation update:** `run_verify_live_control.sh` now implements the first small-signal
+joint and IK/DDS checkpoint for items 1 and 2. See [coverage and budgets](live-control-acceptance.md).
+Full-workspace, limit-boundary, fault-injection, and performance acceptance remain open.
+
 1. **Per-joint DDS verification, both embodiments.** Use an independent DDS sender to
    exercise each active arm joint. Verify names, sparse slots, directions, limits, unused
    transport slots, and measured response. Preserve the existing mapping/contract tests;

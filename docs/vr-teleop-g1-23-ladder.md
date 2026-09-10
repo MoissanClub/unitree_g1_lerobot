@@ -224,6 +224,9 @@ headroom. This remains supported-arm benchmark evidence, not live DDS acceptance
 2. **DDS and joint mapping:** exercise each of the ten active arm joints individually
    through a separate DDS command sender. Verify names, indices, directions, limits,
    unused transport slots, and measured joint feedback from the simulator.
+   `run_verify_live_control.sh` now covers small bidirectional steps on every arm joint
+   of both embodiments, including sparse-slot and fresh-feedback checks. Limit-boundary
+   and independent geometry acceptance remain open; see [live suite](live-control-acceptance.md).
 3. **Scripted end-to-end motion, no headset:** route the existing Cartesian/orientation
    sweep targets through IK, DDS, and actuators. Compare target hand poses, commanded
    joint positions, measured joint positions, and hand poses computed from measurements.

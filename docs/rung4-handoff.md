@@ -1,5 +1,13 @@
 # Rung 4 Handoff
 
+## Resumed: Live Numerical Acceptance
+
+The first non-physical acceptance suite is implemented in `run_verify_live_control.sh`.
+It covers bidirectional per-joint steps and small Cartesian/orientation sweeps through
+the actual simulator/LeRobot DDS path. See [live acceptance](live-control-acceptance.md)
+for thresholds, reports, and remaining coverage. This supersedes the end-of-day stop
+below; do not equate the new smoke suite with full non-physical acceptance.
+
 ## End-of-Day Handoff: 2026-09-10
 
 Camera streaming is implemented and the user verified video with the VR headset.

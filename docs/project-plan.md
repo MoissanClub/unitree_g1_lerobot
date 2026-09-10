@@ -170,6 +170,10 @@ not a claim that every boundary is fully implemented.
 
 ## Cross-Track Acceptance
 
+The first automated joint and target-space live-path suite is now available as
+`./run_verify_live_control.sh`; see [coverage and budgets](live-control-acceptance.md).
+It does not close workspace-boundary, recovery, or sustained-performance acceptance.
+
 Current future backlog and recommended experiments:
 [Future non-physical work](future-non-physical-work.md). The user concluded this session
 after verifying headset video; resume with numerical DDS/physics acceptance, not camera bring-up.

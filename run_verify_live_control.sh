@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
+exec /home/dwei/miniforge3/envs/lerobot-g1/bin/python -m unitree_g1_lerobot.diagnostics.verify_live_control "$@"

@@ -1,0 +1,1210 @@
+{
+  "manifest": {
+    "project_revision": "5fde1a2b45bb3caf9ab2b694c45ba190c15374fa",
+    "lerobot_revision": "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+    "diagnostic_sha256": "ef05327c42b4bb67da66726d613947f1476cfac9b113f4b092cc604e7a228a05",
+    "thresholds": {
+      "settled_joint_rad": 0.04,
+      "cross_joint_rad": 0.04,
+      "minimum_response_rad": 0.06,
+      "moving_joint_p95_rad": 0.08,
+      "actuator_position_p95_m": 0.035,
+      "actuator_rotation_p95_rad": 0.2,
+      "ik_position_p95_m": 0.04,
+      "ik_rotation_p95_rad": 0.5
+    },
+    "python": "3.12.14 (main, Sep  2 2026, 23:27:36) [GCC 15.3.0]",
+    "outcomes": {
+      "g1_29": 0,
+      "g1_23": 0
+    },
+    "simulator_exit_codes": {
+      "g1_29": 0,
+      "g1_23": 0
+    }
+  },
+  "variants": {
+    "g1_29": {
+      "embodiment": "g1_29",
+      "gravity_compensation": true,
+      "thresholds": {
+        "settled_joint_rad": 0.04,
+        "cross_joint_rad": 0.04,
+        "minimum_response_rad": 0.06,
+        "moving_joint_p95_rad": 0.08,
+        "actuator_position_p95_m": 0.035,
+        "actuator_rotation_p95_rad": 0.2,
+        "ik_position_p95_m": 0.04,
+        "ik_rotation_p95_rad": 0.5
+      },
+      "joints": [
+        {
+          "name": "kLeftShoulderPitch",
+          "dds_slot": 15,
+          "pin_name": "left_shoulder_pitch_joint",
+          "lower_rad": -3.0892,
+          "upper_rad": 2.6704
+        },
+        {
+          "name": "kLeftShoulderRoll",
+          "dds_slot": 16,
+          "pin_name": "left_shoulder_roll_joint",
+          "lower_rad": -1.5882,
+          "upper_rad": 2.2515
+        },
+        {
+          "name": "kLeftShoulderYaw",
+          "dds_slot": 17,
+          "pin_name": "left_shoulder_yaw_joint",
+          "lower_rad": -2.618,
+          "upper_rad": 2.618
+        },
+        {
+          "name": "kLeftElbow",
+          "dds_slot": 18,
+          "pin_name": "left_elbow_joint",
+          "lower_rad": -1.0472,
+          "upper_rad": 2.0944
+        },
+        {
+          "name": "kLeftWristRoll",
+          "dds_slot": 19,
+          "pin_name": "left_wrist_roll_joint",
+          "lower_rad": -1.972222054,
+          "upper_rad": 1.972222054
+        },
+        {
+          "name": "kLeftWristPitch",
+          "dds_slot": 20,
+          "pin_name": "left_wrist_pitch_joint",
+          "lower_rad": -1.614429558,
+          "upper_rad": 1.614429558
+        },
+        {
+          "name": "kLeftWristYaw",
+          "dds_slot": 21,
+          "pin_name": "left_wrist_yaw_joint",
+          "lower_rad": -1.614429558,
+          "upper_rad": 1.614429558
+        },
+        {
+          "name": "kRightShoulderPitch",
+          "dds_slot": 22,
+          "pin_name": "right_shoulder_pitch_joint",
+          "lower_rad": -3.0892,
+          "upper_rad": 2.6704
+        },
+        {
+          "name": "kRightShoulderRoll",
+          "dds_slot": 23,
+          "pin_name": "right_shoulder_roll_joint",
+          "lower_rad": -2.2515,
+          "upper_rad": 1.5882
+        },
+        {
+          "name": "kRightShoulderYaw",
+          "dds_slot": 24,
+          "pin_name": "right_shoulder_yaw_joint",
+          "lower_rad": -2.618,
+          "upper_rad": 2.618
+        },
+        {
+          "name": "kRightElbow",
+          "dds_slot": 25,
+          "pin_name": "right_elbow_joint",
+          "lower_rad": -1.0472,
+          "upper_rad": 2.0944
+        },
+        {
+          "name": "kRightWristRoll",
+          "dds_slot": 26,
+          "pin_name": "right_wrist_roll_joint",
+          "lower_rad": -1.972222054,
+          "upper_rad": 1.972222054
+        },
+        {
+          "name": "kRightWristPitch",
+          "dds_slot": 27,
+          "pin_name": "right_wrist_pitch_joint",
+          "lower_rad": -1.614429558,
+          "upper_rad": 1.614429558
+        },
+        {
+          "name": "kRightWristYaw",
+          "dds_slot": 28,
+          "pin_name": "right_wrist_yaw_joint",
+          "lower_rad": -1.614429558,
+          "upper_rad": 1.614429558
+        }
+      ],
+      "kp": [
+        150,
+        150,
+        150,
+        300,
+        40,
+        40,
+        150,
+        150,
+        150,
+        300,
+        40,
+        40,
+        250,
+        250,
+        250,
+        50,
+        50,
+        80,
+        80,
+        40,
+        40,
+        40,
+        50,
+        50,
+        80,
+        80,
+        40,
+        40,
+        40
+      ],
+      "kd": [
+        2,
+        2,
+        2,
+        4,
+        2,
+        2,
+        2,
+        2,
+        2,
+        4,
+        2,
+        2,
+        5,
+        5,
+        5,
+        3,
+        3,
+        3,
+        3,
+        1.5,
+        1.5,
+        1.5,
+        3,
+        3,
+        3,
+        3,
+        1.5,
+        1.5,
+        1.5
+      ],
+      "cases": [
+        {
+          "name": "joint/kLeftShoulderPitch/+1",
+          "response_rad": 0.11747653782367706,
+          "settled_error_rad": 0.0038522791862487527,
+          "cross_joint_rad": 0.00024387240409851074,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderPitch/-1",
+          "response_rad": 0.11991062760353088,
+          "settled_error_rad": 0.001444345712661721,
+          "cross_joint_rad": 0.0001509338617324829,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderRoll/+1",
+          "response_rad": 0.11879635602235794,
+          "settled_error_rad": 0.0020619839429855125,
+          "cross_joint_rad": 0.0017597228288650513,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderRoll/-1",
+          "response_rad": 0.11998097971081734,
+          "settled_error_rad": 0.0014330868422985088,
+          "cross_joint_rad": 0.00012890994548797607,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderYaw/+1",
+          "response_rad": 0.12005958970985375,
+          "settled_error_rad": 0.0018089324235915916,
+          "cross_joint_rad": 0.0021659284830093384,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderYaw/-1",
+          "response_rad": 0.11994994316046359,
+          "settled_error_rad": 0.001409432291984536,
+          "cross_joint_rad": 0.00029243528842926025,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftElbow/+1",
+          "response_rad": 0.1201941967010498,
+          "settled_error_rad": 0.001422530412673928,
+          "cross_joint_rad": 0.0005808845162391663,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftElbow/-1",
+          "response_rad": 0.11997348070144653,
+          "settled_error_rad": 0.0015799611806869285,
+          "cross_joint_rad": 0.00012725591659545898,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftWristRoll/+1",
+          "response_rad": 0.11970985818879853,
+          "settled_error_rad": 0.001336953043937661,
+          "cross_joint_rad": 0.00024416234373347834,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftWristRoll/-1",
+          "response_rad": 0.11999897188798059,
+          "settled_error_rad": 0.001349365711212136,
+          "cross_joint_rad": 1.2375414371490479e-05,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftWristPitch/+1",
+          "response_rad": 0.1199207430545357,
+          "settled_error_rad": 0.001289612054824807,
+          "cross_joint_rad": 0.0018478333950042725,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftWristPitch/-1",
+          "response_rad": 0.11993922891451803,
+          "settled_error_rad": 0.0029846340417861716,
+          "cross_joint_rad": 0.00027808547019958496,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftWristYaw/+1",
+          "response_rad": 0.11982944374085491,
+          "settled_error_rad": 0.0013335853815078513,
+          "cross_joint_rad": 0.0013169795274734497,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftWristYaw/-1",
+          "response_rad": 0.11997152194817318,
+          "settled_error_rad": 0.0012969583272933738,
+          "cross_joint_rad": 0.0001261979341506958,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderPitch/+1",
+          "response_rad": 0.11766816675662994,
+          "settled_error_rad": 0.0036576253175735207,
+          "cross_joint_rad": 0.0007886737585067749,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderPitch/-1",
+          "response_rad": 0.11987121403217316,
+          "settled_error_rad": 0.0014980942010879295,
+          "cross_joint_rad": 0.0001417100429534912,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderRoll/+1",
+          "response_rad": 0.1185117494314909,
+          "settled_error_rad": 0.0014108747988939296,
+          "cross_joint_rad": 0.002393871545791626,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderRoll/-1",
+          "response_rad": 0.11996450275182724,
+          "settled_error_rad": 0.0016690701246261375,
+          "cross_joint_rad": 8.490681648254395e-05,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderYaw/+1",
+          "response_rad": 0.12006057710095774,
+          "settled_error_rad": 0.0014255106449126975,
+          "cross_joint_rad": 0.002128884196281433,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderYaw/-1",
+          "response_rad": 0.11995162431412609,
+          "settled_error_rad": 0.0016831815242767112,
+          "cross_joint_rad": 0.0004961639642715454,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightElbow/+1",
+          "response_rad": 0.12016013264656067,
+          "settled_error_rad": 0.0013597965240478294,
+          "cross_joint_rad": 0.0008487924933433533,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightElbow/-1",
+          "response_rad": 0.11998024582862854,
+          "settled_error_rad": 0.001582747697830178,
+          "cross_joint_rad": 0.00013318657875061035,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightWristRoll/+1",
+          "response_rad": 0.11971340618038084,
+          "settled_error_rad": 0.0012982249259948508,
+          "cross_joint_rad": 0.0002625777701723564,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightWristRoll/-1",
+          "response_rad": 0.12000716239708709,
+          "settled_error_rad": 0.0013340473175048606,
+          "cross_joint_rad": 1.6704201698303223e-05,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightWristPitch/+1",
+          "response_rad": 0.11994877864526643,
+          "settled_error_rad": 0.001297226548194863,
+          "cross_joint_rad": 0.001841619610786438,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightWristPitch/-1",
+          "response_rad": 0.11994826500358613,
+          "settled_error_rad": 0.0029428809881210105,
+          "cross_joint_rad": 0.00026638805866241455,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightWristYaw/+1",
+          "response_rad": 0.11982861017440882,
+          "settled_error_rad": 0.001303783059120156,
+          "cross_joint_rad": 0.0012453794479370117,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightWristYaw/-1",
+          "response_rad": 0.11997013117797906,
+          "settled_error_rad": 0.0013494104146957175,
+          "cross_joint_rad": 0.00012621283531188965,
+          "passed": true
+        },
+        {
+          "name": "cartesian/left/0",
+          "passed": true,
+          "joint_p95_rad": 0.015667926645571376,
+          "ik_position_m": 0.009268076021933356,
+          "ik_rotation_rad": 0.01290988917672394,
+          "actuator_position_m": 0.004252303627750887,
+          "actuator_rotation_rad": 0.009392605923489068,
+          "total_position_m": 0.010330984359786244,
+          "total_rotation_rad": 0.01710341192508052,
+          "command_span_0_rad": 0.25168193551353213,
+          "measured_span_0_rad": 0.24642789363861084
+        },
+        {
+          "name": "cartesian/left/1",
+          "passed": true,
+          "joint_p95_rad": 0.008415073531764865,
+          "ik_position_m": 0.006643594373263486,
+          "ik_rotation_rad": 0.009411024619720541,
+          "actuator_position_m": 0.003587815640308552,
+          "actuator_rotation_rad": 0.00468571730394109,
+          "total_position_m": 0.008450258995171635,
+          "total_rotation_rad": 0.012003520703945104,
+          "command_span_0_rad": 0.07612691847468378,
+          "measured_span_0_rad": 0.07072513550519943
+        },
+        {
+          "name": "cartesian/left/2",
+          "passed": true,
+          "joint_p95_rad": 0.013274062130442887,
+          "ik_position_m": 0.009633008987719308,
+          "ik_rotation_rad": 0.018349893759896596,
+          "actuator_position_m": 0.002608049483994873,
+          "actuator_rotation_rad": 0.006878005176691258,
+          "total_position_m": 0.010149677115181319,
+          "total_rotation_rad": 0.021924917048147714,
+          "command_span_0_rad": 0.2709216064095359,
+          "measured_span_0_rad": 0.26589953899383545
+        },
+        {
+          "name": "cartesian/left/3",
+          "passed": true,
+          "joint_p95_rad": 0.008682573026580258,
+          "ik_position_m": 0.005517983629252686,
+          "ik_rotation_rad": 0.013926314692505366,
+          "actuator_position_m": 0.002464254291425522,
+          "actuator_rotation_rad": 0.017183272395660996,
+          "total_position_m": 0.005717904738495402,
+          "total_rotation_rad": 0.028734359739025148,
+          "command_span_0_rad": 0.08860519079371945,
+          "measured_span_0_rad": 0.08233860856853426
+        },
+        {
+          "name": "cartesian/left/4",
+          "passed": true,
+          "joint_p95_rad": 0.011281219946421514,
+          "ik_position_m": 0.006764286521911669,
+          "ik_rotation_rad": 0.023515659010867485,
+          "actuator_position_m": 0.002528558028098685,
+          "actuator_rotation_rad": 0.01265158626131693,
+          "total_position_m": 0.007272117432444473,
+          "total_rotation_rad": 0.024141274830899558,
+          "command_span_0_rad": 0.21948408726807986,
+          "measured_span_0_rad": 0.21461552008986473
+        },
+        {
+          "name": "cartesian/left/5",
+          "passed": true,
+          "joint_p95_rad": 0.0095342912033856,
+          "ik_position_m": 0.005578118872309723,
+          "ik_rotation_rad": 0.015892198625628635,
+          "actuator_position_m": 0.001052049736291844,
+          "actuator_rotation_rad": 0.008565277254687451,
+          "total_position_m": 0.005745902014517285,
+          "total_rotation_rad": 0.02300061851395281,
+          "command_span_0_rad": 0.1598300685635506,
+          "measured_span_0_rad": 0.1551949605345726
+        },
+        {
+          "name": "cartesian/right/0",
+          "passed": true,
+          "joint_p95_rad": 0.01549042054144753,
+          "ik_position_m": 0.009249702544420698,
+          "ik_rotation_rad": 0.012890783835209873,
+          "actuator_position_m": 0.0041654268555722206,
+          "actuator_rotation_rad": 0.009397165325106805,
+          "total_position_m": 0.010276700362786695,
+          "total_rotation_rad": 0.016414222822724707,
+          "command_span_1_rad": 0.25175993635714056,
+          "measured_span_1_rad": 0.2465006709098816
+        },
+        {
+          "name": "cartesian/right/1",
+          "passed": true,
+          "joint_p95_rad": 0.008547618919083648,
+          "ik_position_m": 0.006415134669940986,
+          "ik_rotation_rad": 0.009375554823327668,
+          "actuator_position_m": 0.0034820276057987818,
+          "actuator_rotation_rad": 0.004496851571246244,
+          "total_position_m": 0.00811577300631095,
+          "total_rotation_rad": 0.011472932932647836,
+          "command_span_1_rad": 0.07634181616266274,
+          "measured_span_1_rad": 0.07087904959917068
+        },
+        {
+          "name": "cartesian/right/2",
+          "passed": true,
+          "joint_p95_rad": 0.013267460565446499,
+          "ik_position_m": 0.009633006674448136,
+          "ik_rotation_rad": 0.018349896184071762,
+          "actuator_position_m": 0.002475588464019135,
+          "actuator_rotation_rad": 0.00701348254503072,
+          "total_position_m": 0.010117240589033552,
+          "total_rotation_rad": 0.021995680553653637,
+          "command_span_1_rad": 0.27090855947113823,
+          "measured_span_1_rad": 0.2658562660217285
+        },
+        {
+          "name": "cartesian/right/3",
+          "passed": true,
+          "joint_p95_rad": 0.00857588179426729,
+          "ik_position_m": 0.005518902180860362,
+          "ik_rotation_rad": 0.01480473610489808,
+          "actuator_position_m": 0.0023112383557378777,
+          "actuator_rotation_rad": 0.017094954642314746,
+          "total_position_m": 0.005808387288224805,
+          "total_rotation_rad": 0.029178027406747433,
+          "command_span_1_rad": 0.0890029893596666,
+          "measured_span_1_rad": 0.08274891157634556
+        },
+        {
+          "name": "cartesian/right/4",
+          "passed": true,
+          "joint_p95_rad": 0.01111993847939714,
+          "ik_position_m": 0.00676428782346633,
+          "ik_rotation_rad": 0.023515657526867788,
+          "actuator_position_m": 0.0024850950524434607,
+          "actuator_rotation_rad": 0.012448009264735488,
+          "total_position_m": 0.007258565936617311,
+          "total_rotation_rad": 0.02410679783626795,
+          "command_span_1_rad": 0.21948454063210762,
+          "measured_span_1_rad": 0.21463992819190025
+        },
+        {
+          "name": "cartesian/right/5",
+          "passed": true,
+          "joint_p95_rad": 0.009306115263710108,
+          "ik_position_m": 0.0055740682418232235,
+          "ik_rotation_rad": 0.015285813415287763,
+          "actuator_position_m": 0.0011820574644998048,
+          "actuator_rotation_rad": 0.008643890229537527,
+          "total_position_m": 0.005645765662809441,
+          "total_rotation_rad": 0.022978155921710118,
+          "command_span_1_rad": 0.15982662509453122,
+          "measured_span_1_rad": 0.15523677691817284
+        },
+        {
+          "name": "cartesian/both/0",
+          "passed": true,
+          "joint_p95_rad": 0.015149501445739283,
+          "ik_position_m": 0.009318394882693584,
+          "ik_rotation_rad": 0.012959296381609201,
+          "actuator_position_m": 0.004209635914436417,
+          "actuator_rotation_rad": 0.009482057807188742,
+          "total_position_m": 0.010547855163614598,
+          "total_rotation_rad": 0.016845872004007178,
+          "command_span_0_rad": 0.2517599363571402,
+          "measured_span_0_rad": 0.24648529291152954,
+          "command_span_1_rad": 0.25133012072459426,
+          "measured_span_1_rad": 0.24598461389541626
+        },
+        {
+          "name": "cartesian/both/1",
+          "passed": true,
+          "joint_p95_rad": 0.0085479079896733,
+          "ik_position_m": 0.006643591526994866,
+          "ik_rotation_rad": 0.00941102633317846,
+          "actuator_position_m": 0.0036100944269161204,
+          "actuator_rotation_rad": 0.004696137649078242,
+          "total_position_m": 0.00850472719029851,
+          "total_rotation_rad": 0.012217635123126002,
+          "command_span_0_rad": 0.07612832392917543,
+          "measured_span_0_rad": 0.07077402621507645,
+          "command_span_1_rad": 0.07635286112387867,
+          "measured_span_1_rad": 0.070911705493927
+        },
+        {
+          "name": "cartesian/both/2",
+          "passed": true,
+          "joint_p95_rad": 0.013133110571001303,
+          "ik_position_m": 0.009633008987557461,
+          "ik_rotation_rad": 0.01834989618282517,
+          "actuator_position_m": 0.002461642442776709,
+          "actuator_rotation_rad": 0.00693607604643502,
+          "total_position_m": 0.010124799342302546,
+          "total_rotation_rad": 0.022040704630400986,
+          "command_span_0_rad": 0.27092160601717674,
+          "measured_span_0_rad": 0.2658342719078064,
+          "command_span_1_rad": 0.27090856219387605,
+          "measured_span_1_rad": 0.2658303380012512
+        },
+        {
+          "name": "cartesian/both/3",
+          "passed": true,
+          "joint_p95_rad": 0.008564135523350265,
+          "ik_position_m": 0.005518902180879732,
+          "ik_rotation_rad": 0.014804736104889863,
+          "actuator_position_m": 0.0024406529361549485,
+          "actuator_rotation_rad": 0.01696012386169461,
+          "total_position_m": 0.00580593337568258,
+          "total_rotation_rad": 0.028979210806016703,
+          "command_span_0_rad": 0.08860519076661595,
+          "measured_span_0_rad": 0.08235735702328384,
+          "command_span_1_rad": 0.08900298915977864,
+          "measured_span_1_rad": 0.08275796938687563
+        },
+        {
+          "name": "cartesian/both/4",
+          "passed": true,
+          "joint_p95_rad": 0.011545576590881854,
+          "ik_position_m": 0.00676428782346636,
+          "ik_rotation_rad": 0.023515659010862295,
+          "actuator_position_m": 0.0024988513746118666,
+          "actuator_rotation_rad": 0.012617501166341805,
+          "total_position_m": 0.007262769565961847,
+          "total_rotation_rad": 0.024439291394843066,
+          "command_span_0_rad": 0.21948408726807866,
+          "measured_span_0_rad": 0.21462303400039673,
+          "command_span_1_rad": 0.2194845406321158,
+          "measured_span_1_rad": 0.21462054178118706
+        },
+        {
+          "name": "cartesian/both/5",
+          "passed": true,
+          "joint_p95_rad": 0.009204781407053103,
+          "ik_position_m": 0.0055781188723096255,
+          "ik_rotation_rad": 0.015892198625636317,
+          "actuator_position_m": 0.0011344218619480301,
+          "actuator_rotation_rad": 0.008381160190238114,
+          "total_position_m": 0.005740109740445348,
+          "total_rotation_rad": 0.022856586216336856,
+          "command_span_0_rad": 0.1598300685635506,
+          "measured_span_0_rad": 0.15524416789412498,
+          "command_span_1_rad": 0.15982662509453194,
+          "measured_span_1_rad": 0.1552412062883377
+        }
+      ],
+      "passed": true,
+      "worst_case_metrics": {
+        "joint_settled_max_rad": 0.0038522791862487527,
+        "cross_joint_max_rad": 0.002393871545791626,
+        "joint_p95_rad": 0.015667926645571376,
+        "ik_position_m": 0.009633008987719308,
+        "ik_rotation_rad": 0.023515659010867485,
+        "actuator_position_m": 0.004252303627750887,
+        "actuator_rotation_rad": 0.017183272395660996,
+        "total_position_m": 0.010547855163614598,
+        "total_rotation_rad": 0.029178027406747433
+      },
+      "sample_count": 3768
+    },
+    "g1_23": {
+      "embodiment": "g1_23",
+      "gravity_compensation": true,
+      "thresholds": {
+        "settled_joint_rad": 0.04,
+        "cross_joint_rad": 0.04,
+        "minimum_response_rad": 0.06,
+        "moving_joint_p95_rad": 0.08,
+        "actuator_position_p95_m": 0.035,
+        "actuator_rotation_p95_rad": 0.2,
+        "ik_position_p95_m": 0.04,
+        "ik_rotation_p95_rad": 0.5
+      },
+      "joints": [
+        {
+          "name": "kLeftShoulderPitch",
+          "dds_slot": 15,
+          "pin_name": "left_shoulder_pitch_joint",
+          "lower_rad": -3.0892,
+          "upper_rad": 2.6704
+        },
+        {
+          "name": "kLeftShoulderRoll",
+          "dds_slot": 16,
+          "pin_name": "left_shoulder_roll_joint",
+          "lower_rad": -1.5882,
+          "upper_rad": 2.2515
+        },
+        {
+          "name": "kLeftShoulderYaw",
+          "dds_slot": 17,
+          "pin_name": "left_shoulder_yaw_joint",
+          "lower_rad": -2.618,
+          "upper_rad": 2.618
+        },
+        {
+          "name": "kLeftElbow",
+          "dds_slot": 18,
+          "pin_name": "left_elbow_joint",
+          "lower_rad": -1.0472,
+          "upper_rad": 2.0944
+        },
+        {
+          "name": "kLeftWristRoll",
+          "dds_slot": 19,
+          "pin_name": "left_wrist_roll_joint",
+          "lower_rad": -1.972222054,
+          "upper_rad": 1.972222054
+        },
+        {
+          "name": "kRightShoulderPitch",
+          "dds_slot": 22,
+          "pin_name": "right_shoulder_pitch_joint",
+          "lower_rad": -3.0892,
+          "upper_rad": 2.6704
+        },
+        {
+          "name": "kRightShoulderRoll",
+          "dds_slot": 23,
+          "pin_name": "right_shoulder_roll_joint",
+          "lower_rad": -2.2515,
+          "upper_rad": 1.5882
+        },
+        {
+          "name": "kRightShoulderYaw",
+          "dds_slot": 24,
+          "pin_name": "right_shoulder_yaw_joint",
+          "lower_rad": -2.618,
+          "upper_rad": 2.618
+        },
+        {
+          "name": "kRightElbow",
+          "dds_slot": 25,
+          "pin_name": "right_elbow_joint",
+          "lower_rad": -1.0472,
+          "upper_rad": 2.0944
+        },
+        {
+          "name": "kRightWristRoll",
+          "dds_slot": 26,
+          "pin_name": "right_wrist_roll_joint",
+          "lower_rad": -1.972222054,
+          "upper_rad": 1.972222054
+        }
+      ],
+      "kp": [
+        300.0,
+        300.0,
+        300.0,
+        300.0,
+        80.0,
+        300.0,
+        300.0,
+        300.0,
+        300.0,
+        300.0,
+        80.0,
+        300.0,
+        300.0,
+        0.0,
+        0.0,
+        80.0,
+        80.0,
+        80.0,
+        80.0,
+        40.0,
+        0.0,
+        0.0,
+        80.0,
+        80.0,
+        80.0,
+        80.0,
+        40.0,
+        0.0,
+        0.0
+      ],
+      "kd": [
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        0.0,
+        0.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        1.5,
+        0.0,
+        0.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        1.5,
+        0.0,
+        0.0
+      ],
+      "cases": [
+        {
+          "name": "joint/kLeftShoulderPitch/+1",
+          "response_rad": 0.11933277547359467,
+          "settled_error_rad": 0.0007594388723373147,
+          "cross_joint_rad": 0.00011131167411804199,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderPitch/-1",
+          "response_rad": 0.11999727785587311,
+          "settled_error_rad": 0.0007237982749939142,
+          "cross_joint_rad": 5.781650543212891e-06,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderRoll/+1",
+          "response_rad": 0.11996756494045258,
+          "settled_error_rad": 0.0002180248498916404,
+          "cross_joint_rad": 0.0005058497190475464,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderRoll/-1",
+          "response_rad": 0.1199969407171011,
+          "settled_error_rad": 0.00015168720710789785,
+          "cross_joint_rad": 6.70403242111206e-05,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderYaw/+1",
+          "response_rad": 0.11964449713559588,
+          "settled_error_rad": 0.0006521627306938227,
+          "cross_joint_rad": 0.000690065324306488,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderYaw/-1",
+          "response_rad": 0.11999805003870279,
+          "settled_error_rad": 0.0006498411297798101,
+          "cross_joint_rad": 0.00017952919006347656,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftElbow/+1",
+          "response_rad": 0.1199047863483429,
+          "settled_error_rad": 0.0008210629224777444,
+          "cross_joint_rad": 0.0006794929504394531,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftElbow/-1",
+          "response_rad": 0.11998733878135681,
+          "settled_error_rad": 0.0008655995130538718,
+          "cross_joint_rad": 5.380809307098389e-05,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftWristRoll/+1",
+          "response_rad": 0.1197688633483196,
+          "settled_error_rad": 0.0002513319253921731,
+          "cross_joint_rad": 0.000586971640586853,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftWristRoll/-1",
+          "response_rad": 0.12000177043228177,
+          "settled_error_rad": 0.000231276154518123,
+          "cross_joint_rad": 5.2675604820251465e-05,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderPitch/+1",
+          "response_rad": 0.11923912167549133,
+          "settled_error_rad": 0.0007608544826507302,
+          "cross_joint_rad": 0.00022830025216080685,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderPitch/-1",
+          "response_rad": 0.11999872326850891,
+          "settled_error_rad": 0.0007223677635193049,
+          "cross_joint_rad": 5.170702934265137e-06,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderRoll/+1",
+          "response_rad": 0.1199607327580452,
+          "settled_error_rad": 0.00015278081264114007,
+          "cross_joint_rad": 0.0006051063537597656,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderRoll/-1",
+          "response_rad": 0.12000460922718048,
+          "settled_error_rad": 0.000154360372107476,
+          "cross_joint_rad": 0.00013436377048492432,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderYaw/+1",
+          "response_rad": 0.1196472415686003,
+          "settled_error_rad": 0.0006466895341873113,
+          "cross_joint_rad": 0.0006832331418991089,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderYaw/-1",
+          "response_rad": 0.11999862510128878,
+          "settled_error_rad": 0.0006497114896774348,
+          "cross_joint_rad": 0.00020040571689605713,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightElbow/+1",
+          "response_rad": 0.11989951133728027,
+          "settled_error_rad": 0.0008235663175583108,
+          "cross_joint_rad": 0.0005872026085853577,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightElbow/-1",
+          "response_rad": 0.11998608708381653,
+          "settled_error_rad": 0.0008673578500747459,
+          "cross_joint_rad": 5.714595317840576e-05,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightWristRoll/+1",
+          "response_rad": 0.11976861524951943,
+          "settled_error_rad": 0.00025168955326082543,
+          "cross_joint_rad": 0.000584825873374939,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightWristRoll/-1",
+          "response_rad": 0.11999991878838046,
+          "settled_error_rad": 0.00023130223155021223,
+          "cross_joint_rad": 5.270540714263916e-05,
+          "passed": true
+        },
+        {
+          "name": "cartesian/left/0",
+          "passed": true,
+          "joint_p95_rad": 0.010926501747970458,
+          "ik_position_m": 0.007605703561540804,
+          "ik_rotation_rad": 0.037357296398956026,
+          "actuator_position_m": 0.00201030223486488,
+          "actuator_rotation_rad": 0.003821390725495721,
+          "total_position_m": 0.008412413405068087,
+          "total_rotation_rad": 0.03756056781606349,
+          "command_span_0_rad": 0.21698246107070218,
+          "measured_span_0_rad": 0.2120504379272461
+        },
+        {
+          "name": "cartesian/left/1",
+          "passed": true,
+          "joint_p95_rad": 0.008593762411840507,
+          "ik_position_m": 0.004967952529699723,
+          "ik_rotation_rad": 0.02789444413141719,
+          "actuator_position_m": 0.002554497828070875,
+          "actuator_rotation_rad": 0.005795017297695259,
+          "total_position_m": 0.006602998305762126,
+          "total_rotation_rad": 0.02745413504713118,
+          "command_span_0_rad": 0.09729061007640624,
+          "measured_span_0_rad": 0.09218549728393555
+        },
+        {
+          "name": "cartesian/left/2",
+          "passed": true,
+          "joint_p95_rad": 0.008191807991588158,
+          "ik_position_m": 0.007854237777585503,
+          "ik_rotation_rad": 0.0681072495319398,
+          "actuator_position_m": 0.0013700859360882174,
+          "actuator_rotation_rad": 0.00479082635611968,
+          "total_position_m": 0.008380371453520547,
+          "total_rotation_rad": 0.06858464188749383,
+          "command_span_0_rad": 0.15019437464482477,
+          "measured_span_0_rad": 0.14576488733291626
+        },
+        {
+          "name": "cartesian/left/3",
+          "passed": true,
+          "joint_p95_rad": 0.00935105183228123,
+          "ik_position_m": 0.003984891058050188,
+          "ik_rotation_rad": 0.02436908103394174,
+          "actuator_position_m": 0.0007010497113181064,
+          "actuator_rotation_rad": 0.014615005509837633,
+          "total_position_m": 0.004008635590544677,
+          "total_rotation_rad": 0.03375933208101384,
+          "command_span_0_rad": 0.11102306306538517,
+          "measured_span_0_rad": 0.1044773068279028
+        },
+        {
+          "name": "cartesian/left/4",
+          "passed": true,
+          "joint_p95_rad": 0.005941913123725985,
+          "ik_position_m": 0.006460834801650833,
+          "ik_rotation_rad": 0.0816232481892011,
+          "actuator_position_m": 0.0007500318557290659,
+          "actuator_rotation_rad": 0.008708751488039897,
+          "total_position_m": 0.00639485343872179,
+          "total_rotation_rad": 0.08215565312162944,
+          "command_span_0_rad": 0.0637490988935484,
+          "measured_span_0_rad": 0.06001865863800049
+        },
+        {
+          "name": "cartesian/left/5",
+          "passed": true,
+          "joint_p95_rad": 0.01370757534100823,
+          "ik_position_m": 0.004328312311928223,
+          "ik_rotation_rad": 0.06060339581526857,
+          "actuator_position_m": 0.0013179271306701038,
+          "actuator_rotation_rad": 0.004138755719205369,
+          "total_position_m": 0.004576321483558514,
+          "total_rotation_rad": 0.06365818421355401,
+          "command_span_0_rad": 0.22312243596433134,
+          "measured_span_0_rad": 0.2154565006494522
+        },
+        {
+          "name": "cartesian/right/0",
+          "passed": true,
+          "joint_p95_rad": 0.011030851306751332,
+          "ik_position_m": 0.007606353315648501,
+          "ik_rotation_rad": 0.03735717177060382,
+          "actuator_position_m": 0.0021975714640316227,
+          "actuator_rotation_rad": 0.003936400117259024,
+          "total_position_m": 0.008459591243592267,
+          "total_rotation_rad": 0.037356301549088165,
+          "command_span_1_rad": 0.21698984758515338,
+          "measured_span_1_rad": 0.21201568841934204
+        },
+        {
+          "name": "cartesian/right/1",
+          "passed": true,
+          "joint_p95_rad": 0.008724271672819084,
+          "ik_position_m": 0.004950161533120434,
+          "ik_rotation_rad": 0.027821446832066513,
+          "actuator_position_m": 0.002464559652957461,
+          "actuator_rotation_rad": 0.00555178117132185,
+          "total_position_m": 0.005906995316851397,
+          "total_rotation_rad": 0.028523932755689315,
+          "command_span_1_rad": 0.09721992574332775,
+          "measured_span_1_rad": 0.09209366142749786
+        },
+        {
+          "name": "cartesian/right/2",
+          "passed": true,
+          "joint_p95_rad": 0.008232178983933946,
+          "ik_position_m": 0.007854267980781055,
+          "ik_rotation_rad": 0.06794931576396554,
+          "actuator_position_m": 0.0013042412244400803,
+          "actuator_rotation_rad": 0.004387701679739273,
+          "total_position_m": 0.00832273477569107,
+          "total_rotation_rad": 0.06841762393134704,
+          "command_span_1_rad": 0.15012785827345965,
+          "measured_span_1_rad": 0.14566022157669067
+        },
+        {
+          "name": "cartesian/right/3",
+          "passed": true,
+          "joint_p95_rad": 0.009186731349689012,
+          "ik_position_m": 0.003983508799434856,
+          "ik_rotation_rad": 0.02413058162861311,
+          "actuator_position_m": 0.0006445982326592916,
+          "actuator_rotation_rad": 0.01435067515479877,
+          "total_position_m": 0.003986330380879323,
+          "total_rotation_rad": 0.034177600969541776,
+          "command_span_1_rad": 0.1103707140993509,
+          "measured_span_1_rad": 0.10377251170575619
+        },
+        {
+          "name": "cartesian/right/4",
+          "passed": true,
+          "joint_p95_rad": 0.0061656132007973695,
+          "ik_position_m": 0.00646082925207956,
+          "ik_rotation_rad": 0.08167707216764399,
+          "actuator_position_m": 0.0007164190679884669,
+          "actuator_rotation_rad": 0.008333541694049616,
+          "total_position_m": 0.006388431510598197,
+          "total_rotation_rad": 0.08219208902746447,
+          "command_span_1_rad": 0.06371477318621543,
+          "measured_span_1_rad": 0.060011982917785645
+        },
+        {
+          "name": "cartesian/right/5",
+          "passed": true,
+          "joint_p95_rad": 0.01354470505527888,
+          "ik_position_m": 0.004330660877672028,
+          "ik_rotation_rad": 0.05805703898045952,
+          "actuator_position_m": 0.000972796492693834,
+          "actuator_rotation_rad": 0.0035790864323785635,
+          "total_position_m": 0.00466230339680307,
+          "total_rotation_rad": 0.060135120474325905,
+          "command_span_1_rad": 0.22301296197511827,
+          "measured_span_1_rad": 0.215190090239048
+        },
+        {
+          "name": "cartesian/both/0",
+          "passed": true,
+          "joint_p95_rad": 0.011103685079349768,
+          "ik_position_m": 0.007606353315648455,
+          "ik_rotation_rad": 0.03735938183803194,
+          "actuator_position_m": 0.002157236696463747,
+          "actuator_rotation_rad": 0.003897196496383434,
+          "total_position_m": 0.008410081534587532,
+          "total_rotation_rad": 0.03732241049246284,
+          "command_span_0_rad": 0.2169898475851526,
+          "measured_span_0_rad": 0.21203935146331787,
+          "command_span_1_rad": 0.2168603366037497,
+          "measured_span_1_rad": 0.2119286060333252
+        },
+        {
+          "name": "cartesian/both/1",
+          "passed": true,
+          "joint_p95_rad": 0.008398048044017515,
+          "ik_position_m": 0.004967952320842467,
+          "ik_rotation_rad": 0.027894444144606515,
+          "actuator_position_m": 0.0025334558556380712,
+          "actuator_rotation_rad": 0.005812820088853873,
+          "total_position_m": 0.00668498059763641,
+          "total_rotation_rad": 0.028574853903018817,
+          "command_span_0_rad": 0.09729061612035925,
+          "measured_span_0_rad": 0.09213307499885559,
+          "command_span_1_rad": 0.09722003497948357,
+          "measured_span_1_rad": 0.09208128601312637
+        },
+        {
+          "name": "cartesian/both/2",
+          "passed": true,
+          "joint_p95_rad": 0.008025734410139,
+          "ik_position_m": 0.007854267980780908,
+          "ik_rotation_rad": 0.06810724953191452,
+          "actuator_position_m": 0.0012785086678599553,
+          "actuator_rotation_rad": 0.004417192855020302,
+          "total_position_m": 0.008369636361701654,
+          "total_rotation_rad": 0.06858680878041264,
+          "command_span_0_rad": 0.1501943746448141,
+          "measured_span_0_rad": 0.14570432901382446,
+          "command_span_1_rad": 0.15012785827364716,
+          "measured_span_1_rad": 0.1456422209739685
+        },
+        {
+          "name": "cartesian/both/3",
+          "passed": true,
+          "joint_p95_rad": 0.009216313449188999,
+          "ik_position_m": 0.003984891058050116,
+          "ik_rotation_rad": 0.02436908103393673,
+          "actuator_position_m": 0.0007013382010040141,
+          "actuator_rotation_rad": 0.014382979209432663,
+          "total_position_m": 0.004008306274866966,
+          "total_rotation_rad": 0.03424446301175094,
+          "command_span_0_rad": 0.11102306306538517,
+          "measured_span_0_rad": 0.10445134155452251,
+          "command_span_1_rad": 0.11037071409935063,
+          "measured_span_1_rad": 0.1037727240473032
+        },
+        {
+          "name": "cartesian/both/4",
+          "passed": true,
+          "joint_p95_rad": 0.006445728197913661,
+          "ik_position_m": 0.006460834801650798,
+          "ik_rotation_rad": 0.08167707216764399,
+          "actuator_position_m": 0.0007493928499304006,
+          "actuator_rotation_rad": 0.009125426673128744,
+          "total_position_m": 0.00638983891417341,
+          "total_rotation_rad": 0.08224224613185901,
+          "command_span_0_rad": 0.06374909889354885,
+          "measured_span_0_rad": 0.060039401054382324,
+          "command_span_1_rad": 0.06371477318621566,
+          "measured_span_1_rad": 0.060008883476257324
+        },
+        {
+          "name": "cartesian/both/5",
+          "passed": true,
+          "joint_p95_rad": 0.013096480759568775,
+          "ik_position_m": 0.00433066087767206,
+          "ik_rotation_rad": 0.06060339581527059,
+          "actuator_position_m": 0.0013270590125124253,
+          "actuator_rotation_rad": 0.004066451674821045,
+          "total_position_m": 0.004661880765441038,
+          "total_rotation_rad": 0.06386616788137782,
+          "command_span_0_rad": 0.22312243596433134,
+          "measured_span_0_rad": 0.21520789712667465,
+          "command_span_1_rad": 0.22301296197511833,
+          "measured_span_1_rad": 0.21510037779808044
+        }
+      ],
+      "passed": true,
+      "worst_case_metrics": {
+        "joint_settled_max_rad": 0.0008673578500747459,
+        "cross_joint_max_rad": 0.000690065324306488,
+        "joint_p95_rad": 0.01370757534100823,
+        "ik_position_m": 0.007854267980781055,
+        "ik_rotation_rad": 0.08167707216764399,
+        "actuator_position_m": 0.002554497828070875,
+        "actuator_rotation_rad": 0.014615005509837633,
+        "total_position_m": 0.008459591243592267,
+        "total_rotation_rad": 0.08224224613185901
+      },
+      "sample_count": 3192
+    }
+  }
+}
