@@ -1,5 +1,12 @@
 # Rung 4 Handoff
 
+## Workstream update: 2026-09-11
+
+Continue simulation follow-ups using [future non-physical work](future-non-physical-work.md).
+The separate [sim-to-real plan](sim-to-real-plan.md) records physical preflight, simple
+joint motion, scripted IK verification, and XR teleoperation on G1-29, then G1-23.
+The earlier simulation-only session boundaries below remain historical context.
+
 ## End-of-Day Handoff: 2026-09-10
 
 Camera streaming is implemented and the user verified video with the VR headset.
