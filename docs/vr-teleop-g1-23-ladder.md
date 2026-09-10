@@ -261,6 +261,9 @@ the lower rotation weight encodes.
 
 ### Rung 4V - Robot Camera Feedback in the Headset
 
+The consolidated [future non-physical backlog](future-non-physical-work.md) records
+remaining numerical, recovery, performance, and cleanup experiments for Rungs 4 and 4V.
+
 **Status: capture and OpenXR image submission implemented; basic headset video user-verified
 on 2026-09-10.** The reviewed embodiment was not specified; headless checks cover both.
 Systematic reconnect and latency acceptance remain open. The standalone

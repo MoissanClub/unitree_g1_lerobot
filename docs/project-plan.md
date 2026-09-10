@@ -170,12 +170,18 @@ not a claim that every boundary is fully implemented.
 
 ## Cross-Track Acceptance
 
+Current future backlog and recommended experiments:
+[Future non-physical work](future-non-physical-work.md). The user concluded this session
+after verifying headset video; resume with numerical DDS/physics acceptance, not camera bring-up.
+
 1. **Next: Tracks 1 + 3.** With the live G1-23 backend in place, exercise individual DDS joints,
    then run scripted IK-to-actuator tests without a headset.
-2. **Then Track 2 with Tracks 1 + 3.** Verify G1-23 headset control and G1-29 regression.
+2. **Then Track 2 with Tracks 1 + 3.** Extend the completed headset visual review with
+   systematic controller lifecycle checks and G1-29 regression.
    This completes the remaining historical **Rung 4 control** acceptance.
-3. **Tracks 3 + 2: camera feedback.** Local capture, headset delivery, reconnect/timing
-   tests. This is **Rung 4V**, currently unimplemented/unverified.
+3. **Tracks 3 + 2: camera feedback.** Local capture and submission are tested on both
+   embodiments; basic headset video is user-verified. Reconnect/timing acceptance remains
+   open for **Rung 4V**.
 4. **Track 1 + Track 2: physical robots.** G1-29 baseline when available (**5a**), then
    G1-23 (**5b**), after simulation and video acceptance. Track 3 remains the regression
    environment. Future hand/tactile integration remains historical **Rung 6**.

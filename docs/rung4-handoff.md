@@ -1,5 +1,14 @@
 # Rung 4 Handoff
 
+## End-of-Day Handoff: 2026-09-10
+
+Camera streaming is implemented and the user verified video with the VR headset.
+Implementation `4612a5c` is committed and pushed. Today's work is concluded.
+Resume with [future non-physical work](future-non-physical-work.md): systematic joint DDS
+and numerical IK-to-physics acceptance first, then recovery, performance, and native cleanup
+investigations. Do not rebuild the working camera path or start physical actuation.
+The camera section below records the earlier implementation sequence, not the current backlog.
+
 ## Next Session: Camera Streaming
 
 **Local camera checkpoint implemented:** simulator `--camera` now publishes a torso-mounted
@@ -13,8 +22,8 @@ Next is systematic reconnect and performance acceptance,
 not rebuilding camera capture. See the camera document for the complete three-command sequence.
 The original sequence below remains context; local capture/frame handoff are now implemented.
 
-**User direction:** dual-arm headset visual review is complete. Resume with robot-camera
-streaming to the headset (Rung 4V), not another model/IK/motor comparison or backend bring-up.
+**Earlier user direction (now implemented):** after dual-arm headset visual review, add
+robot-camera streaming to the headset (Rung 4V), not another model/IK/motor comparison or backend bring-up.
 Systematic numerical DDS/actuator and controller-lifecycle acceptance remains open, but
 is deferred rather than a prerequisite to beginning camera work. Do not mark it complete.
 
