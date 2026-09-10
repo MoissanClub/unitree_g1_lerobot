@@ -79,6 +79,10 @@ not a claim that other providers or all LeRobot robots have been tested.
 ### Completed
 
 - External CloudXR startup, controller smoke test, and existing XR-to-G1 bridge.
+- CloudXR-only launcher has no robot diagnostic, embodiment selection, or LeRobot
+  runtime dependency; it can start independently of the simulator and bridge.
+- XR commands and simulator startup diagnostics default to gravity compensation ON;
+  `--no-gravity-compensation` provides an explicit opt-out. DDS feedforward is sender-owned.
 - Clutch/engagement, ready-pose behavior, diagnostics, and pose/button instrumentation.
 - User-confirmed G1-29 and G1-23 right-controller engagement and movement in simulation.
 - Default dual-arm input (`--hand-side both`): one session, independent clutches,

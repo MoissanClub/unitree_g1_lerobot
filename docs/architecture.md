@@ -109,8 +109,10 @@ identity checks, stale holding, and embedded lifecycle have been tested. See
 [live simulator](g1-23-live-simulator.md). G1-23 hardware and G1-29-specific whole-body
 controllers remain blocked. Full per-joint, Cartesian/DDS, and XR acceptance is still pending.
 
-The XR bridge and all three session launchers now select either embodiment and support
-headless operation. Mock left/right motion, external identity mismatch rejection, and
+The simulator and XR bridge select either embodiment; all three session launchers support
+headless operation. CloudXR is robot-independent and has no startup diagnostic or
+embodiment parameter, and does not require LeRobot or the G1 conda environment.
+Mock left/right motion, external identity mismatch rejection, and
 real CloudXR/OpenXR startup passed for both variants. Headset acceptance is separate.
 
 **DDS lifetime boundary:** the combined tests reproduced a native publication-matched

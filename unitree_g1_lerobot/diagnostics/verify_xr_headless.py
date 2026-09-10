@@ -39,7 +39,8 @@ def main():
         def start(label, script, *options):
             path = output / f"{variant}-{label}.log"
             with path.open("w") as log:
-                process = subprocess.Popen([str(ROOT / script), "--embodiment", variant,
+                selection = [] if script == "run_isaac_teleop.sh" else ["--embodiment", variant]
+                process = subprocess.Popen([str(ROOT / script), *selection,
                     "--headless", *options], cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
                     stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             processes.append(process)
@@ -74,12 +75,15 @@ def main():
                 options.append("--mock-xr")
                 if side == "left":
                     options.append("--gravity-compensation")
+                elif side == "right":
+                    options.append("--no-gravity-compensation")
             else:
                 options.append("--skip-startup-diagnostic")
             return start(label, "run_xr_g1_mujoco.sh", *options), report
 
         def check_motion(report):
             result = json.loads(report.read_text())
+            assert result["gravity_compensation"] == (result["hand_side"] != "right"), report
             samples = result["samples"]
             if len(samples) < 20 or not any(s["engaged"] for s in samples):
                 raise AssertionError(f"No sustained mock XR engagement: {report}")

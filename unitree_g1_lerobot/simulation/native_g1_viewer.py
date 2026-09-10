@@ -14,6 +14,7 @@ from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowCmd_
 
 
 def raise_arm_diagnostic(env, args):
+    print(f"Startup diagnostic gravity compensation={args.gravity_compensation}", flush=True)
     publisher = ChannelPublisher("rt/lowcmd", LowCmd_)
     publisher.Init()
     try:
@@ -33,7 +34,7 @@ def raise_arm_diagnostic(env, args):
             desired = initial + (target - initial) * (alpha * alpha * (3 - 2 * alpha))
             msg = unitree_hg_msg_dds__LowCmd_()
             with env.lock:
-                gravity = env.plant.gravity_torque()
+                gravity = env.plant.gravity_torque() if args.gravity_compensation else np.zeros(len(env.indices))
             for j, index in enumerate(env.indices):
                 motor = msg.motor_cmd[index]
                 motor.mode = 1

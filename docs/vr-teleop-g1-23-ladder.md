@@ -431,8 +431,14 @@ future XR inputs can feed the same wrist-target contract.
 
 ## Rung 3 Runtime Model
 
-CloudXR is external for the current rung 3 test: `run_isaac_teleop.sh` starts the runtime,
+CloudXR is external for the current rung 3 test: `run_isaac_teleop.sh` starts only the runtime,
 and `python -m unitree_g1_lerobot.xr.xr_to_g1_mujoco --external-cloudxr` attaches to the existing OpenXR runtime.
+
+The CloudXR launcher has no robot startup diagnostic, confirmation prompt, or embodiment
+parameter and can run without the simulator, bridge, LeRobot checkout, or G1 conda environment.
+Embodiment selection belongs to the simulator and XR bridge. Those launchers now default
+to gravity compensation ON for their own commands, with `--no-gravity-compensation`
+as an opt-out; the simulator never adds duplicate feedforward to received DDS commands.
 MuJoCo can be embedded or external. Without `--external-g1-sim`, the script constructs
 `UnitreeG1(UnitreeG1Config(is_simulation=True))` and `robot.connect()` creates the G1-29
 simulation in the bridge process. With that flag, the standalone simulator owns physics

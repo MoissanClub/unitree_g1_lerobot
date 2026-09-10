@@ -9,13 +9,20 @@ basic standalone/embedded DDS checks. Next is systematic Track 1 joint/IK/DDS
 acceptance; Track 2 headset acceptance follows. Existing rung names remain shared
 acceptance gates, not separate implementation tracks.
 
-The three launchers now accept `--embodiment` and `--headless`. Both variants passed
+The simulator and bridge accept `--embodiment`; all three accept `--headless`. Both variants passed
 real CloudXR/OpenXR startup and separate plus simultaneous mock left/right motion with
 measured feedback. The user confirmed right-arm headset control on both embodiments.
 The bridge now defaults to `--hand-side both`, with independent clutches in one XR
 session and one combined IK/DDS update. Next visual acceptance is simultaneous
 two-controller motion, independent release, tracking loss, and re-engagement on both
 embodiments. Single-hand modes remain available explicitly.
+
+The XR launcher and simulator startup diagnostics now default to gravity compensation
+ON for both embodiments, with `--no-gravity-compensation` as an explicit opt-out.
+DDS feedforward remains sender-owned, never added twice by the simulator. Native
+G1-23 idle/stale hold retains its compensated safety behavior. CloudXR is now independent:
+no lowering diagnostic, embodiment/gravity parameter, confirmation prompt, or LeRobot
+checkout/G1 conda dependency. Start it with `./run_isaac_teleop.sh`, in either service order.
 
 Package modules now use descriptive names: `xr.xr_to_g1_mujoco`,
 `diagnostics.verify_g1_ik`, and `diagnostics.verify_g1_ik_mujoco`. Root shell launchers

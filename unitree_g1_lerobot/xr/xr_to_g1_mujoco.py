@@ -46,7 +46,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--headless", action="store_true", help="No viewer or confirmation prompts; does not mock XR.")
     parser.add_argument("--skip-startup-diagnostic", action="store_true")
     parser.add_argument("--verification-report", type=Path, help="Write numerical loop evidence on normal shutdown.")
-    parser.add_argument("--gravity-compensation", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--gravity-compensation", action=argparse.BooleanOptionalAction, default=True,
+                        help="Include IK-model gravity feedforward in arm commands (default: on).")
     parser.add_argument(
         "--lerobot-root",
         default="/home/dwei/lerobot-sim/lerobot",

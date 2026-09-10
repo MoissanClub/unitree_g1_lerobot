@@ -49,12 +49,16 @@ means additional motor torque, not disabling gravity in MuJoCo.
 
 | G1-23 live phase | Gravity feedforward |
 | --- | --- |
-| Startup arm raising and waiting for Enter | ON, exact MuJoCo model at measured pose |
+| Startup arm raising and waiting for Enter | ON by default, exact MuJoCo model at measured pose; `--no-gravity-compensation` disables it |
 | Idle or stale-command hold | ON, exact MuJoCo model at measured pose |
 | Following valid DDS commands | Sender-controlled: uses incoming `tau`, without extra compensation |
 
 For a LeRobot sender, explicitly set `UnitreeG1Config(gravity_compensation=True)`
 to enable its IK-model feedforward; the configuration default is `False`.
+The XR launcher sets this to `True` by default for both embodiments; pass
+`--no-gravity-compensation` to that launcher to disable it during teleoperation.
+The simulator launcher's compensation option controls its startup diagnostic, not
+incoming DDS commands or the native stale-command safety hold.
 That controller evaluates gravity at the commanded pose, unlike the simulator's
 measured-pose fallback. Do not assume these are identical compensation methods.
 

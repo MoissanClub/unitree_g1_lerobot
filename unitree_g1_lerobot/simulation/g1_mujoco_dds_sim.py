@@ -24,6 +24,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lerobot-root", default="/home/dwei/lerobot-sim/lerobot")
     parser.add_argument("--embodiment", choices=("g1_29", "g1_23"), default="g1_29")
+    parser.add_argument("--gravity-compensation", action=argparse.BooleanOptionalAction, default=True,
+                        help="Compensate startup diagnostic commands (default: on). During DDS control the sender owns feedforward; no extra torque is added.")
     parser.add_argument("--duration-s", type=float, default=0, help="Stop after N seconds; 0 runs until interrupted.")
     parser.add_argument("--save-frame", type=Path, help="Save the native G1-23 viewer's latest frame.")
     parser.add_argument("--hz", type=float, default=250.0)
@@ -121,6 +123,8 @@ def run_raise_arm_diagnostic(env, args: argparse.Namespace, *, drive_steps: bool
         thread.start()
     try:
         diag_args = SimpleNamespace(
+            embodiment=args.embodiment,
+            gravity_compensation=args.gravity_compensation,
             mode="raise",
             lerobot_root=args.lerobot_root,
             duration_s=args.diagnostic_duration_s,

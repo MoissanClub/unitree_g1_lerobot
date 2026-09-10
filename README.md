@@ -64,7 +64,8 @@ The working G1-29 session sequence is: simulator, bridge, CloudXR, then headset:
 ./run_isaac_teleop.sh
 ```
 
-Each launcher has confirmation-based startup diagnostics. Put on the headset after
+The simulator and bridge have confirmation-based startup diagnostics. CloudXR starts
+without robot motion or confirmation and can run independently. Put on the headset after
 the services are ready. Current headset support supplies controller input only; the
 robot image is a workstation Tk/X view, not video streamed to the headset.
 
@@ -72,14 +73,14 @@ The bridge now defaults to `--hand-side both`: each controller moves its corresp
 arm while its trigger or squeeze is held above 0.5. Release or tracking loss freezes
 only that arm's joint command. Use `--hand-side right` or `--hand-side left` for the
 previous single-arm modes. One bridge owns both arms; do not run two bridges together.
-Use matching `--embodiment g1_23` on all three launchers for G1-23.
+Use matching `--embodiment g1_23` on the simulator and bridge for G1-23; CloudXR has no embodiment option.
 
 See the [operator guide](docs/operator-guide.md) for one-time setup, headset connection,
 diagnostic behavior, embedded/external simulator modes, and troubleshooting.
 
 ### Embodiment Selection and Headless Verification
 
-All three launchers accept `--embodiment g1_29|g1_23` (default: `g1_29`). For a
+The simulator and XR bridge accept `--embodiment g1_29|g1_23` (default: `g1_29`). For a
 headless session, start these in separate terminals in the order shown:
 
 ```bash
@@ -90,14 +91,13 @@ headless session, start these in separate terminals in the order shown:
 ./run_xr_g1_mujoco.sh --embodiment g1_23 --headless --external-g1-sim --external-cloudxr --wait-for-cloudxr
 
 # Terminal B, after the bridge reports steady-state listening:
-./run_isaac_teleop.sh --embodiment g1_23 --headless
+./run_isaac_teleop.sh --headless
 ```
 
-Use `g1_29` in all three commands for that variant. Run only one live simulator at a
+Use `g1_29` in the simulator and bridge commands for that variant. Run only one live simulator at a
 time. The bridge selects registered IK, joints, gains, and the embedded simulator
-factory; external simulator identity is checked before sending commands. CloudXR
-uses the embodiment only to validate its bridge-owned lowering diagnostic, not to
-configure controller acquisition.
+factory; external simulator identity is checked before sending commands. CloudXR is
+robot-independent: no embodiment, gravity-compensation, or startup-diagnostic options.
 
 `--headless` removes local viewers and confirmation prompts, but still runs startup
 diagnostics and uses real XR input. It does not imply `--mock-xr`. Omit it for visual
@@ -116,13 +116,17 @@ both arms separately and simultaneously with deterministic controller translatio
 command/feedback motion, and starts real CloudXR and headless OpenXR sessions. It
 also rejects mismatched embodiments; right-arm checks use feedforward OFF and
 left-arm checks use selected IK-model gravity feedforward ON. The bridge is started
-before CloudXR to exercise its waiting/diagnostic path. The harness
+before CloudXR to exercise its runtime-waiting path. The harness
 prints a temporary directory containing logs and JSON evidence and stops its processes.
 Real OpenXR uses one session with both controller streams. This is not physical
 headset tracking, simultaneous two-controller headset acceptance, or video verification.
 
-Bridge gravity feedforward remains OFF by default, preserving G1-29 behavior. Add
-`--gravity-compensation` to enable selected IK-model feedforward. The G1-23 simulator
+Bridge gravity feedforward is ON by default for both embodiments. Use
+`--no-gravity-compensation` to disable selected IK-model feedforward. Simulator startup
+diagnostics also default to ON and accept the same opt-out. While following DDS commands,
+the simulator applies incoming torque without adding a second compensation term.
+`run_isaac_teleop.sh` needs no gravity option and performs no robot diagnostic.
+The G1-23 simulator
 still compensates gravity during its own startup and stale-command hold.
 
 ## Track 3: Simulation for G1

@@ -86,7 +86,13 @@ class LayoutTests(unittest.TestCase):
             stub.chmod(0o755)
             env = os.environ.copy()
             env.pop("CLOUDXR_ENV_FILE", None)
-            env.update(VENV_DIR=str(venv), LEROBOT_ROOT=str(ROOT), SKIP_G1_STARTUP_DIAGNOSTIC="1")
+            request, ack = Path(temporary) / "request", Path(temporary) / "ack"
+            request.write_text("untouched request")
+            ack.write_text("untouched ack")
+            env.pop("SKIP_G1_STARTUP_DIAGNOSTIC", None)
+            env.update(VENV_DIR=str(venv), LEROBOT_ROOT="/nonexistent/lerobot",
+                       G1_PYTHON_BIN="/nonexistent/python", G1_DIAGNOSTIC_REQUEST_FILE=str(request),
+                       G1_DIAGNOSTIC_ACK_FILE=str(ack))
             result = subprocess.run(
                 [str(ROOT / "run_isaac_teleop.sh")], cwd=temporary, env=env,
                 capture_output=True, text=True, timeout=15,
@@ -96,6 +102,16 @@ class LayoutTests(unittest.TestCase):
             config = ROOT / "configs/cloudxr_quest3.env"
             self.assertTrue(config.is_file())
             self.assertIn(str(config), result.stdout)
+            self.assertNotIn("--embodiment", result.stdout)
+            self.assertEqual(request.read_text(), "untouched request")
+            self.assertEqual(ack.read_text(), "untouched ack")
+
+    def test_cloudxr_rejects_removed_robot_options(self):
+        for option in ("--embodiment", "--skip-startup-diagnostic"):
+            result = subprocess.run([str(ROOT / "run_isaac_teleop.sh"), option],
+                                    capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("Unknown argument", result.stderr)
 
 
 if __name__ == "__main__":

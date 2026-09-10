@@ -31,6 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("mode", choices=("raise", "orient", "hands-up", "lower"))
     parser.add_argument("--lerobot-root", default="/home/dwei/lerobot-sim/lerobot")
     parser.add_argument("--embodiment", choices=("g1_29", "g1_23"), default="g1_29")
+    parser.add_argument("--gravity-compensation", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--duration-s", type=float, default=2.0)
     parser.add_argument("--hz", type=float, default=30.0)
     parser.add_argument("--g1-state-timeout-s", type=float, default=10.0)
@@ -137,7 +138,10 @@ def run_diagnostic(args: argparse.Namespace) -> int:
     print(f"== Startup diagnostic: {messages[args.mode]} ==", flush=True)
 
     patch_unitree_dds_config()
-    robot = UnitreeG1(UnitreeG1Config(embodiment=getattr(args, "embodiment", "g1_29"), is_simulation=True))
+    compensation = getattr(args, "gravity_compensation", True)
+    print(f"Startup diagnostic gravity compensation={compensation}", flush=True)
+    robot = UnitreeG1(UnitreeG1Config(embodiment=getattr(args, "embodiment", "g1_29"),
+                                    is_simulation=True, gravity_compensation=compensation))
     try:
         connect_unitree_g1_external_dds(robot, g1_module, robot.joint_index, args.g1_state_timeout_s)
     except TimeoutError as exc:

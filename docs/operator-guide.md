@@ -138,6 +138,14 @@ cd ~/lerobot-sim/unitree_g1_lerobot
 
 This command runs until Ctrl+C. For bounded smoke tests, pass `--duration-s N`.
 
+Gravity compensation is ON by default in the bridge (including its startup
+diagnostic motions) and in simulator startup diagnostics, for both embodiments.
+Use `--no-gravity-compensation` on the bridge to disable feedforward during XR control;
+the simulator option controls only its own startup diagnostic. The simulator does not
+add duplicate compensation to received DDS commands. Native G1-23 idle/stale-command
+holding retains its exact-model compensation. `run_isaac_teleop.sh` has no gravity
+option and performs no robot motion or diagnostic.
+
 If the MuJoCo arms feel too slow or too subtle, tune only the bridge command gains
 and controller translation scale first:
 
@@ -154,22 +162,22 @@ and holding the clutch, each hand's `raw` position and `target` should change, w
 nonzero combined joint delta `q_d`. If `raw` stays constant, CloudXR/OpenXR is reporting
 button state but not changing controller position.
 
-Terminal B, start CloudXR. When Terminal C is already running, this asks the XR
-bridge to raise both arms briefly, lower both arms, and hold that diagnostic pose
-until you confirm it. This avoids Terminal B and Terminal C publishing conflicting
-DDS arm commands before CloudXR starts:
+Terminal B, start CloudXR. This is a robot-independent service: no startup motion,
+confirmation, DDS request, or bridge prerequisite. It can also start before the simulator
+or bridge, without changing robot state:
 
 ```bash
 cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_isaac_teleop.sh
 ```
 
-For noninteractive runs, use `--headless` on all three launchers: startup motion
-still runs, but there is no viewer or confirmation prompt. Use
+For noninteractive runs, use `--headless` on all three launchers. Simulator and bridge
+startup motion still runs, but there is no viewer or confirmation prompt. CloudXR is
+always headless and accepts that flag for convenience. On the simulator and bridge, use
 `--skip-startup-diagnostic` or `SKIP_G1_STARTUP_DIAGNOSTIC=1` only when intentionally
-skipping the motion. If Terminal B receives no matching bridge acknowledgement
-within 20 seconds, it aborts rather than starting a competing direct DDS sender.
-The standalone diagnostic remains available for an otherwise idle simulator.
+skipping the motion. CloudXR no longer accepts `--embodiment` or
+`--skip-startup-diagnostic`; it does not need a LeRobot checkout or the G1 conda environment.
+The standalone robot diagnostic remains available for an otherwise idle simulator.
 
 Restart the simulator and bridge processes between sessions. Repeated DDS sessions
 inside one Python interpreter exposed a native callback teardown crash; the headless
@@ -199,7 +207,7 @@ still applies: with `--wait-for-cloudxr`, after `--tracking-timeout-s` (default 
 the bridge holds the ready pose while recreating its XR session. A single lost
 controller does not restart the session while the other remains tracked.
 
-For headset review, use the same embodiment on all three launchers. Move each arm
+For headset review, use the same embodiment on the simulator and bridge. Move each arm
 separately, then both together, including wrist rotation. Release one clutch while
 moving the other, then re-engage after repositioning the released controller. Repeat
 with one controller temporarily untracked. Inspect both `left` and `right` log lines.

@@ -8,7 +8,6 @@ import time
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--embodiment", choices=("g1_29", "g1_23"), default="g1_29")
     parser.add_argument("--duration-s", type=float, default=0)
     parser.add_argument("--cloudxr-env-config", required=True)
     args = parser.parse_args()
@@ -20,7 +19,7 @@ def main():
     signal.signal(signal.SIGINT, lambda *_: stop.set())
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     with CloudXRLauncher(env_config=args.cloudxr_env_config, accept_eula=True) as launcher:
-        print(f"CloudXR ready: runtime and WSS proxy running; diagnostic embodiment={args.embodiment}", flush=True)
+        print("CloudXR ready: runtime and WSS proxy running", flush=True)
         print("Steady-state listening for headset connections (no robot video stream).", flush=True)
         deadline = time.monotonic() + args.duration_s if args.duration_s else math.inf
         while not stop.is_set() and time.monotonic() < deadline:
