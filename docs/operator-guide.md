@@ -31,6 +31,12 @@ described in [architecture](architecture.md#configurable-g1-runtime-structure).
 See the [three-track project plan](project-plan.md) for remaining work,
 and [architecture and upstream boundaries](architecture.md) for contribution scope.
 
+At the 2026-09-10 end-of-day checkpoint, migration `bbc08f4` and all seven comparison
+launchers are verified. The next task is broader motion acceptance using the existing
+live verification launcher, followed by recovery and performance work. Start from the
+[latest handoff](rung4-handoff.md) and [ordered backlog](future-non-physical-work.md);
+launch/setup procedures below remain reference instructions, not unfinished bring-up tasks.
+
 ## Isaac Teleop CloudXR Scripts
 
 Use these scripts for the Isaac Teleop / CloudXR part of the ladder.

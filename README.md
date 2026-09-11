@@ -7,8 +7,8 @@ and simulation work tracks. Simulation and physical-robot acceptance are distinc
 
 | Track | Code Owner | Current Status | Next Milestone |
 |---|---|---|---|
-| 1. Add G1-23 to the LeRobot stack | `unitree_g1_lerobot/robots/` | Configurable G1 class and native backend connected; basic DDS command/feedback tested | Systematic per-joint and IK/DDS acceptance |
-| 2. XR support for LeRobot | `unitree_g1_lerobot/xr/` | Both-arm bridge; headless checks pass on both variants; dual-arm headset review complete | Systematic lifecycle testing and headset camera display |
+| 1. Add G1-23 to the LeRobot stack | `unitree_g1_lerobot/robots/` | Configurable G1 class; both embodiments pass small-signal DDS/IK and independent geometry checks | Broader workspace and near-limit acceptance |
+| 2. XR support for LeRobot | `unitree_g1_lerobot/xr/` | Both-arm bridge and headless video pass on both variants; headset control and basic video user-reviewed | Failure/recovery, reconnect, and video performance acceptance |
 | 3. Simulation for G1 | `unitree_g1_lerobot/simulation/` | Live G1-29 and supported-arm G1-23 backends; reviewed model/IK/motor benchmarks | Broader DDS/actuator timing and scripted trajectory acceptance |
 
 The tracks share interfaces and acceptance tests, not duplicate control implementations.
@@ -19,6 +19,9 @@ systematic controller lifecycle testing, and physical-robot validation remain pe
 **Roadmap:** [three-track project plan](docs/project-plan.md).
 **Resume:** [handoff](docs/rung4-handoff.md).
 **Future experiments:** [non-physical acceptance and reliability work](docs/future-non-physical-work.md).
+Today's work is concluded. Resume with broader motion acceptance, then recovery,
+performance/endurance, and native cleanup. Matched waist models and upstream preparation
+are conditional/separate follow-ups; see the handoff for scope and safeguards.
 **Live acceptance:** `./run_verify_live_control.sh` runs headless joint and IK/DDS checks
 on both embodiments; see [coverage and reports](docs/live-control-acceptance.md).
 Add `--geometry` for [independent MuJoCo checks](docs/independent-geometry.md).
@@ -228,11 +231,11 @@ Dual-arm headset visual review is user-confirmed. Remaining Rung 4
 acceptance includes:
 
 1. Preserve the implemented embodiment selection and headless launcher regression checks above.
-2. Verify every active arm joint and scripted IK -> DDS -> actuator trajectories,
-   including feedback, control timing, and stale-command behavior.
+2. Extend the passing per-joint and IK -> DDS -> actuator baseline to larger motions,
+   near-limit cases, holds/reversals, control timing, and stale-command behavior.
 3. Record systematic engagement/release, invalid tracking, loss, and reconnection
    coverage on both embodiments, including G1-23's five-joint orientation limitations.
 
-Robot-camera streaming is separate **Rung 4V**, after control acceptance and before
-physical G1-29 and G1-23 work. See the
+Robot-camera streaming is separate **Rung 4V**: basic headset video is verified;
+reconnect and performance acceptance remain open. Physical work stays separately gated. See the
 [acceptance sequence](docs/project-plan.md#cross-track-acceptance).

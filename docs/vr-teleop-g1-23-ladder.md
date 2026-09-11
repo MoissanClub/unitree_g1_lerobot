@@ -19,13 +19,12 @@ not separate source-code tracks.
 
 Working method and status log. September 2026.
 
-Current checkpoint (2026-09-09): G1-29 controller-to-simulation teleoperation was
-confirmed by the user. G1-23 geometry and scripted IK have been visually reviewed;
-motor comparisons are reviewed and the configurable runtime structure is tested;
-native supported-arm G1-23 physics/DDS bring-up is tested, with systematic joint/IK
-and XR acceptance still pending. Robot camera video has not been
-streamed to or verified in the headset. The code now lives in responsibility-based
-subpackages; see [architecture](architecture.md).
+Current end-of-day checkpoint (2026-09-10): both embodiments pass small-signal joint/IK/DDS
+and independent geometry suites. Bilateral headset control and basic camera video have
+been user-reviewed; headless XR/video regression covers both embodiments. Diagnostic/test
+organization and launcher verification are committed in `bbc08f4`. Broader motion,
+recovery, and sustained-performance acceptance remain open. Work is concluded today;
+resume from the [latest handoff](rung4-handoff.md) and [ordered backlog](future-non-physical-work.md).
 
 **Goal:** drive a Unitree **G1-23** (5-DoF arms) from a VR headset through the **LeRobot**
 stack, and contribute the result upstream.
@@ -183,7 +182,8 @@ physics/DDS simulator: the comparison assigns joint positions and replays render
 #### What is actually left for Rung 4
 
 **User review confirmed:** the motor-comparison verification checkpoint is reviewed.
-Resume with systematic G1-23 joint/IK/DDS acceptance, not another geometry/benchmark
+Resume by extending the passing small-signal joint/IK/DDS suites for both embodiments,
+not another geometry/benchmark
 review. See the [handoff note](rung4-handoff.md) for the implementation baseline,
 verification commands, caveats, and remaining acceptance work.
 
@@ -248,9 +248,9 @@ headroom. This remains supported-arm benchmark evidence, not live DDS acceptance
 changes the source of targets. Scripted sweeps over DDS isolate the new physics,
 actuator, transport, feedback, and timing behavior without introducing another input device.
 
-**Next planning session:** decide the runtime integration details, controller settings,
-verification artifact interfaces, and numerical pass/fail thresholds before implementation.
-The items above are remaining acceptance work, not newly implemented capabilities.
+**Next session:** preserve the implemented runtime and baseline settings. Define broader
+motion cases and their acceptance budgets, then extend the existing suite. Older bring-up
+items above are historical where superseded by the current checkpoint and handoff.
 Rung 4 control is complete only after live G1-23 simulation and XR acceptance, with
 regression evidence and documented limitations. Visual feedback is tracked separately
 as Rung 4V below; real robot work belongs to Rung 5.
@@ -278,10 +278,9 @@ an SDK VizSession mono quad sharing OpenXR handles with both controllers.
 See [local camera verification](camera-streaming.md). A connected client showing "Running"
 is not evidence of robot video delivery.
 
-The user has completed dual-arm headset visual review and selected camera streaming
-for the next session. Numerical control and exhaustive lifecycle checks remain open,
-but are deferred rather than blockers to starting this work. See the
-[camera handoff](rung4-handoff.md#next-session-camera-streaming).
+The earlier camera bring-up task and basic headset video review are complete. Broader
+numerical control, video reconnect, and exhaustive lifecycle checks remain open. See the
+[current handoff](rung4-handoff.md); the camera launch procedure there is retained as history.
 
 Implement this before moving to physical-robot work, so
 rendering/streaming problems can be isolated from IK, DDS, and actuator problems. Preserve
@@ -437,10 +436,12 @@ since the hardware is running anyway.
 
 ## Immediate next actions
 
-1. Tracks 3 + 1: extend the tested G1-23 live backend to systematic per-joint and scripted DDS acceptance.
-2. Track 2: preserve the completed dual-arm headset review and finish systematic controller lifecycle acceptance, retaining G1-29 regression.
-3. Tracks 3 + 2: capture and deliver robot camera frames for Rung 4V.
-4. Tracks 1 + 2: establish physical G1-29 baseline when available, then physical G1-23.
+1. Tracks 3 + 1: extend both passing small-signal suites to broader motion and limit-boundary coverage.
+2. Track 2 with Tracks 1 + 3: test clutch/tracking/command loss and service/headset recovery.
+3. Tracks 3 + 2: compare video off/on performance and sustained operation; retain working camera delivery.
+4. Tracks 1 + 2 + 3: isolate DDS teardown and OpenXR shutdown issues before assigning upstream responsibility.
+5. Conditional Track 3 work: match model families before articulated-waist experiments.
+6. Prepare focused upstream contributions separately; physical G1-29 then G1-23 stays in its own gated workstream.
 
 Track-level completed/remaining work is maintained in the [project plan](project-plan.md).
 

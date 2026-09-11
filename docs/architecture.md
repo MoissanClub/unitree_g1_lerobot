@@ -6,6 +6,11 @@ launchers remain the operator interface. Python entry points use `python -m` fro
 repository root. This is a checkout-based integration workspace, not a new distribution
 that replaces or vendors LeRobot.
 
+The diagnostic/test organization migration is complete in `bbc08f4`; no further folder
+refactor is required before the next experiments. The [latest handoff](rung4-handoff.md)
+and [non-physical backlog](future-non-physical-work.md) specify broader motion acceptance
+as the next task, reusing shared cases/metrics and the simulation backend described below.
+
 Package filenames, comments, and identifiers describe functionality, not planning stages.
 The XR entry point is `xr.xr_to_g1_mujoco`; isolated IK and simulated execution checks
 are `diagnostics.simulation.verify_g1_ik` and `diagnostics.simulation.verify_g1_ik_mujoco`. The comparison

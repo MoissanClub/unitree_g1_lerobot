@@ -1,5 +1,40 @@
 # Rung 4 Handoff
 
+## Latest End-of-Day Handoff: 2026-09-10
+
+The user concluded work after the verification organization migration. **Resume with
+broader motion acceptance for both embodiments**, not camera bring-up or another refactor.
+The ordered [non-physical backlog](future-non-physical-work.md) is the current next-action list.
+
+1. Extend baseline motion coverage: larger workspace sweeps, near-limit approaches with
+   margins, holds/reversals, bilateral motion, and hand orientation. Preserve the baseline
+   and distinguish reachable-target acceptance from G1-23 workspace/orientation limitations.
+2. Add tracking/clutch/command-loss and service/headset recovery experiments.
+3. Compare video off/on timing and run explicitly bounded endurance experiments.
+4. Isolate native DDS teardown and OpenXR shutdown issues; process isolation is not a fix.
+5. Select matched URDF/MJCF families before articulated-waist work, not before arm-only tests.
+6. Prepare focused upstream contributions separately from experimental acceptance.
+
+Start in `diagnostics/shared/motion_cases.py`, `shared/acceptance_metrics.py`, and
+`verify_live_control.py`, with regression coverage in `tests/diagnostics/`. Diagnostic
+paths are relative to `unitree_g1_lerobot/`. Adjust `backends/simulation.py` and reporting
+only as needed. Keep `run_verify_live_control.sh` and all interactive root launchers stable.
+Do not tune gains, change IK/model geometry, or loosen budgets to force passing results.
+
+Code checkpoints already pushed to `origin/main`: `e0b95bd` (geometry/source audit),
+`bbc08f4` (organization migration and evidence). The project was clean after the latter
+push; this handoff update is a separate documentation commit. The adjacent LeRobot
+checkout retains its existing user modifications and does not match the physical audit
+manifest. Offline physical checks passed on a temporary pinned checkout instead; do not
+silently replace the adjacent files. No physical connection or actuation was performed.
+
+Latest evidence: 72-test regression run `OK` with three environment-gated skips; those
+checks passed separately. Both live suites passed (46/38 cases), both real headless
+XR/video matrices passed, and all seven comparison launchers ran with actual Tk/EGL.
+See [migration results](verification-organization.md#migration-verification-2026-09-10).
+No verification services were left running. Previous dated sections below are history;
+this section and the linked backlog supersede their resume instructions.
+
 ## Verification Organization Migration
 
 Diagnostics now separate shared calculations, simulation session management, and
@@ -40,7 +75,7 @@ The separate [sim-to-real plan](sim-to-real-plan.md) records physical preflight,
 joint motion, scripted IK verification, and XR teleoperation on G1-29, then G1-23.
 The earlier simulation-only session boundaries below remain historical context.
 
-## End-of-Day Handoff: 2026-09-10
+## Historical Camera Handoff: 2026-09-10
 
 Camera streaming is implemented and the user verified video with the VR headset.
 Implementation `4612a5c` is committed and pushed. Today's work is concluded.
@@ -50,6 +85,9 @@ investigations. Do not rebuild the working camera path or start physical actuati
 The camera section below records the earlier implementation sequence, not the current backlog.
 
 ## Next Session: Camera Streaming
+
+Historical bring-up plan, retained for its launch procedures. Camera delivery is now
+implemented and user-reviewed; follow the latest end-of-day handoff above for new work.
 
 **Local camera checkpoint implemented:** simulator `--camera` now publishes a torso-mounted
 mono RGB8 stream on both embodiments; `./view_g1_camera.sh` previews it independently.
@@ -203,7 +241,7 @@ for the tested standalone launcher, confirmation flow, and remaining acceptance 
 The user has confirmed visual review of the motor-comparison checkpoint. Geometry,
 scripted IK, and the supported-arm motor benchmarks are reviewed. **Rung 4 is not
 complete:** systematic per-joint, Cartesian/DDS, and XR lifecycle acceptance remains open.
-The next session prioritizes camera streaming as directed above.
+The next session extends the passing small-signal suite to broader motion coverage.
 Do not repeat the completed comparisons or backend bring-up as a new milestone.
 
 The live-simulator baseline is `252e29b` on `main`; this headless XR extension is
@@ -285,11 +323,11 @@ See [benchmark details](motor-config-comparison.md) for metrics and test conditi
    extra compensation. See [live simulator scope and verification](g1-23-live-simulator.md).
    The G1-29 launcher/viewer regression passed with its startup diagnostic skipped;
    broader G1-29 motion and headset regression remains pending.
-2. Exercise each of ten active arm joints through a separate DDS sender. Verify
-   names, sparse transport indices, directions, ranges, unused slots, and feedback.
-3. Run deterministic Cartesian/orientation targets through IK -> DDS -> actuators.
-   Measure IK residuals separately from actuator tracking error. Define acceptance
-   thresholds and verify control timing, command stop, and stale-command behavior.
+2. Preserve the passing per-joint small-signal checks for both embodiments. Extend them
+   toward joint limits with explicit margins, checking sparse slots, directions, and feedback.
+3. Extend the passing Cartesian/orientation suite to broader workspace, holds, and
+   reversals. Keep IK residuals separate from actuator error and independent geometry;
+   add control timing, command-stop, and stale-command fault injection.
 4. The XR bridge now selects either embodiment; all three launchers support headless
    mode. Mock left/right motion and real CloudXR/OpenXR sessions pass for both variants.
    Verify actual headset startup diagnostics, engagement,
@@ -302,7 +340,7 @@ diagnostics, and CloudXR responsibilities separate for possible LeRobot contribu
 The user prefers continued implementation with minimal intervention; ask only when
 a real tradeoff or required external observation blocks progress.
 
-Robot-camera submission is implemented; in-headset acceptance remains open **Rung 4V**,
-and is now the next-session priority following visual headset review. Physical G1-29 baseline is
+Robot-camera submission and basic in-headset video are verified; reconnect and performance
+acceptance remain open for **Rung 4V**. Physical G1-29 baseline is
 Rung 5a, followed by G1-23 work. A connected headset showing "Running" is not evidence
 of camera streaming. Refer to the [ladder](vr-teleop-g1-23-ladder.md) for acceptance.

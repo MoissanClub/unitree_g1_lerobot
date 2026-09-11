@@ -8,8 +8,9 @@ it does not establish that those Git branches exist or that hardware acceptance 
 The workstreams span the existing robot, XR, and simulation code ownership tracks.
 
 - **Simulation:** follow the [non-physical acceptance plan](future-non-physical-work.md)
-  and [handoff](rung4-handoff.md). Next are systematic per-joint DDS and numerical
-  IK-to-physics acceptance, followed by recovery, performance, and cleanup investigations.
+  and [handoff](rung4-handoff.md). Small-signal per-joint DDS, IK-to-physics, and independent
+  geometry checks already pass. Next is broader motion acceptance, followed by recovery,
+  performance/endurance, and cleanup investigations.
   Camera streaming is implemented and basic headset video was user-verified.
 - **Sim-to-real:** validate physical G1-29 first, then G1-23. For each embodiment,
   progress from simple slow joint motion to scripted IK motion to XR teleoperation,

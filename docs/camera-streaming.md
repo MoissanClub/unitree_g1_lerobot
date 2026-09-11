@@ -118,10 +118,11 @@ not headset latency. Acceptance guards are at least 30 frames, 5 FPS, p95 age be
 500 ms, nonblank images and visible changes. These broad smoke thresholds are not
 final performance targets. Numerical physics timing A/B acceptance remains separate.
 
-The latest suite with DDS and EGL camera checks enabled passed 45 of 47 tests;
+The initial suite with DDS and EGL camera checks enabled passed 45 of 47 tests;
 the GPU display test and GUI motor-viewer test were skipped in that run. Both display/mailbox
 tests passed separately with `G1_TEST_VIDEO=1`. The actual Tk camera preview was separately run
-under Xvfb and its screenshot inspected. No headset video result is claimed.
+under Xvfb and its screenshot inspected. Those automated checks alone make no headset
+video claim; the later user review is recorded below.
 
 Protocol tests cover contention, staleness, shape checks, exclusive ownership, and
 restart with an existing mapping. Enable `G1_TEST_CAMERA=1 MUJOCO_GL=egl` for real-EGL
@@ -129,6 +130,13 @@ tests of optical pose/orientation and renderer-failure isolation; `G1_TEST_DDS=1
 enables the existing fresh-process DDS cases.
 
 ## Headset Review
+
+**Latest end-of-day status:** delivery remains implemented and basic headset video
+user-reviewed. Migration `bbc08f4` reverified both real headless XR/video matrices and
+the separate GPU display checks. See [migration evidence](verification-organization.md#migration-verification-2026-09-10).
+The next project task is broader motion acceptance; camera follow-ups are recovery,
+video off/on performance, endurance, and native OpenXR cleanup, as ordered in the
+[non-physical backlog](future-non-physical-work.md). Do not restart camera bring-up.
 
 **User verification, 2026-09-10:** video was verified with the VR headset. Basic visible
 delivery is confirmed; the systematic checks below remain a follow-up checklist.

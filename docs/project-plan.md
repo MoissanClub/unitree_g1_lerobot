@@ -17,9 +17,9 @@ These workstreams span the three ownership tracks below and keep separate accept
 
 | Track | Implemented and Verified | Remaining |
 |---|---|---|
-| 1. G1-23 in LeRobot | Native embodiment/IK, sparse mapping, derived profiles, shared configurable G1 interface; reviewed geometry/IK and contract tests | Live command/feedback acceptance, runtime feedforward decision, hardware support and contribution preparation |
-| 2. XR for LeRobot | Both-arm bridge; headless bilateral motion and real CloudXR/OpenXR for both variants; dual-arm headset review complete | Systematic lifecycle testing, camera display in headset |
-| 3. G1 simulation | Live G1-29 and native supported-arm G1-23 simulator; reviewed benchmarks, basic DDS/hold checks, and local robot-camera capture | Systematic DDS/actuator timing and trajectory acceptance, XR camera-display integration |
+| 1. G1-23 in LeRobot | Native embodiment/IK, sparse mapping, runtime gains/feedforward, shared G1 interface; both variants pass small-signal live and geometry suites | Broader workspace/near-limit acceptance, hardware support, contribution preparation |
+| 2. XR for LeRobot | Both-arm bridge and real headless CloudXR/OpenXR/video for both variants; headset control and basic video reviewed | Failure/recovery, reconnect, and video timing/endurance acceptance |
+| 3. G1 simulation | Live supported-arm backends; reviewed benchmarks; independent geometry, DDS baseline, camera capture and delivery tested | Larger trajectory/limit coverage, performance/endurance, native cleanup; matched models before waist control |
 
 User visual review of the geometry, IK, and motor-comparison checkpoint is complete.
 The structural refactor passed 25 project tests and 92 LeRobot G1 regression tests.
@@ -60,11 +60,12 @@ Different embodiments still expose different active joints and pose capabilities
 ### Remaining
 
 1. Preserve the now-connected G1-23 backend and its basic standalone/embedded regression checks with Track 3.
-2. Verify each of the ten active arm joints through actual DDS command and feedback,
-   including sparse indices, unused slots, signs, ranges, and partial commands.
-3. Explicitly choose live gain/feedforward settings and verify them. The current live
-   gravity path uses command-pose IK gravity; the benchmark uses measured-pose,
-   exact-model gravity. Do not treat them as already-equivalent implementations.
+2. Extend the passing per-joint DDS checks to near-limit motions and fault cases,
+   retaining sparse-index, unused-slot, direction, and feedback assertions for both embodiments.
+3. Preserve the verified runtime settings: LeRobot-default G1-29 gains, derived G1-23
+   gains, and gravity compensation enabled. Characterize larger-motion tracking without
+   treating live IK feedforward and measured-pose exact-model benchmark compensation
+   as identical implementations. Gain comparison is a separate experiment.
 4. Define measured-state initialization, command ownership, and stop/stale-command
    contracts with the simulator and later hardware adapter.
 5. Validate physical G1-29 first when available, then G1-23. Recheck transport, gains,
@@ -110,7 +111,7 @@ not a claim that other providers or all LeRobot robots have been tested.
    and reconnect coverage on both variants beyond the completed visual review.
 3. Retain G1-29 regression evidence and record bilateral/controller lifecycle coverage
    explicitly. Visual review is not exhaustive controller lifecycle acceptance.
-4. Review the implemented mono headset display for Track 3 camera frames. The bridge
+4. Extend the basic user-reviewed mono headset display acceptance for Track 3 frames. The bridge
    shares one graphics/input OpenXR session; headless submission passes on both variants.
    Verify actual headset framing, reconnects, latency, and control-loop interference.
 
@@ -120,9 +121,10 @@ showing "Running" does not establish video delivery.
 
 ## Track 3: Simulation for G1
 
-**Next-session priority:** camera streaming is implemented and basic headset video is
-user-verified. Follow the [non-physical plan](future-non-physical-work.md) for systematic
-joint DDS and numerical IK-to-physics acceptance, then lifecycle and performance work.
+**Next-session priority:** extend the passing small-signal joint/IK/DDS and geometry
+suites to broader motion coverage. Camera streaming and the verification organization
+migration are complete. Follow the [non-physical plan](future-non-physical-work.md),
+then lifecycle/recovery, performance/endurance, and native cleanup work.
 
 **Owner:** `unitree_g1_lerobot/simulation/`. Benchmark orchestration and startup checks
 are shared verification tooling under `diagnostics/`. Its `shared/`, `backends/`, and
@@ -146,19 +148,20 @@ live command/state backend that the shared robot interface can use.
 
 ### Remaining
 
-1. Extend the implemented native G1-23 live factory's smoke checks into systematic
-   acceptance. It reuses the reviewed model/motor data with ten dynamic arm joints
+1. Extend the passing small-signal suites for both embodiments into broader motion
+   acceptance. Native G1-23 reuses reviewed model/motor data with ten dynamic arm joints
    and supported pelvis/legs/waist, not a G1-29 visual substitute.
-2. With Track 1, test motor-command-to-measured-state DDS round trips. Define simulator
+2. With Track 1, extend the tested motor-command-to-measured-state DDS path. Verify simulator
    ownership, timestep/control rate, contacts/support assumptions, limits, and stale
    command behavior. Do not silently turn the supported-arm benchmark into a claimed
    full-body/balance simulator.
-3. Run device-free Cartesian/orientation trajectories through IK -> DDS -> actuators.
+3. Extend device-free Cartesian/orientation trajectories through IK -> DDS -> actuators.
    Compare target pose, commanded joints, measured joints, and measured FK. Separate
    kinematic residuals from actuator errors; establish numerical acceptance thresholds.
 4. Preserve the implemented local-camera-to-XR-display interface. Local images, frame
    motion, age, and OpenXR submission are checked; quantify physics timing impact and
-   verify actual headset presentation. See [camera checkpoint](camera-streaming.md).
+   extend basic headset presentation review to reconnect/endurance acceptance.
+   See [camera checkpoint](camera-streaming.md).
 
 **Acceptance evidence:** native models, measured motor-driven trajectories, DDS/timing
 and command-loss tests, then camera-frame tests. Geometry/IK pose replay is not physics;
@@ -191,13 +194,15 @@ It does not close workspace-boundary, recovery, or sustained-performance accepta
 
 Current future backlog and recommended experiments:
 [Future non-physical work](future-non-physical-work.md). The user concluded this session
-after verifying headset video; resume with numerical DDS/physics acceptance, not camera bring-up.
+after migration commit `bbc08f4`; resume with broader motion acceptance, not camera
+bring-up or a repeat refactor. The latest [handoff](rung4-handoff.md) supersedes older priorities.
 
-1. **Next: Tracks 1 + 3.** With the live G1-23 backend in place, exercise individual DDS joints,
-   then run scripted IK-to-actuator tests without a headset.
+1. **Next: Tracks 1 + 3.** Extend the passing baseline for both embodiments to broader
+   workspace, near-limit, hold/reversal, bilateral, and orientation cases without a headset.
 2. **Then Track 2 with Tracks 1 + 3.** Extend the completed headset visual review with
    systematic controller lifecycle checks and G1-29 regression.
-   This completes the remaining historical **Rung 4 control** acceptance.
+   These checks contribute to **Rung 4 control** acceptance; broader numerical and
+   sustained-operation evidence is still required.
 3. **Tracks 3 + 2: camera feedback.** Local capture and submission are tested on both
    embodiments; basic headset video is user-verified. Reconnect/timing acceptance remains
    open for **Rung 4V**.
