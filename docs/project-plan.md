@@ -7,6 +7,12 @@ sequence and historical record, not the source-code ownership structure.
 
 ## Development Workstreams
 
+The upstream-oriented fork now has separate embodiment, Cartesian, simulation,
+XR, XR-video, generic-hand, and BrainCo feature branches. See the
+[branch stack verification](branch-stack-verification.md) for exact suites and
+fresh-checkout merge reproduction. This contribution effort does not replace the
+experimental three-script DDS workflow or its remaining acceptance work.
+
 The [simulation and sim-to-real plan](sim-to-real-plan.md) records the 2026-09-11
 split into simulation follow-ups and physical embodiment testing. Simulation follows
 the existing non-physical handoff. Physical work progresses through read-only preflight,

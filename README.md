@@ -19,9 +19,12 @@ systematic controller lifecycle testing, and physical-robot validation remain pe
 **Roadmap:** [three-track project plan](docs/project-plan.md).
 **Resume:** [handoff](docs/rung4-handoff.md).
 **Future experiments:** [non-physical acceptance and reliability work](docs/future-non-physical-work.md).
-Today's work is concluded. Resume with broader motion acceptance, then recovery,
-performance/endurance, and native cleanup. Matched waist models and upstream preparation
-are conditional/separate follow-ups; see the handoff for scope and safeguards.
+The LeRobot contribution work now lives in the separate `../lerobot-upstream`
+checkout and seven feature branches on `MoissanClub/lerobot`. See
+[branch verification and reproduction](docs/branch-stack-verification.md) and the
+[branch plan](docs/lerobot_g1_branching_refactor_plan.md). This does not replace the
+experimental runtime or close the broader motion, recovery, endurance, and native
+cleanup backlog. Matched waist models remain a separate prerequisite for waist work.
 **Live acceptance:** `./run_verify_live_control.sh` runs headless joint and IK/DDS checks
 on both embodiments; see [coverage and reports](docs/live-control-acceptance.md).
 Add `--geometry` for [independent MuJoCo checks](docs/independent-geometry.md).

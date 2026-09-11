@@ -1,5 +1,14 @@
 # Rung 4 Handoff
 
+## Current Contribution Handoff
+
+The latest work is the seven-branch LeRobot contribution stack, not another
+experimental runtime refactor. Resume from the
+[branch-reorganization handoff](branch-stack-handoff.md) and
+[headless verification guide](branch-stack-verification.md). The original DDS/XR
+workflow and its broader non-physical backlog remain intact. The dated sections
+below preserve earlier experiment history.
+
 ## Latest End-of-Day Handoff: 2026-09-10
 
 The user concluded work after the verification organization migration. **Resume with

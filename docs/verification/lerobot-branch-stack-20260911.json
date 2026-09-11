@@ -1,0 +1,2546 @@
+{
+  "status": "passed",
+  "scope": "headless_nonphysical",
+  "checkout": "/home/dwei/lerobot-sim/lerobot-g1-review",
+  "remote": "git@github.com:MoissanClub/lerobot.git",
+  "base": "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "clone",
+        "git@github.com:MoissanClub/lerobot.git",
+        "/home/dwei/lerobot-sim/lerobot-g1-review"
+      ],
+      "cwd": "/home/dwei/lerobot-sim",
+      "log": "command-000.log",
+      "exit_code": 0,
+      "seconds": 19.111
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "origin/g1/embodiments"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-001.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "origin/g1/cartesian-control"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-002.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "origin/g1/simulation"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-003.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "origin/g1/xr"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-004.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "origin/g1/xr-video"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-005.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "origin/g1/hand-support"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-006.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "origin/g1/brainco-hands"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-007.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "import sys, pinocchio, casadi, mujoco; print(sys.version); print('pinocchio',pinocchio.__version__,'casadi',casadi.__version__,'mujoco',mujoco.__version__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-008.log",
+      "exit_code": 0,
+      "seconds": 0.153
+    },
+    {
+      "argv": [
+        "git",
+        "switch",
+        "--detach",
+        "origin/g1/embodiments"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-009.log",
+      "exit_code": 0,
+      "seconds": 0.079
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-010.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-011.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_embodiments.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-012.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_embodiments.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-013.log",
+      "exit_code": 0,
+      "seconds": 0.017
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-014.log",
+      "exit_code": 0,
+      "seconds": 0.747
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/branch-1.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-015.log",
+      "exit_code": 0,
+      "seconds": 3.977
+    },
+    {
+      "argv": [
+        "git",
+        "switch",
+        "--detach",
+        "origin/g1/cartesian-control"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-016.log",
+      "exit_code": 0,
+      "seconds": 0.081
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-017.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-018.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-019.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-020.log",
+      "exit_code": 0,
+      "seconds": 0.017
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-021.log",
+      "exit_code": 0,
+      "seconds": 0.733
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/branch-2.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-022.log",
+      "exit_code": 0,
+      "seconds": 5.986
+    },
+    {
+      "argv": [
+        "git",
+        "switch",
+        "--detach",
+        "origin/g1/simulation"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-023.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-024.log",
+      "exit_code": 0,
+      "seconds": 0.002
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-025.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-026.log",
+      "exit_code": 0,
+      "seconds": 0.019
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-027.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-028.log",
+      "exit_code": 0,
+      "seconds": 0.743
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/branch-3.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-029.log",
+      "exit_code": 0,
+      "seconds": 6.625
+    },
+    {
+      "argv": [
+        "git",
+        "switch",
+        "--detach",
+        "origin/g1/xr"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-030.log",
+      "exit_code": 0,
+      "seconds": 0.015
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-031.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-032.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/teleoperators/test_unitree_g1_xr.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-033.log",
+      "exit_code": 0,
+      "seconds": 0.016
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/teleoperators/test_unitree_g1_xr.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-034.log",
+      "exit_code": 0,
+      "seconds": 0.014
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-035.log",
+      "exit_code": 0,
+      "seconds": 0.727
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/branch-4.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-036.log",
+      "exit_code": 0,
+      "seconds": 5.693
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from lerobot.teleoperators.xr_controllers.xr_controllers import IsaacControllerSession; from lerobot.teleoperators.xr_controllers import XRControllersConfig; s=IsaacControllerSession(XRControllersConfig()); assert set(s.pipeline.output_types()) == {'left', 'right'}; print('SDK pipeline verified without OpenXR connection')"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-037.log",
+      "exit_code": 0,
+      "seconds": 0.889
+    },
+    {
+      "argv": [
+        "git",
+        "switch",
+        "--detach",
+        "origin/g1/xr-video"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-038.log",
+      "exit_code": 0,
+      "seconds": 0.014
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-039.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-040.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_xr_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/cameras/frame_channel.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/camera_display.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/video_session.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-041.log",
+      "exit_code": 0,
+      "seconds": 0.015
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_xr_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/cameras/frame_channel.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/camera_display.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/video_session.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-042.log",
+      "exit_code": 0,
+      "seconds": 0.014
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "mypy",
+        "--follow-imports=silent",
+        "src/lerobot/cameras/frame_channel.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-043.log",
+      "exit_code": 0,
+      "seconds": 8.628
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-044.log",
+      "exit_code": 0,
+      "seconds": 0.718
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/branch-5.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-045.log",
+      "exit_code": 0,
+      "seconds": 8.09
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from lerobot.teleoperators.xr_controllers.xr_controllers import IsaacControllerSession; from lerobot.teleoperators.xr_controllers import XRControllersConfig; s=IsaacControllerSession(XRControllersConfig()); assert set(s.pipeline.output_types()) == {'left', 'right'}; print('SDK pipeline verified without OpenXR connection')"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-046.log",
+      "exit_code": 0,
+      "seconds": 0.876
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/teleoperators/test_unitree_g1_xr_video.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/branch-5-gpu.xml",
+        "-k",
+        "real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-047.log",
+      "exit_code": 0,
+      "seconds": 2.899
+    },
+    {
+      "argv": [
+        "git",
+        "switch",
+        "--detach",
+        "origin/g1/hand-support"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-048.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-049.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-050.log",
+      "exit_code": 0,
+      "seconds": 0.002
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_with_hands.py",
+        "src/lerobot/robots/unitree_g1/hand_system.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/robots/test_unitree_g1_kinematics.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-051.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_with_hands.py",
+        "src/lerobot/robots/unitree_g1/hand_system.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/robots/test_unitree_g1_kinematics.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-052.log",
+      "exit_code": 0,
+      "seconds": 0.017
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-053.log",
+      "exit_code": 0,
+      "seconds": 0.74
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/branch-6.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-054.log",
+      "exit_code": 0,
+      "seconds": 5.811
+    },
+    {
+      "argv": [
+        "git",
+        "switch",
+        "--detach",
+        "origin/g1/brainco-hands"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-055.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-056.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-057.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/brainco_hand.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_with_hands.py",
+        "src/lerobot/robots/unitree_g1/hand_system.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_brainco_hands.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/robots/test_unitree_g1_kinematics.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-058.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/brainco_hand.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_with_hands.py",
+        "src/lerobot/robots/unitree_g1/hand_system.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_brainco_hands.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/robots/test_unitree_g1_kinematics.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-059.log",
+      "exit_code": 0,
+      "seconds": 0.017
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-060.log",
+      "exit_code": 0,
+      "seconds": 0.757
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/robots/test_unitree_g1_brainco_hands.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/branch-7.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-061.log",
+      "exit_code": 0,
+      "seconds": 5.915
+    },
+    {
+      "argv": [
+        "git",
+        "switch",
+        "-c",
+        "integration/g1-acceptance",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-062.log",
+      "exit_code": 0,
+      "seconds": 0.017
+    },
+    {
+      "argv": [
+        "git",
+        "merge",
+        "--no-ff",
+        "--no-edit",
+        "origin/g1/embodiments"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-063.log",
+      "exit_code": 0,
+      "seconds": 0.019
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-064.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-065.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_embodiments.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-066.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_embodiments.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-067.log",
+      "exit_code": 0,
+      "seconds": 0.017
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-068.log",
+      "exit_code": 0,
+      "seconds": 0.743
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/merge-1.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-069.log",
+      "exit_code": 0,
+      "seconds": 3.815
+    },
+    {
+      "argv": [
+        "git",
+        "merge",
+        "--no-ff",
+        "--no-edit",
+        "origin/g1/cartesian-control"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-070.log",
+      "exit_code": 0,
+      "seconds": 0.022
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-071.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-072.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-073.log",
+      "exit_code": 0,
+      "seconds": 0.019
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-074.log",
+      "exit_code": 0,
+      "seconds": 0.017
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-075.log",
+      "exit_code": 0,
+      "seconds": 0.741
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/merge-2.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-076.log",
+      "exit_code": 0,
+      "seconds": 5.742
+    },
+    {
+      "argv": [
+        "git",
+        "merge",
+        "--no-ff",
+        "--no-edit",
+        "origin/g1/simulation"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-077.log",
+      "exit_code": 0,
+      "seconds": 0.021
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-078.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-079.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-080.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-081.log",
+      "exit_code": 0,
+      "seconds": 0.017
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-082.log",
+      "exit_code": 0,
+      "seconds": 0.741
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/merge-3.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-083.log",
+      "exit_code": 0,
+      "seconds": 6.823
+    },
+    {
+      "argv": [
+        "git",
+        "merge",
+        "--no-ff",
+        "--no-edit",
+        "origin/g1/xr"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-084.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-085.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-086.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/teleoperators/test_unitree_g1_xr.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-087.log",
+      "exit_code": 0,
+      "seconds": 0.015
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/teleoperators/test_unitree_g1_xr.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-088.log",
+      "exit_code": 0,
+      "seconds": 0.014
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-089.log",
+      "exit_code": 0,
+      "seconds": 0.725
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/merge-4.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-090.log",
+      "exit_code": 0,
+      "seconds": 9.647
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from lerobot.teleoperators.xr_controllers.xr_controllers import IsaacControllerSession; from lerobot.teleoperators.xr_controllers import XRControllersConfig; s=IsaacControllerSession(XRControllersConfig()); assert set(s.pipeline.output_types()) == {'left', 'right'}; print('SDK pipeline verified without OpenXR connection')"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-091.log",
+      "exit_code": 0,
+      "seconds": 0.886
+    },
+    {
+      "argv": [
+        "git",
+        "merge",
+        "--no-ff",
+        "--no-edit",
+        "origin/g1/xr-video"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-092.log",
+      "exit_code": 0,
+      "seconds": 0.017
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-093.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-094.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/run_xr_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/cameras/frame_channel.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/camera_display.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/video_session.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-095.log",
+      "exit_code": 0,
+      "seconds": 0.015
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/run_xr_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/cameras/frame_channel.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/camera_display.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/video_session.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-096.log",
+      "exit_code": 0,
+      "seconds": 0.014
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "mypy",
+        "--follow-imports=silent",
+        "src/lerobot/cameras/frame_channel.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-097.log",
+      "exit_code": 0,
+      "seconds": 0.179
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-098.log",
+      "exit_code": 0,
+      "seconds": 0.732
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/merge-5.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-099.log",
+      "exit_code": 0,
+      "seconds": 12.243
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from lerobot.teleoperators.xr_controllers.xr_controllers import IsaacControllerSession; from lerobot.teleoperators.xr_controllers import XRControllersConfig; s=IsaacControllerSession(XRControllersConfig()); assert set(s.pipeline.output_types()) == {'left', 'right'}; print('SDK pipeline verified without OpenXR connection')"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-100.log",
+      "exit_code": 0,
+      "seconds": 0.875
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/teleoperators/test_unitree_g1_xr_video.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/merge-5-gpu.xml",
+        "-k",
+        "real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-101.log",
+      "exit_code": 0,
+      "seconds": 2.864
+    },
+    {
+      "argv": [
+        "git",
+        "merge",
+        "--no-ff",
+        "--no-edit",
+        "origin/g1/hand-support"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-102.log",
+      "exit_code": 0,
+      "seconds": 0.021
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-103.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-104.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/run_xr_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/cameras/frame_channel.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_with_hands.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/hand_system.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/camera_display.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/video_session.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-105.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/run_xr_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/cameras/frame_channel.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_with_hands.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/hand_system.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/camera_display.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/video_session.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-106.log",
+      "exit_code": 0,
+      "seconds": 0.016
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "mypy",
+        "--follow-imports=silent",
+        "src/lerobot/cameras/frame_channel.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-107.log",
+      "exit_code": 0,
+      "seconds": 0.179
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-108.log",
+      "exit_code": 0,
+      "seconds": 0.735
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/merge-6.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-109.log",
+      "exit_code": 0,
+      "seconds": 12.748
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from lerobot.teleoperators.xr_controllers.xr_controllers import IsaacControllerSession; from lerobot.teleoperators.xr_controllers import XRControllersConfig; s=IsaacControllerSession(XRControllersConfig()); assert set(s.pipeline.output_types()) == {'left', 'right'}; print('SDK pipeline verified without OpenXR connection')"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-110.log",
+      "exit_code": 0,
+      "seconds": 0.878
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/teleoperators/test_unitree_g1_xr_video.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/merge-6-gpu.xml",
+        "-k",
+        "real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-111.log",
+      "exit_code": 0,
+      "seconds": 2.877
+    },
+    {
+      "argv": [
+        "git",
+        "merge",
+        "--no-ff",
+        "--no-edit",
+        "origin/g1/brainco-hands"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-112.log",
+      "exit_code": 0,
+      "seconds": 0.022
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-113.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACM",
+        "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+        "HEAD",
+        "--",
+        "*.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-114.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/run_xr_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/cameras/frame_channel.py",
+        "src/lerobot/robots/unitree_g1/brainco_hand.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_with_hands.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/hand_system.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/camera_display.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/video_session.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_brainco_hands.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-115.log",
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "examples/unitree_g1/prepare_cartesian_assets.py",
+        "examples/unitree_g1/run_simulation.py",
+        "examples/unitree_g1/run_xr_simulation.py",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "src/lerobot/cameras/frame_channel.py",
+        "src/lerobot/robots/unitree_g1/brainco_hand.py",
+        "src/lerobot/robots/unitree_g1/config_unitree_g1.py",
+        "src/lerobot/robots/unitree_g1/g1_cartesian_control.py",
+        "src/lerobot/robots/unitree_g1/g1_embodiments.py",
+        "src/lerobot/robots/unitree_g1/g1_simulation.py",
+        "src/lerobot/robots/unitree_g1/g1_utils.py",
+        "src/lerobot/robots/unitree_g1/g1_with_hands.py",
+        "src/lerobot/robots/unitree_g1/g1_xr_control.py",
+        "src/lerobot/robots/unitree_g1/hand_system.py",
+        "src/lerobot/robots/unitree_g1/unitree_g1.py",
+        "src/lerobot/teleoperators/xr_controllers/__init__.py",
+        "src/lerobot/teleoperators/xr_controllers/camera_display.py",
+        "src/lerobot/teleoperators/xr_controllers/config_xr_controllers.py",
+        "src/lerobot/teleoperators/xr_controllers/video_session.py",
+        "src/lerobot/teleoperators/xr_controllers/xr_controllers.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_brainco_hands.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-116.log",
+      "exit_code": 0,
+      "seconds": 0.017
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "mypy",
+        "--follow-imports=silent",
+        "src/lerobot/cameras/frame_channel.py"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-117.log",
+      "exit_code": 0,
+      "seconds": 0.179
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from pathlib import Path; import lerobot.robots.unitree_g1 as m; assert Path(m.__file__).resolve().is_relative_to(Path('/home/dwei/lerobot-sim/lerobot-g1-review/src')); print(m.__file__)"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-118.log",
+      "exit_code": 0,
+      "seconds": 0.737
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/robots/test_unitree_g1_embodiments.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+        "tests/robots/test_sonic_whole_body.py",
+        "tests/robots/test_unitree_g1_cartesian_control.py",
+        "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_simulation.py",
+        "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/teleoperators/test_unitree_g1_xr.py",
+        "tests/teleoperators/test_unitree_g1_xr_video.py",
+        "tests/robots/test_unitree_g1_hands.py",
+        "tests/robots/test_unitree_g1_brainco_hands.py",
+        "tests/integration/test_unitree_g1_xr_mujoco.py",
+        "tests/integration/test_unitree_g1_xr_video_mujoco.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/merge-7.xml",
+        "-k",
+        "not real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-119.log",
+      "exit_code": 0,
+      "seconds": 12.237
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-c",
+        "from lerobot.teleoperators.xr_controllers.xr_controllers import IsaacControllerSession; from lerobot.teleoperators.xr_controllers import XRControllersConfig; s=IsaacControllerSession(XRControllersConfig()); assert set(s.pipeline.output_types()) == {'left', 'right'}; print('SDK pipeline verified without OpenXR connection')"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-120.log",
+      "exit_code": 0,
+      "seconds": 0.865
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "-m",
+        "pytest",
+        "tests/teleoperators/test_unitree_g1_xr_video.py",
+        "-q",
+        "--junitxml=/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/merge-7-gpu.xml",
+        "-k",
+        "real_offscreen_delivery_and_recovery"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-121.log",
+      "exit_code": 0,
+      "seconds": 2.932
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "examples/unitree_g1/verify_cartesian_control.py",
+        "--assets",
+        "/tmp/g1-cartesian-assets",
+        "--headless",
+        "--samples-per-phase",
+        "16",
+        "--report",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/cartesian.json"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-122.log",
+      "exit_code": 0,
+      "seconds": 4.723
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "examples/unitree_g1/run_simulation.py",
+        "--assets",
+        "/tmp/g1-cartesian-assets",
+        "--embodiment",
+        "g1_29",
+        "--headless"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-123.log",
+      "exit_code": 0,
+      "seconds": 0.851
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "examples/unitree_g1/run_simulation.py",
+        "--assets",
+        "/tmp/g1-cartesian-assets",
+        "--embodiment",
+        "g1_29",
+        "--headless",
+        "--no-gravity-compensation"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-124.log",
+      "exit_code": 0,
+      "seconds": 0.826
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "examples/unitree_g1/run_xr_simulation.py",
+        "--assets",
+        "/tmp/g1-cartesian-assets",
+        "--embodiment",
+        "g1_29",
+        "--headless",
+        "--steps",
+        "100",
+        "--channel",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/g1_29.rgb"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-125.log",
+      "exit_code": 0,
+      "seconds": 2.796
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "examples/unitree_g1/run_simulation.py",
+        "--assets",
+        "/tmp/g1-cartesian-assets",
+        "--embodiment",
+        "g1_23",
+        "--headless"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-126.log",
+      "exit_code": 0,
+      "seconds": 0.85
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "examples/unitree_g1/run_simulation.py",
+        "--assets",
+        "/tmp/g1-cartesian-assets",
+        "--embodiment",
+        "g1_23",
+        "--headless",
+        "--no-gravity-compensation"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-127.log",
+      "exit_code": 0,
+      "seconds": 0.818
+    },
+    {
+      "argv": [
+        "/home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python",
+        "examples/unitree_g1/run_xr_simulation.py",
+        "--assets",
+        "/tmp/g1-cartesian-assets",
+        "--embodiment",
+        "g1_23",
+        "--headless",
+        "--steps",
+        "100",
+        "--channel",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/artifacts/branch-stack-headless/g1_23.rgb"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-128.log",
+      "exit_code": 0,
+      "seconds": 2.453
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-129.log",
+      "exit_code": 0,
+      "seconds": 0.004
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/dwei/lerobot-sim/lerobot-g1-review",
+      "log": "command-130.log",
+      "exit_code": 0,
+      "seconds": 0.001
+    }
+  ],
+  "stages": [
+    {
+      "name": "branch-1",
+      "commit": "ec59825d1b45c0c6f8ad10f62fa0f2e2b26859c9",
+      "milestones": [
+        1
+      ],
+      "passed": 128,
+      "optional_skipped": 1,
+      "junit": "branch-1.xml",
+      "gpu": null
+    },
+    {
+      "name": "branch-2",
+      "commit": "cef08462595008a677455e5122384405833b85f0",
+      "milestones": [
+        1,
+        2
+      ],
+      "passed": 181,
+      "optional_skipped": 1,
+      "junit": "branch-2.xml",
+      "gpu": null
+    },
+    {
+      "name": "branch-3",
+      "commit": "5884e6b9792b31f18bd164d42cd8d892beec74d9",
+      "milestones": [
+        1,
+        2,
+        3
+      ],
+      "passed": 195,
+      "optional_skipped": 1,
+      "junit": "branch-3.xml",
+      "gpu": null
+    },
+    {
+      "name": "branch-4",
+      "commit": "6e6d3147d0ff3597be8588991d688e76d9f19b0b",
+      "milestones": [
+        1,
+        2,
+        4
+      ],
+      "passed": 206,
+      "optional_skipped": 1,
+      "junit": "branch-4.xml",
+      "gpu": null
+    },
+    {
+      "name": "branch-5",
+      "commit": "4b2d23b2646646f45b8cdd7286e044deee5f2987",
+      "milestones": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "passed": 217,
+      "optional_skipped": 1,
+      "junit": "branch-5.xml",
+      "gpu": {
+        "passed": 1,
+        "optional_skipped": 0,
+        "junit": "branch-5-gpu.xml"
+      }
+    },
+    {
+      "name": "branch-6",
+      "commit": "9f285fd88fde69a57e0da0957a9888945fb47e08",
+      "milestones": [
+        1,
+        2,
+        6
+      ],
+      "passed": 192,
+      "optional_skipped": 1,
+      "junit": "branch-6.xml",
+      "gpu": null
+    },
+    {
+      "name": "branch-7",
+      "commit": "d732e7017645ec344b5fa9bf78a24f0a47bbcb27",
+      "milestones": [
+        1,
+        2,
+        6,
+        7
+      ],
+      "passed": 221,
+      "optional_skipped": 1,
+      "junit": "branch-7.xml",
+      "gpu": null
+    },
+    {
+      "name": "merge-1",
+      "commit": "82eaf56715e9d16593ae6c8650ff425f80942e40",
+      "milestones": [
+        1
+      ],
+      "passed": 128,
+      "optional_skipped": 1,
+      "junit": "merge-1.xml",
+      "gpu": null
+    },
+    {
+      "name": "merge-2",
+      "commit": "83598b7a848807cf864eda77058bf5b407a7894e",
+      "milestones": [
+        1,
+        2
+      ],
+      "passed": 181,
+      "optional_skipped": 1,
+      "junit": "merge-2.xml",
+      "gpu": null
+    },
+    {
+      "name": "merge-3",
+      "commit": "4f04ab442ac8090d32f153c5de775b2cf916c400",
+      "milestones": [
+        1,
+        2,
+        3
+      ],
+      "passed": 195,
+      "optional_skipped": 1,
+      "junit": "merge-3.xml",
+      "gpu": null
+    },
+    {
+      "name": "merge-4",
+      "commit": "bfccdba8195a806a4ff7705220e8820956b31161",
+      "milestones": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "passed": 222,
+      "optional_skipped": 1,
+      "junit": "merge-4.xml",
+      "gpu": null
+    },
+    {
+      "name": "merge-5",
+      "commit": "1e5821f5048b44d878833e9d70d6ea6cbcf0af75",
+      "milestones": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "passed": 235,
+      "optional_skipped": 1,
+      "junit": "merge-5.xml",
+      "gpu": {
+        "passed": 1,
+        "optional_skipped": 0,
+        "junit": "merge-5-gpu.xml"
+      }
+    },
+    {
+      "name": "merge-6",
+      "commit": "e8e333518655e549d2a925c7c8a07f0b5c3f0c52",
+      "milestones": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "passed": 246,
+      "optional_skipped": 1,
+      "junit": "merge-6.xml",
+      "gpu": {
+        "passed": 1,
+        "optional_skipped": 0,
+        "junit": "merge-6-gpu.xml"
+      }
+    },
+    {
+      "name": "merge-7",
+      "commit": "d5e400bcefeccc93ba956ce876530e5283512df1",
+      "milestones": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "passed": 275,
+      "optional_skipped": 1,
+      "junit": "merge-7.xml",
+      "gpu": {
+        "passed": 1,
+        "optional_skipped": 0,
+        "junit": "merge-7-gpu.xml"
+      }
+    }
+  ],
+  "gpu_requested": true,
+  "manual_X_headset_hardware": "not_run",
+  "branch_commits": {
+    "g1/embodiments": "ec59825d1b45c0c6f8ad10f62fa0f2e2b26859c9",
+    "g1/cartesian-control": "cef08462595008a677455e5122384405833b85f0",
+    "g1/simulation": "5884e6b9792b31f18bd164d42cd8d892beec74d9",
+    "g1/xr": "6e6d3147d0ff3597be8588991d688e76d9f19b0b",
+    "g1/xr-video": "4b2d23b2646646f45b8cdd7286e044deee5f2987",
+    "g1/hand-support": "9f285fd88fde69a57e0da0957a9888945fb47e08",
+    "g1/brainco-hands": "d732e7017645ec344b5fa9bf78a24f0a47bbcb27"
+  },
+  "environment": "3.12.14 (main, Sep  2 2026, 23:27:36) [GCC 15.3.0]\npinocchio 3.9.0 casadi 3.7.2 mujoco 3.12.0",
+  "final_commit": "d5e400bcefeccc93ba956ce876530e5283512df1"
+}

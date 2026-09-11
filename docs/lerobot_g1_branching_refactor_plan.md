@@ -68,21 +68,32 @@ Question this repo answers:
 
 These milestone numbers are independent of the procedural step numbers below.
 Each feature PR must deliver its named suites, setup instructions, and verification
-commands with its implementation. Only milestone 1's suites currently exist in the
-fork. All other paths in this table are planned deliverables, not existing tests.
+commands with its implementation. All seven feature branches and the named test
+suites are now implemented and pushed. See [branch-stack verification](branch-stack-verification.md)
+for branch-local results, headless merge reproduction, and remaining manual gates.
+The procedural sections below describe the contribution workflow, not unfinished
+implementation steps. Physical/headset acceptance is separate from branch completion.
 
 | Milestone and verification goal | Branch created | Previous milestone dependency | Test suites to run |
 |---|---|---|---|
 | 0. Prepare an isolated fork checkout; preserve the working environment. | None; prepare `main` and remotes. | None. | Check origin/upstream URLs, recorded upstream base, clean fork checkout, and preserved reference repositories/environment. Completed. |
 | 1. Verify both embodiments' configuration, sparse joint mapping, action/observation schemas, and early rejection of unsupported connections. Preserve G1-29 behavior. | `g1/embodiments` | 0; branch from fork `main`. | Common regression suite **B** below. Completed at `ec59825d`: 128 passed, 1 skipped, including the optional SONIC module. |
-| 2. Verify FK, IK, joint limits, continuity, and gravity feedforward using each embodiment's selected model. | `g1/cartesian-control` | 1; branch from `g1/embodiments`. | **B** + planned `tests/robots/test_unitree_g1_cartesian_control.py` and `tests/robots/test_unitree_g1_kinematics.py`. Side-by-side kinematic playback of translations and hand rotations with numerical results; no motor dynamics required yet. |
-| 3. Run both embodiments through LeRobot and MuJoCo with correct commands, feedback, motor response, and camera output. | `g1/simulation` | 2; branch from `g1/cartesian-control` for shared control/gravity verification. | Milestone 2 suites + planned `tests/robots/test_unitree_g1_simulation.py` and `tests/integration/test_unitree_g1_mujoco_runtime.py`. Headless runtime plus visible keyboard/scripted motion for both embodiments, gravity compensation on/off. |
-| 4. Independently control both arms through XR, including clutch, release, tracking loss, and reconnection. | `g1/xr` | 2 for source; 3 additionally for simulated acceptance. Branch from `g1/cartesian-control`. | Milestone 2 suites + planned `tests/teleoperators/test_unitree_g1_xr.py`. On the combined acceptance branch, also milestone 3 suites and `tests/integration/test_unitree_g1_xr_mujoco.py`. Synthetic replay followed by headset review for both embodiments. |
-| 5. See live robot-camera images while controlling either embodiment; recover from stream interruption. | `g1/xr-video` | 4 for source; 3 additionally for simulated acceptance. Branch from `g1/xr`. | Milestone 4 suites + planned `tests/teleoperators/test_unitree_g1_xr_video.py`; on the combined acceptance branch, also `tests/integration/test_unitree_g1_xr_video_mujoco.py`. Check changing frames, timestamps, freshness, recovery, and headset view during arm motion. |
-| 6. Compose optional hands with the body through one interface without XR or a vendor SDK. | `g1/hand-support` | 2; branch from `g1/cartesian-control`. | Milestone 2 suites + planned `tests/robots/test_unitree_g1_hands.py`. Fake-hand tests for namespaced features, dispatch, observations, lifecycle, failure cleanup, and unchanged no-hand operation. |
-| 7. Map canonical hand actions and SDK feedback correctly for both BrainCo hands. | `g1/brainco-hands` | 6; branch from `g1/hand-support`. | Milestone 6 suites + planned `tests/robots/test_unitree_g1_brainco_hands.py`. SDK-mocked tests/replay for units, limits, side mapping, malformed feedback, and disconnects. Physical motion/tactile acceptance remains a separate hardware gate. |
+| 2. Verify FK, IK, joint limits, continuity, and gravity feedforward using each embodiment's selected model. | `g1/cartesian-control` | 1; branch from `g1/embodiments`. | **B** + `tests/robots/test_unitree_g1_cartesian_control.py` and `tests/robots/test_unitree_g1_kinematics.py`. Side-by-side kinematic playback of translations and hand rotations with numerical results; no motor dynamics required yet. |
+| 3. Run both embodiments through LeRobot and MuJoCo with correct commands, feedback, motor response, and camera output. | `g1/simulation` | 2; branch from `g1/cartesian-control` for shared control/gravity verification. | Milestone 2 suites + `tests/robots/test_unitree_g1_simulation.py` and `tests/integration/test_unitree_g1_mujoco_runtime.py`. Headless runtime plus visible keyboard/scripted motion for both embodiments, gravity compensation on/off. |
+| 4. Independently control both arms through XR, including clutch, release, tracking loss, and reconnection. | `g1/xr` | 2 for source; 3 additionally for simulated acceptance. Branch from `g1/cartesian-control`. | Milestone 2 suites + `tests/teleoperators/test_unitree_g1_xr.py`. On the combined acceptance branch, also milestone 3 suites and `tests/integration/test_unitree_g1_xr_mujoco.py`. Synthetic replay followed by headset review for both embodiments. |
+| 5. See live robot-camera images while controlling either embodiment; recover from stream interruption. | `g1/xr-video` | 4 for source; 3 additionally for simulated acceptance. Branch from `g1/xr`. | Milestone 4 suites + `tests/teleoperators/test_unitree_g1_xr_video.py`; on the combined acceptance branch, also `tests/integration/test_unitree_g1_xr_video_mujoco.py`. Check changing frames, timestamps, freshness, recovery, and headset view during arm motion. |
+| 6. Compose optional hands with the body through one interface without XR or a vendor SDK. | `g1/hand-support` | 2; branch from `g1/cartesian-control`. | Milestone 2 suites + `tests/robots/test_unitree_g1_hands.py`. Fake-hand tests for namespaced features, dispatch, observations, lifecycle, failure cleanup, and unchanged no-hand operation. |
+| 7. Map canonical hand actions and SDK feedback correctly for both BrainCo hands. | `g1/brainco-hands` | 6; branch from `g1/hand-support`. | Milestone 6 suites + `tests/robots/test_unitree_g1_brainco_hands.py`. SDK-mocked tests/replay for units, limits, side mapping, malformed feedback, and disconnects. Physical motion/tactile acceptance remains a separate hardware gate. |
 
 ## Common Regression Suite B
+
+**Implemented checkpoint (2026-09-11):** all seven origin branches passed their
+branch-local suites and sequential merges in a fresh clone. The final
+`integration/g1-acceptance` commit is `d5e400bcefeccc93ba956ce876530e5283512df1`:
+275 regressions passed, one optional SONIC skip, and one separate offscreen GPU
+test passed. The headless examples passed for both embodiments. See the linked
+verification guide for evidence, exact reproduction, and remaining X/headset gates.
+No physical hardware was used and no GitHub PR was created/merged by this check.
 
 From the checked-out fork with the documented dependencies installed:
 
