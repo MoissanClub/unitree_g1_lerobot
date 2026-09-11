@@ -1,5 +1,6 @@
 """Owned loopback-only joint and IK/DDS acceptance sessions; no XR or hardware."""
 import argparse
+from collections import OrderedDict
 import fcntl
 import hashlib
 import json
@@ -92,6 +93,8 @@ def run_child(args):
                   kp=list(config.kp), kd=list(config.kd), cases=[], samples=[])
     samples = result["samples"]
     raw = [None]
+    received = OrderedDict()
+    active_case = ["startup"]
     observer = None
     unused = sorted(set(range(29)) - {j.value for j in spec.joint_index})
 
@@ -99,6 +102,7 @@ def run_child(args):
         return fk(model, data, ik.L_hand_id, ik.R_hand_id, q_g1[inverse])
 
     def tick(command, case, targets=None, started=None):
+        active_case[0] = case
         started = time.monotonic() if started is None else started
         if not np.isfinite(command).all() or np.any(command < lower-1e-6) or np.any(command > upper+1e-6):
             raise ValueError("Nonfinite or out-of-limit command rejected before publication")
@@ -134,7 +138,16 @@ def run_child(args):
     try:
         connect_unitree_g1_external_dds(robot, g1_module, spec.joint_index, 12)
         observer = robot._ChannelSubscriber(g1_module.kTopicLowState, g1_module.hg_LowState)
-        observer.Init(lambda msg: raw.__setitem__(0, (time.monotonic(), [float(m.q) for m in msg.motor_state])), 1)
+        def receive(msg):
+            now = time.monotonic()
+            values = [float(m.q) for m in msg.motor_state]
+            raw[0] = (now, values)
+            if args.geometry_log:
+                from ..simulation.geometry_trace import state_key
+                received[state_key(msg.tick, values)] = dict(q=values, time=now, case=active_case[0])
+                if len(received) > 65536:
+                    received.popitem(last=False)
+        observer.Init(receive, 1)
         deadline = time.monotonic()+3
         while raw[0] is None and time.monotonic() < deadline:
             time.sleep(.01)
@@ -182,6 +195,13 @@ def run_child(args):
                 print(f"{label}: {metrics}", flush=True)
         hold(base, "final_hold")
         result["passed"] = all(case["passed"] for case in result["cases"])
+        if args.geometry_log:
+            from .geometry_acceptance import compare_trace
+            result["geometry"] = compare_trace(args.geometry_log, dict(received), ik, joints, args.child,
+                                                [case["name"] for case in result["cases"]])
+            result["passed"] &= result["geometry"]["passed"]
+            print(f"Independent geometry: passed={result['geometry']['passed']}, "
+                  f"matched={len(result['geometry']['samples'])}", flush=True)
     except BaseException as exc:
         result["passed"] = False
         result["error"] = repr(exc)
@@ -204,22 +224,24 @@ def run_matrix(args):
     metadata = dict(project_revision=revision(ROOT), lerobot_revision=revision(ROOT.parent/"lerobot"),
                     diagnostic_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                     thresholds=LIMITS, python=sys.version, outcomes={})
+    metadata["geometry_enabled"] = args.geometry
     print(f"Reports: {output}", flush=True)
     env = dict(os.environ, HF_HUB_OFFLINE="1", PYTHONUNBUFFERED="1")
     env.pop("DISPLAY", None)
     for variant in args.embodiment or ("g1_29", "g1_23"):
         sim = None
         try:
+            geometry_options = ["--geometry-log", str(output/f"{variant}-geometry.jsonl")] if args.geometry else []
             with (output/f"{variant}-sim.log").open("w") as log:
                 sim = subprocess.Popen([str(ROOT/"run_g1_mujoco_dds_sim.sh"), "--embodiment", variant,
-                                        "--headless", "--skip-startup-diagnostic", "--duration-s", "240"],
+                                        "--headless", "--skip-startup-diagnostic", "--duration-s", "240", *geometry_options],
                                        cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             time.sleep(5)
             if sim.poll() is not None:
                 raise RuntimeError(f"Simulator exited; inspect {variant}-sim.log")
             with (output/f"{variant}-control.log").open("w") as log:
                 child = subprocess.run([sys.executable, "-m", "unitree_g1_lerobot.diagnostics.verify_live_control",
-                                        "--child", variant, "--report", str(output/f"{variant}.json")],
+                                        "--child", variant, "--report", str(output/f"{variant}.json"), *geometry_options],
                                        cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=220)
             metadata["outcomes"][variant] = child.returncode
             if sim.poll() is not None:
@@ -242,6 +264,8 @@ def run_matrix(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--embodiment", action="append", choices=("g1_29", "g1_23"))
+    parser.add_argument("--geometry", action="store_true", help="Also verify publish-time MuJoCo hand geometry against exact received DDS states.")
+    parser.add_argument("--geometry-log", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("--output", type=Path, default=ROOT/"outputs"/f"live-control-{time.strftime('%Y%m%d-%H%M%S')}")
     parser.add_argument("--child", choices=("g1_29", "g1_23"), help=argparse.SUPPRESS)
     parser.add_argument("--report", type=Path, help=argparse.SUPPRESS)

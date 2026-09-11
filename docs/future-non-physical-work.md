@@ -20,6 +20,11 @@ implementation today. Keep physical robot actuation out of these experiments.
 **Implementation update:** `run_verify_live_control.sh` now implements the first small-signal
 joint and IK/DDS checkpoint for items 1 and 2. See [coverage and budgets](live-control-acceptance.md).
 Full-workspace, limit-boundary, fault-injection, and performance acceptance remain open.
+The independent `--geometry` extension and [model-family audit](g1-model-source-audit.md)
+are implemented. The initial G1-29 10 mm torso comparison used different origins;
+neutral-waist pelvis-relative arm geometry agrees. Legacy versus rev_1_0 waist layouts
+still differ under roll/pitch. Use a matched model pair before articulated-waist work
+and select physical models from the actual hardware identity; do not shift shoulders.
 
 1. **Per-joint DDS verification, both embodiments.** Use an independent DDS sender to
    exercise each active arm joint. Verify names, sparse slots, directions, limits, unused

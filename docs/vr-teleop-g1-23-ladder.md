@@ -382,6 +382,7 @@ back `True` — one line that retired a whole class of hypothesis.
 | 8 | LeRobot Hub | `lerobot/unitree-g1-mujoco` has undeclared deps (`loguru`) |
 | 9 | **Unitree** | `<Tracing>` in the default DDS config aborts on glibc 2.39 / Ubuntu 24.04 |
 | 10 | LeRobot / Unitree SDK / CycloneDDS bindings (ownership unresolved) | Repeated DDS sessions in one Python process can crash during publication-matched callback cleanup; process isolation is a workaround, not a root-cause fix |
+| 11 | LeRobot Hub model assets | Mixed legacy/rev_1_0 G1-29 waist layouts: torso origins differ, but neutral-waist pelvis-relative arms agree; articulated roll/pitch produces a real difference |
 
 Items 5, 6 and 9 also exist in `xr_teleoperate` — 5 and 6 were copied verbatim into LeRobot.
 
@@ -410,6 +411,22 @@ MuJoCo, or IK, comparing explicit channel cleanup with garbage-collection cleanu
 Then compare with direct CycloneDDS Python usage to distinguish LeRobot cleanup,
 SDK listener ownership, and binding/native-library behavior before assigning upstream
 responsibility.
+
+### Finding 11: G1-29 Model Families and Reference Frames
+
+`./run_verify_live_control.sh --geometry` pairs received DDS ticks and float32 joint
+payloads with publish-time MuJoCo geometry. It finds approximately 10 mm of torso-Z
+hand position discrepancy on both G1-29 arms. The Hub URDF uses shoulder-pitch origin
+z=0.24778 m, versus z=0.23778 m in its MJCF. The pinned local benchmark MJCF also uses
+0.23778 m. G1-23 geometry passes the same 1 mm/0.002 rad budgets. These checks use
+LeRobot's default G1-29 gains and derived G1-23 gains, both with gravity compensation.
+
+**Audit correction:** the historical torso-only test compared different origins. The
+URDF torso is 44 mm above the pelvis at neutral waist; the MJCF torso is 54 mm above it.
+Both put the neutral shoulder at 291.78 mm. The checker now uses the shared pelvis frame
+and full-URDF FK with measured waist state, with no model edits or fitted correction.
+The URDF follows rev_1_0 and the MJCF the legacy waist layout; nonzero roll/pitch produces
+2.7-3.0 mm differences at +/-0.3 rad. See the [complete source audit](g1-model-source-audit.md).
 
 **These were found by running the stack, not by reading it.** That is the argument for
 offering hardware validation to maintainers: a G1 EDU with a non-Unitree tactile hand in a

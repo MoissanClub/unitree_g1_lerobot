@@ -39,6 +39,10 @@ locally. Compact reviewed summaries can be archived under `docs/verification/`.
 - Reports separate target-to-commanded-FK (IK error), commanded-to-measured-FK (actuator
   error), and target-to-measured-FK (total error), with translation and rotation separate.
   FK uses the same Pinocchio model as IK; it is not independent MuJoCo end-effector truth.
+  Add `--geometry` for the separate [exact-state MuJoCo comparison](independent-geometry.md).
+  It uses the common pelvis frame and actual received waist state. The initial 10 mm
+  torso-only finding is qualified by the [full-chain audit](g1-model-source-audit.md).
+  Existing Pinocchio-only control metrics are preserved.
 - Reports include joint names/slots/limits, gains, raw DDS q, targets/commands/measured
   poses, feedback age, loop duration including IK, revisions, and diagnostic source hash.
 

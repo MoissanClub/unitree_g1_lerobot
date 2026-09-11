@@ -177,6 +177,12 @@ not a claim that every boundary is fully implemented.
 
 ## Cross-Track Acceptance
 
+Independent geometry verification is implemented as `--geometry` on the live suite.
+The [source-family audit](g1-model-source-audit.md) corrects the initial torso-origin
+comparison: neutral-waist arm geometry agrees in the common pelvis frame. Legacy versus
+rev_1_0 waist kinematics differ under roll/pitch; use matched models before extending
+waist control. Current arm-only checks are not full-body or physical calibration evidence.
+
 The first automated joint and target-space live-path suite is now available as
 `./run_verify_live_control.sh`; see [coverage and budgets](live-control-acceptance.md).
 It does not close workspace-boundary, recovery, or sustained-performance acceptance.

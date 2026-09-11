@@ -1,5 +1,15 @@
 # Rung 4 Handoff
 
+## Independent Geometry Checkpoint
+
+`./run_verify_live_control.sh --geometry` now compares actual MuJoCo hand poses with
+Pinocchio FK using exactly paired received DDS states. The [completed source audit](g1-model-source-audit.md)
+corrects the initial 10 mm interpretation: neutral-waist arms agree in pelvis coordinates;
+the torso origins differ. The checker now uses full-URDF FK with measured waist state.
+Actual legacy/rev_1_0 waist geometry differs under roll/pitch. No model or gain was changed.
+Resume with larger-workspace or failure/recovery work; select a matched model pair before
+adding articulated-waist control, and use actual hardware identity for physical model selection.
+
 ## Resumed: Live Numerical Acceptance
 
 The first non-physical acceptance suite is implemented in `run_verify_live_control.sh`.

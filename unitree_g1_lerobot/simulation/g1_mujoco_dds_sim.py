@@ -31,6 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hz", type=float, default=250.0)
     parser.add_argument("--view-fps", type=float, default=20.0)
     parser.add_argument("--camera", action="store_true", help="Publish a robot-mounted mono camera independently of the Tk viewer.")
+    parser.add_argument("--geometry-log", type=Path, help="Opt-in publish-time geometry journal for independent verification (new file only).")
     parser.add_argument("--camera-channel", type=Path, help="Local latest-frame IPC path (default: /tmp/lerobot-camera-UID.rgb).")
     parser.add_argument("--camera-width", type=int, default=640)
     parser.add_argument("--camera-height", type=int, default=480)
@@ -271,8 +272,11 @@ def main() -> int:
         print("Starting native g1_23 on loopback DDS: 10 dynamic arm joints; pelvis, legs and waist supported.", flush=True)
         env = None
         camera = None
+        geometry = None
         try:
             env = NativeG1Simulation()
+            from .geometry_trace import start_geometry_trace
+            geometry = start_geometry_trace(env.plant.model, env.plant.data, env.publisher, args)
             camera = start_camera(env.plant.model, env.plant.data, env, "step", args)
             run_native(env, args, root)
         except KeyboardInterrupt:
@@ -280,6 +284,8 @@ def main() -> int:
         finally:
             if env is not None:
                 env.close()
+            if geometry is not None:
+                geometry.close()
             if camera is not None:
                 camera.close()
             if root is not None:
@@ -306,8 +312,11 @@ def main() -> int:
     print("G1 MuJoCo DDS sim is running. Ctrl+C to stop.")
 
     camera = None
+    geometry = None
     try:
         inner = env.simulator.sim_env
+        from .geometry_trace import start_geometry_trace
+        geometry = start_geometry_trace(inner.mj_model, inner.mj_data, inner.unitree_bridge.low_state_puber, args)
         camera = start_camera(inner.mj_model, inner.mj_data, inner, "sim_step", args)
         if not args.no_view:
             print("Opening Tk/X viewer window before startup diagnostic")
@@ -335,6 +344,8 @@ def main() -> int:
             camera.close()
         stop_identity()
         env.close()
+        if geometry is not None:
+            geometry.close()
         process_lock.close()
     return 0
 

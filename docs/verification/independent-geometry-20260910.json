@@ -1,0 +1,1081 @@
+{
+  "manifest": {
+    "project_revision": "dfea6ac31e43f88d846474df7a44b3f861d0c61a",
+    "lerobot_revision": "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+    "diagnostic_sha256": "2364b6d1c98d5782020afdac069d94130d6d782ebbfc2e8c404c22b2e57ff261",
+    "thresholds": {
+      "settled_joint_rad": 0.04,
+      "cross_joint_rad": 0.04,
+      "minimum_response_rad": 0.06,
+      "moving_joint_p95_rad": 0.08,
+      "actuator_position_p95_m": 0.035,
+      "actuator_rotation_p95_rad": 0.2,
+      "ik_position_p95_m": 0.04,
+      "ik_rotation_p95_rad": 0.5
+    },
+    "python": "3.12.14 (main, Sep  2 2026, 23:27:36) [GCC 15.3.0]",
+    "outcomes": {
+      "g1_29": 1,
+      "g1_23": 0
+    },
+    "geometry_enabled": true,
+    "simulator_exit_codes": {
+      "g1_29": 0,
+      "g1_23": 0
+    }
+  },
+  "source_hashes": {
+    "unitree_g1_lerobot/diagnostics/geometry_acceptance.py": "d18be69c2b8f989200b7fb52bd4fa88cee325cb80a99b9569f1b9ecfa0cf2450",
+    "unitree_g1_lerobot/diagnostics/../simulation/geometry_trace.py": "6407e76cb30331d6c826c5aec608aaf5fb6d73bb7263708d722e113e2a6a7cee"
+  },
+  "variants": {
+    "g1_29": {
+      "passed": false,
+      "thresholds": {
+        "position_m": 0.001,
+        "rotation_rad": 0.002,
+        "joint_rad": 1e-06,
+        "minimum_samples_per_case": 10
+      },
+      "pairing": "exact DDS tick and float32 joint payload",
+      "frame": "torso_link",
+      "source_audit": {
+        "urdf": "/home/dwei/.cache/huggingface/hub/models--lerobot--unitree-g1-mujoco/snapshots/a38dc8617f0fca51b38e9354dc58ee35ad850fb5/assets/g1_body29_hand14.urdf",
+        "sha256": "8bbf006633fc50b616f665c7a970780cc296577a0adfd7d28b049e751c238735",
+        "shoulder_origins": {
+          "left_shoulder_pitch_joint": {
+            "urdf_xyz": [
+              0.0039563,
+              0.10022,
+              0.24778
+            ],
+            "mujoco_xyz": [
+              0.0039563,
+              0.10022,
+              0.23778
+            ],
+            "urdf_minus_mujoco_m": [
+              0.0,
+              0.0,
+              0.010000000000000009
+            ]
+          },
+          "right_shoulder_pitch_joint": {
+            "urdf_xyz": [
+              0.0039563,
+              -0.10021,
+              0.24778
+            ],
+            "mujoco_xyz": [
+              0.0039563,
+              -0.10021,
+              0.23778
+            ],
+            "urdf_minus_mujoco_m": [
+              0.0,
+              0.0,
+              0.010000000000000009
+            ]
+          }
+        }
+      },
+      "cases": [
+        {
+          "name": "joint/kLeftShoulderPitch/+1",
+          "samples": 60,
+          "position_m": 0.010000122786062483,
+          "rotation_rad": 1.452844112221858e-06,
+          "joint_rad": 2.968609025266744e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftShoulderPitch/-1",
+          "samples": 60,
+          "position_m": 0.0100001138780093,
+          "rotation_rad": 1.4385602934537184e-06,
+          "joint_rad": 2.9691718084201568e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftShoulderRoll/+1",
+          "samples": 60,
+          "position_m": 0.010000181428015198,
+          "rotation_rad": 1.4453358236531253e-06,
+          "joint_rad": 2.9452515870609375e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftShoulderRoll/-1",
+          "samples": 60,
+          "position_m": 0.01000011332586298,
+          "rotation_rad": 1.438251556398236e-06,
+          "joint_rad": 2.9154399672215447e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftShoulderYaw/+1",
+          "samples": 60,
+          "position_m": 0.010000144856847493,
+          "rotation_rad": 1.4394861073177295e-06,
+          "joint_rad": 2.9722664662834575e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftShoulderYaw/-1",
+          "samples": 60,
+          "position_m": 0.010000113186302968,
+          "rotation_rad": 1.4405654714832302e-06,
+          "joint_rad": 2.9615354946166406e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftElbow/+1",
+          "samples": 60,
+          "position_m": 0.010000118085589618,
+          "rotation_rad": 1.4397945796468504e-06,
+          "joint_rad": 2.957661504598974e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftElbow/-1",
+          "samples": 60,
+          "position_m": 0.010000113308949947,
+          "rotation_rad": 1.4404113261217614e-06,
+          "joint_rad": 2.90870902919238e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftWristRoll/+1",
+          "samples": 60,
+          "position_m": 0.010000113038331428,
+          "rotation_rad": 1.4394861073177295e-06,
+          "joint_rad": 2.9492928210750335e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftWristRoll/-1",
+          "samples": 60,
+          "position_m": 0.01000011430005897,
+          "rotation_rad": 1.439331846361672e-06,
+          "joint_rad": 2.9753321029168944e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftWristPitch/+1",
+          "samples": 60,
+          "position_m": 0.01000011645358022,
+          "rotation_rad": 1.4388689642637197e-06,
+          "joint_rad": 2.9503997467372756e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftWristPitch/-1",
+          "samples": 60,
+          "position_m": 0.01000011177700221,
+          "rotation_rad": 1.439331846361672e-06,
+          "joint_rad": 2.8603048818354182e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftWristYaw/+1",
+          "samples": 60,
+          "position_m": 0.010000122061343947,
+          "rotation_rad": 1.4379427530546019e-06,
+          "joint_rad": 2.8975355115257173e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kLeftWristYaw/-1",
+          "samples": 60,
+          "position_m": 0.010000112690346945,
+          "rotation_rad": 1.4394861073177295e-06,
+          "joint_rad": 2.9730529371718717e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightShoulderPitch/+1",
+          "samples": 60,
+          "position_m": 0.010000120202363176,
+          "rotation_rad": 1.4510089399791844e-06,
+          "joint_rad": 2.9663338452223798e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightShoulderPitch/-1",
+          "samples": 60,
+          "position_m": 0.010000113853233416,
+          "rotation_rad": 1.4376338833801e-06,
+          "joint_rad": 2.9744857243940714e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightShoulderRoll/+1",
+          "samples": 59,
+          "position_m": 0.010000112409153106,
+          "rotation_rad": 1.4379427530546019e-06,
+          "joint_rad": 2.9786277111476522e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightShoulderRoll/-1",
+          "samples": 60,
+          "position_m": 0.010000178546167953,
+          "rotation_rad": 1.4436449223499198e-06,
+          "joint_rad": 2.959122302748085e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightShoulderYaw/+1",
+          "samples": 59,
+          "position_m": 0.010000112749314055,
+          "rotation_rad": 1.4408737127345345e-06,
+          "joint_rad": 2.9075330476580064e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightShoulderYaw/-1",
+          "samples": 59,
+          "position_m": 0.010000144391098786,
+          "rotation_rad": 1.4394861073177295e-06,
+          "joint_rad": 2.9195701856110645e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightElbow/+1",
+          "samples": 59,
+          "position_m": 0.0100001187985332,
+          "rotation_rad": 1.4404113261217614e-06,
+          "joint_rad": 2.9753387642550422e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightElbow/-1",
+          "samples": 59,
+          "position_m": 0.010000112300957915,
+          "rotation_rad": 1.4390232748399865e-06,
+          "joint_rad": 2.95575964814887e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightWristRoll/+1",
+          "samples": 59,
+          "position_m": 0.010000114040326798,
+          "rotation_rad": 1.4394861073177295e-06,
+          "joint_rad": 2.9740633289421226e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightWristRoll/-1",
+          "samples": 59,
+          "position_m": 0.010000113715750674,
+          "rotation_rad": 1.4407196003523905e-06,
+          "joint_rad": 2.9521184163883163e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightWristPitch/+1",
+          "samples": 60,
+          "position_m": 0.010000112465577464,
+          "rotation_rad": 1.4379427530546019e-06,
+          "joint_rad": 2.92008665025989e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightWristPitch/-1",
+          "samples": 60,
+          "position_m": 0.010000113156637193,
+          "rotation_rad": 1.4394861073177295e-06,
+          "joint_rad": 2.9692960978877636e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightWristYaw/+1",
+          "samples": 60,
+          "position_m": 0.01000011401770755,
+          "rotation_rad": 1.4388689642637197e-06,
+          "joint_rad": 2.9783779220693418e-08,
+          "passed": false
+        },
+        {
+          "name": "joint/kRightWristYaw/-1",
+          "samples": 60,
+          "position_m": 0.010000119720825035,
+          "rotation_rad": 1.4396403517443515e-06,
+          "joint_rad": 2.908803931056525e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/left/0",
+          "samples": 124,
+          "position_m": 0.010000116204357685,
+          "rotation_rad": 1.45437165350409e-06,
+          "joint_rad": 2.9680477298121843e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/left/1",
+          "samples": 126,
+          "position_m": 0.010000128877627088,
+          "rotation_rad": 1.4425678623058793e-06,
+          "joint_rad": 2.926352693499723e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/left/2",
+          "samples": 126,
+          "position_m": 0.010000113247620986,
+          "rotation_rad": 1.4461037615552729e-06,
+          "joint_rad": 2.9624288355734052e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/left/3",
+          "samples": 117,
+          "position_m": 0.010000112959624712,
+          "rotation_rad": 1.4448748649988717e-06,
+          "joint_rad": 2.9799604894797938e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/left/4",
+          "samples": 131,
+          "position_m": 0.010000113726437023,
+          "rotation_rad": 1.4462573002042755e-06,
+          "joint_rad": 2.9715715221811934e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/left/5",
+          "samples": 116,
+          "position_m": 0.010000113179482255,
+          "rotation_rad": 1.4479451507921535e-06,
+          "joint_rad": 2.976347124317158e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/right/0",
+          "samples": 132,
+          "position_m": 0.010000113511656333,
+          "rotation_rad": 1.4493246574150195e-06,
+          "joint_rad": 2.9764829156953e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/right/1",
+          "samples": 126,
+          "position_m": 0.010000128157740918,
+          "rotation_rad": 1.4436449223499198e-06,
+          "joint_rad": 2.972101886822287e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/right/2",
+          "samples": 123,
+          "position_m": 0.01000011582341661,
+          "rotation_rad": 1.445796635341433e-06,
+          "joint_rad": 2.976859247993957e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/right/3",
+          "samples": 124,
+          "position_m": 0.010000112942843014,
+          "rotation_rad": 1.4442600246029476e-06,
+          "joint_rad": 2.976169666268902e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/right/4",
+          "samples": 130,
+          "position_m": 0.010000113900546392,
+          "rotation_rad": 1.4462573002042755e-06,
+          "joint_rad": 2.967598855541098e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/right/5",
+          "samples": 124,
+          "position_m": 0.01000011298625603,
+          "rotation_rad": 1.4447211794307084e-06,
+          "joint_rad": 2.969983070588711e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/both/0",
+          "samples": 122,
+          "position_m": 0.0100001159866567,
+          "rotation_rad": 1.452844112221858e-06,
+          "joint_rad": 2.9763643105695792e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/both/1",
+          "samples": 126,
+          "position_m": 0.010000129143029952,
+          "rotation_rad": 1.4430295579049325e-06,
+          "joint_rad": 2.9730499839786262e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/both/2",
+          "samples": 117,
+          "position_m": 0.010000111710298144,
+          "rotation_rad": 1.4471781900143675e-06,
+          "joint_rad": 2.9756124786395333e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/both/3",
+          "samples": 124,
+          "position_m": 0.010000113422245833,
+          "rotation_rad": 1.448864967815018e-06,
+          "joint_rad": 2.9659743772114666e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/both/4",
+          "samples": 123,
+          "position_m": 0.010000111184462448,
+          "rotation_rad": 1.4456430477662037e-06,
+          "joint_rad": 2.9682538649211665e-08,
+          "passed": false
+        },
+        {
+          "name": "cartesian/both/5",
+          "samples": 121,
+          "position_m": 0.010000112263063287,
+          "rotation_rad": 1.4484051323203955e-06,
+          "joint_rad": 2.9515856203587987e-08,
+          "passed": false
+        }
+      ],
+      "matched_samples": 3905,
+      "control_cases_passed": 46,
+      "control_cases_total": 46,
+      "max_errors": {
+        "position_m": 0.010000181428015198,
+        "rotation_rad": 1.45437165350409e-06,
+        "joint_rad": 2.9799604894797938e-08
+      },
+      "example_sample": {
+        "case": "joint/kLeftShoulderPitch/+1",
+        "sequence": 2650,
+        "tick": 10595,
+        "state_key": "10595:ed4f16bc622a27ff2e114a7ae6839d2c99ef1aeafd1c3476a8e6e31964719668",
+        "simulation_time_s": 10.595999999999277,
+        "capture_to_receive_s": 0.0006925150009919889,
+        "joint_mapping_error_rad": 2.2308107139323852e-08,
+        "error": [
+          {
+            "position_m": 0.010000100366999009,
+            "rotation_rad": 1.437324947331969e-06
+          },
+          {
+            "position_m": 0.010000103903201316,
+            "rotation_rad": 1.4354699347964918e-06
+          }
+        ],
+        "pinocchio_poses": [
+          [
+            [
+              0.9194125702028202,
+              0.05051289737067786,
+              0.39003714304186854,
+              0.30671128060912234
+            ],
+            [
+              0.01640230023927779,
+              0.9859303431822906,
+              -0.16635000132044378,
+              0.17552869256172957
+            ],
+            [
+              -0.3929522748374214,
+              0.15934178859191472,
+              0.9056482231575487,
+              -0.015528160875652133
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            [
+              0.9193768090179046,
+              -0.05050732086115698,
+              0.3901221521260788,
+              0.3066993526900525
+            ],
+            [
+              -0.016437421320764065,
+              0.9859246644384796,
+              0.1663801888212508,
+              -0.17553081505477114
+            ],
+            [
+              -0.3930344695066567,
+              -0.15937868926333756,
+              0.90560606181072,
+              -0.015543827635169781
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ]
+        ],
+        "mujoco_poses": [
+          [
+            [
+              0.9194125578936796,
+              0.05051310095159018,
+              0.3900371456921133,
+              0.30671127546852656
+            ],
+            [
+              0.016401558211428923,
+              0.9859305593748315,
+              -0.1663487931397877,
+              0.17552826021203796
+            ],
+            [
+              -0.3929523346102343,
+              0.15934038635286796,
+              0.9056484439346651,
+              -0.025528261233303602
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            [
+              0.9193767932406851,
+              -0.05050752124128754,
+              0.39012216336492667,
+              0.3066993431249201
+            ],
+            [
+              -0.01643668397578521,
+              0.9859248807068083,
+              0.16637898011209593,
+              -0.17553038467810803
+            ],
+            [
+              -0.39303453724876375,
+              -0.15937728790929384,
+              0.9056062790353894,
+              -0.025543931529105415
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ]
+        ]
+      }
+    },
+    "g1_23": {
+      "passed": true,
+      "thresholds": {
+        "position_m": 0.001,
+        "rotation_rad": 0.002,
+        "joint_rad": 1e-06,
+        "minimum_samples_per_case": 10
+      },
+      "pairing": "exact DDS tick and float32 joint payload",
+      "frame": "torso_link",
+      "source_audit": {
+        "urdf": "/home/dwei/lerobot-sim/unitree_g1_lerobot/assets/g1/g1_body23.urdf",
+        "sha256": "b1af86fb023c0b6f8e52723d224be6cad70916eaff2778e7dbe09e6f91faa9b9",
+        "shoulder_origins": {
+          "left_shoulder_pitch_joint": {
+            "urdf_xyz": [
+              0.0039563,
+              0.10022,
+              0.23778
+            ],
+            "mujoco_xyz": [
+              0.0039563,
+              0.10022,
+              0.23778
+            ],
+            "urdf_minus_mujoco_m": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "right_shoulder_pitch_joint": {
+            "urdf_xyz": [
+              0.0039563,
+              -0.10021,
+              0.23778
+            ],
+            "mujoco_xyz": [
+              0.0039563,
+              -0.10021,
+              0.23778
+            ],
+            "urdf_minus_mujoco_m": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "cases": [
+        {
+          "name": "joint/kLeftShoulderPitch/+1",
+          "samples": 59,
+          "position_m": 5.402378957583728e-07,
+          "rotation_rad": 1.451314963169338e-06,
+          "joint_rad": 2.938965337762056e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderPitch/-1",
+          "samples": 59,
+          "position_m": 4.93871092014942e-07,
+          "rotation_rad": 1.4362431478527219e-06,
+          "joint_rad": 2.979677315995133e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderRoll/+1",
+          "samples": 59,
+          "position_m": 5.016204927603819e-07,
+          "rotation_rad": 1.4439525062294834e-06,
+          "joint_rad": 2.9794658962245535e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderRoll/-1",
+          "samples": 60,
+          "position_m": 4.923500223262507e-07,
+          "rotation_rad": 1.432217881573118e-06,
+          "joint_rad": 2.953347999490319e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderYaw/+1",
+          "samples": 60,
+          "position_m": 4.993748235401003e-07,
+          "rotation_rad": 1.4384059332093282e-06,
+          "joint_rad": 2.96872516569735e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftShoulderYaw/-1",
+          "samples": 60,
+          "position_m": 4.942609712167742e-07,
+          "rotation_rad": 1.4401029859007136e-06,
+          "joint_rad": 2.9539431567471297e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftElbow/+1",
+          "samples": 59,
+          "position_m": 5.363908361229529e-07,
+          "rotation_rad": 1.4367068759435399e-06,
+          "joint_rad": 2.971313439736889e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftElbow/-1",
+          "samples": 59,
+          "position_m": 4.893031341810966e-07,
+          "rotation_rad": 1.4379427530546019e-06,
+          "joint_rad": 2.9779577914723632e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftWristRoll/+1",
+          "samples": 59,
+          "position_m": 4.94343529162771e-07,
+          "rotation_rad": 1.438251556398236e-06,
+          "joint_rad": 2.942132404371023e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kLeftWristRoll/-1",
+          "samples": 59,
+          "position_m": 4.941627978742665e-07,
+          "rotation_rad": 1.4408737127345345e-06,
+          "joint_rad": 2.9723366989919953e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderPitch/+1",
+          "samples": 59,
+          "position_m": 5.394658396111436e-07,
+          "rotation_rad": 1.451620921845272e-06,
+          "joint_rad": 2.9285592506589353e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderPitch/-1",
+          "samples": 60,
+          "position_m": 4.912355884690707e-07,
+          "rotation_rad": 1.4297351618185049e-06,
+          "joint_rad": 2.9769875009577618e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderRoll/+1",
+          "samples": 60,
+          "position_m": 4.910441161258129e-07,
+          "rotation_rad": 1.4320628376883256e-06,
+          "joint_rad": 2.875453219974844e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderRoll/-1",
+          "samples": 60,
+          "position_m": 5.021497756959435e-07,
+          "rotation_rad": 1.4431834236150149e-06,
+          "joint_rad": 2.9699404602290258e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderYaw/+1",
+          "samples": 59,
+          "position_m": 4.943608810755513e-07,
+          "rotation_rad": 1.4407196003523905e-06,
+          "joint_rad": 2.9608164808792026e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightShoulderYaw/-1",
+          "samples": 59,
+          "position_m": 5.00516122707308e-07,
+          "rotation_rad": 1.4388689642637197e-06,
+          "joint_rad": 2.9774230525525525e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightElbow/+1",
+          "samples": 59,
+          "position_m": 5.361074051815796e-07,
+          "rotation_rad": 1.4367068759435399e-06,
+          "joint_rad": 2.968015611060082e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightElbow/-1",
+          "samples": 59,
+          "position_m": 4.893010114212833e-07,
+          "rotation_rad": 1.4374794236554125e-06,
+          "joint_rad": 2.9500793807812897e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightWristRoll/+1",
+          "samples": 59,
+          "position_m": 4.943763054053891e-07,
+          "rotation_rad": 1.4374794236554125e-06,
+          "joint_rad": 2.9298572568059456e-08,
+          "passed": true
+        },
+        {
+          "name": "joint/kRightWristRoll/-1",
+          "samples": 59,
+          "position_m": 4.941005918999771e-07,
+          "rotation_rad": 1.4401029859007136e-06,
+          "joint_rad": 2.9424342629091882e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/left/0",
+          "samples": 119,
+          "position_m": 4.97102229868827e-07,
+          "rotation_rad": 1.4471781900143675e-06,
+          "joint_rad": 2.970764934051573e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/left/1",
+          "samples": 125,
+          "position_m": 4.946045795010895e-07,
+          "rotation_rad": 1.4437987224805803e-06,
+          "joint_rad": 2.9563908987562115e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/left/2",
+          "samples": 122,
+          "position_m": 5.048438573392596e-07,
+          "rotation_rad": 1.4430295579049325e-06,
+          "joint_rad": 2.96121762666246e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/left/3",
+          "samples": 122,
+          "position_m": 4.904804311773572e-07,
+          "rotation_rad": 1.441644027525052e-06,
+          "joint_rad": 2.969202794744774e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/left/4",
+          "samples": 129,
+          "position_m": 4.936827386370084e-07,
+          "rotation_rad": 1.441644027525052e-06,
+          "joint_rad": 2.9779097521220876e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/left/5",
+          "samples": 120,
+          "position_m": 4.892259701257135e-07,
+          "rotation_rad": 1.4444137592379675e-06,
+          "joint_rad": 2.9268362178314078e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/right/0",
+          "samples": 126,
+          "position_m": 4.962392366525899e-07,
+          "rotation_rad": 1.4491714437502947e-06,
+          "joint_rad": 2.973383428361842e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/right/1",
+          "samples": 122,
+          "position_m": 4.941164825886782e-07,
+          "rotation_rad": 1.4436449223499198e-06,
+          "joint_rad": 2.9560222714053452e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/right/2",
+          "samples": 126,
+          "position_m": 5.049142102285883e-07,
+          "rotation_rad": 1.4421060188932724e-06,
+          "joint_rad": 2.9799446021883114e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/right/3",
+          "samples": 125,
+          "position_m": 4.893483345314193e-07,
+          "rotation_rad": 1.4424139309324159e-06,
+          "joint_rad": 2.9795360956264005e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/right/4",
+          "samples": 122,
+          "position_m": 4.926186489202482e-07,
+          "rotation_rad": 1.4422599831299674e-06,
+          "joint_rad": 2.9518880784173973e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/right/5",
+          "samples": 125,
+          "position_m": 4.893043267555656e-07,
+          "rotation_rad": 1.4430295579049325e-06,
+          "joint_rad": 2.9764254061426243e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/both/0",
+          "samples": 125,
+          "position_m": 4.964152789357645e-07,
+          "rotation_rad": 1.4496310361643284e-06,
+          "joint_rad": 2.9627069464410738e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/both/1",
+          "samples": 126,
+          "position_m": 4.910941411054837e-07,
+          "rotation_rad": 1.4431834236150149e-06,
+          "joint_rad": 2.9794070210975576e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/both/2",
+          "samples": 125,
+          "position_m": 5.048086144632185e-07,
+          "rotation_rad": 1.4434911058322652e-06,
+          "joint_rad": 2.9721927918835434e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/both/3",
+          "samples": 116,
+          "position_m": 4.901168102938303e-07,
+          "rotation_rad": 1.4431834236150149e-06,
+          "joint_rad": 2.9585018213040826e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/both/4",
+          "samples": 129,
+          "position_m": 4.934195290480269e-07,
+          "rotation_rad": 1.4430295579049325e-06,
+          "joint_rad": 2.9737105222693572e-08,
+          "passed": true
+        },
+        {
+          "name": "cartesian/both/5",
+          "samples": 128,
+          "position_m": 4.877581332124262e-07,
+          "rotation_rad": 1.4459502066027237e-06,
+          "joint_rad": 2.9751976660108426e-08,
+          "passed": true
+        }
+      ],
+      "matched_samples": 3418,
+      "control_cases_passed": 38,
+      "control_cases_total": 38,
+      "max_errors": {
+        "position_m": 5.402378957583728e-07,
+        "rotation_rad": 1.451620921845272e-06,
+        "joint_rad": 2.9799446021883114e-08
+      },
+      "example_sample": {
+        "case": "joint/kLeftShoulderPitch/+1",
+        "sequence": 2755,
+        "tick": 2755,
+        "state_key": "2755:3280a5edf96a00223f77b9e6353f970f08f674338de2a5ca6d2b889c3cd4df35",
+        "simulation_time_s": 11.02000000000035,
+        "capture_to_receive_s": 0.000768548998166807,
+        "joint_mapping_error_rad": 1.3993753378294116e-08,
+        "error": [
+          {
+            "position_m": 4.945331504836741e-07,
+            "rotation_rad": 1.437324947331969e-06
+          },
+          {
+            "position_m": 4.920883858576421e-07,
+            "rotation_rad": 1.4317526995498348e-06
+          }
+        ],
+        "pinocchio_poses": [
+          [
+            [
+              0.9173276309246219,
+              0.04916449854797758,
+              0.39508590157679196,
+              0.36456653877571343
+            ],
+            [
+              0.018283190975074845,
+              0.9860971957759374,
+              -0.16516066544610852,
+              0.17745896052127783
+            ],
+            [
+              -0.3977131409319907,
+              0.15872987294570093,
+              0.9036753205464074,
+              -0.05392096313909831
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            [
+              0.9187426989817471,
+              -0.05039354877416363,
+              0.3916278122269669,
+              0.3669585962074275
+            ],
+            [
+              -0.016778315219957124,
+              0.9859443005967101,
+              0.16622973337897215,
+              -0.17674841306613934
+            ],
+            [
+              -0.3945001155970862,
+              -0.15929320877805933,
+              0.9049836089295071,
+              -0.05201324180746799
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ]
+        ],
+        "mujoco_poses": [
+          [
+            [
+              0.9173276109681991,
+              0.04916469443865581,
+              0.3950859235357929,
+              0.3645665269491386
+            ],
+            [
+              0.018282451119023595,
+              0.9860974124961206,
+              -0.16515945340650984,
+              0.17745847904972087
+            ],
+            [
+              -0.39771322097267187,
+              0.15872846590706463,
+              0.9036755324641323,
+              -0.05392107542582458
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          [
+            [
+              0.918742679055071,
+              -0.05039375024383895,
+              0.3916278330495317,
+              0.36695858723332075
+            ],
+            [
+              -0.016777577191269145,
+              0.9859445165002572,
+              0.16622852729500148,
+              -0.176747933478759
+            ],
+            [
+              -0.39450019339196946,
+              -0.15929180870162668,
+              0.9049838214544295,
+              -0.05201335165458687
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ]
+        ]
+      }
+    }
+  }
+}

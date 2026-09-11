@@ -1,0 +1,494 @@
+{
+  "hub_revision": "a38dc8617f0fca51b38e9354dc58ee35ad850fb5",
+  "urdf_signature": {
+    "origins": {
+      "waist_roll_joint": [
+        -0.0039635,
+        0.0,
+        0.044
+      ],
+      "waist_pitch_joint": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "left_shoulder_pitch_joint": [
+        0.0039563,
+        0.10022,
+        0.24778
+      ],
+      "right_shoulder_pitch_joint": [
+        0.0039563,
+        -0.10021,
+        0.24778
+      ]
+    },
+    "torso_mesh": "meshes/torso_link_rev_1_0.STL",
+    "neutral_shoulder_pelvis_z": 0.29178
+  },
+  "local_files": {
+    "/home/dwei/.cache/huggingface/hub/models--lerobot--unitree-g1-mujoco/snapshots/a38dc8617f0fca51b38e9354dc58ee35ad850fb5/assets/g1_body29_hand14.urdf": "8bbf006633fc50b616f665c7a970780cc296577a0adfd7d28b049e751c238735",
+    "/home/dwei/.cache/huggingface/hub/models--lerobot--unitree-g1-mujoco/snapshots/a38dc8617f0fca51b38e9354dc58ee35ad850fb5/assets/g1_29dof_with_hand.xml": "cec4777a3b9c8b05f8ed6547a1bc35673e0f2b0e267c4493bcb59efdb4275f51"
+  },
+  "cases": [
+    {
+      "name": "neutral",
+      "joint_values": {},
+      "pelvis": [
+        {
+          "position_m": 2.890464884248259e-07,
+          "rotation_rad": 1.456050097978972e-06
+        },
+        {
+          "position_m": 2.890464884248259e-07,
+          "rotation_rad": 1.456050097978972e-06
+        }
+      ],
+      "torso_link": [
+        {
+          "position_m": 0.010000049645847482,
+          "rotation_rad": 1.456050097978972e-06
+        },
+        {
+          "position_m": 0.010000049645847482,
+          "rotation_rad": 1.456050097978972e-06
+        }
+      ]
+    },
+    {
+      "name": "arms_waist_zero",
+      "joint_values": {
+        "left_shoulder_pitch_joint": -0.4,
+        "right_shoulder_pitch_joint": -0.5,
+        "left_elbow_joint": 0.8,
+        "right_elbow_joint": 0.9,
+        "left_wrist_roll_joint": 0.15,
+        "right_wrist_yaw_joint": -0.2
+      },
+      "pelvis": [
+        {
+          "position_m": 4.392014799068777e-07,
+          "rotation_rad": 1.429424518650945e-06
+        },
+        {
+          "position_m": 4.3819068184021594e-07,
+          "rotation_rad": 1.4149042928779375e-06
+        }
+      ],
+      "torso_link": [
+        {
+          "position_m": 0.010000028612170975,
+          "rotation_rad": 1.429424518650945e-06
+        },
+        {
+          "position_m": 0.010000038483586826,
+          "rotation_rad": 1.4149042928779375e-06
+        }
+      ]
+    },
+    {
+      "name": "waist_yaw_-1",
+      "joint_values": {
+        "left_shoulder_pitch_joint": -0.4,
+        "right_shoulder_pitch_joint": -0.5,
+        "left_elbow_joint": 0.8,
+        "right_elbow_joint": 0.9,
+        "left_wrist_roll_joint": 0.15,
+        "right_wrist_yaw_joint": -0.2,
+        "waist_yaw_joint": -0.3
+      },
+      "pelvis": [
+        {
+          "position_m": 4.3920147990822815e-07,
+          "rotation_rad": 1.429890458094618e-06
+        },
+        {
+          "position_m": 4.3819068187435496e-07,
+          "rotation_rad": 1.4149042928779375e-06
+        }
+      ],
+      "torso_link": [
+        {
+          "position_m": 0.010000028612170635,
+          "rotation_rad": 1.4302010000589907e-06
+        },
+        {
+          "position_m": 0.010000038483586712,
+          "rotation_rad": 1.4150612167727115e-06
+        }
+      ]
+    },
+    {
+      "name": "waist_yaw_+1",
+      "joint_values": {
+        "left_shoulder_pitch_joint": -0.4,
+        "right_shoulder_pitch_joint": -0.5,
+        "left_elbow_joint": 0.8,
+        "right_elbow_joint": 0.9,
+        "left_wrist_roll_joint": 0.15,
+        "right_wrist_yaw_joint": -0.2,
+        "waist_yaw_joint": 0.3
+      },
+      "pelvis": [
+        {
+          "position_m": 4.3920147985583455e-07,
+          "rotation_rad": 1.429890458094618e-06
+        },
+        {
+          "position_m": 4.3819068191488893e-07,
+          "rotation_rad": 1.4149042928779375e-06
+        }
+      ],
+      "torso_link": [
+        {
+          "position_m": 0.010000028612170746,
+          "rotation_rad": 1.429890458094618e-06
+        },
+        {
+          "position_m": 0.010000038483586712,
+          "rotation_rad": 1.4150612167727115e-06
+        }
+      ]
+    },
+    {
+      "name": "waist_roll_-1",
+      "joint_values": {
+        "left_shoulder_pitch_joint": -0.4,
+        "right_shoulder_pitch_joint": -0.5,
+        "left_elbow_joint": 0.8,
+        "right_elbow_joint": 0.9,
+        "left_wrist_roll_joint": 0.15,
+        "right_wrist_yaw_joint": -0.2,
+        "waist_roll_joint": -0.3
+      },
+      "pelvis": [
+        {
+          "position_m": 0.002689449146931652,
+          "rotation_rad": 1.429424518650945e-06
+        },
+        {
+          "position_m": 0.002690311720736075,
+          "rotation_rad": 1.414590392864562e-06
+        }
+      ],
+      "torso_link": [
+        {
+          "position_m": 0.010000028612170832,
+          "rotation_rad": 1.429579848672447e-06
+        },
+        {
+          "position_m": 0.010000038483586753,
+          "rotation_rad": 1.4149042928779375e-06
+        }
+      ]
+    },
+    {
+      "name": "waist_roll_+1",
+      "joint_values": {
+        "left_shoulder_pitch_joint": -0.4,
+        "right_shoulder_pitch_joint": -0.5,
+        "left_elbow_joint": 0.8,
+        "right_elbow_joint": 0.9,
+        "left_wrist_roll_joint": 0.15,
+        "right_wrist_yaw_joint": -0.2,
+        "waist_roll_joint": 0.3
+      },
+      "pelvis": [
+        {
+          "position_m": 0.002690315075505089,
+          "rotation_rad": 1.429579848672447e-06
+        },
+        {
+          "position_m": 0.002689449551614294,
+          "rotation_rad": 1.4150612167727115e-06
+        }
+      ],
+      "torso_link": [
+        {
+          "position_m": 0.010000028612170753,
+          "rotation_rad": 1.429890458094618e-06
+        },
+        {
+          "position_m": 0.01000003848358657,
+          "rotation_rad": 1.4152181232672639e-06
+        }
+      ]
+    },
+    {
+      "name": "waist_pitch_-1",
+      "joint_values": {
+        "left_shoulder_pitch_joint": -0.4,
+        "right_shoulder_pitch_joint": -0.5,
+        "left_elbow_joint": 0.8,
+        "right_elbow_joint": 0.9,
+        "left_wrist_roll_joint": 0.15,
+        "right_wrist_yaw_joint": -0.2,
+        "waist_pitch_joint": -0.3
+      },
+      "pelvis": [
+        {
+          "position_m": 0.002988748711153956,
+          "rotation_rad": 1.429424518650945e-06
+        },
+        {
+          "position_m": 0.002988747387559611,
+          "rotation_rad": 1.4149042928779375e-06
+        }
+      ],
+      "torso_link": [
+        {
+          "position_m": 0.01000002861217091,
+          "rotation_rad": 1.429579848672447e-06
+        },
+        {
+          "position_m": 0.010000038483586625,
+          "rotation_rad": 1.4150612167727115e-06
+        }
+      ]
+    },
+    {
+      "name": "waist_pitch_+1",
+      "joint_values": {
+        "left_shoulder_pitch_joint": -0.4,
+        "right_shoulder_pitch_joint": -0.5,
+        "left_elbow_joint": 0.8,
+        "right_elbow_joint": 0.9,
+        "left_wrist_roll_joint": 0.15,
+        "right_wrist_yaw_joint": -0.2,
+        "waist_pitch_joint": 0.3
+      },
+      "pelvis": [
+        {
+          "position_m": 0.0029887852008419554,
+          "rotation_rad": 1.429424518650945e-06
+        },
+        {
+          "position_m": 0.0029887894744526655,
+          "rotation_rad": 1.414590392864562e-06
+        }
+      ],
+      "torso_link": [
+        {
+          "position_m": 0.010000028612170718,
+          "rotation_rad": 1.429579848672447e-06
+        },
+        {
+          "position_m": 0.010000038483586729,
+          "rotation_rad": 1.4149042928779375e-06
+        }
+      ]
+    }
+  ],
+  "upstream": {
+    "unitree_ros_revision": "7d6075f7f58588b189b940130e3edab3c839b2df",
+    "files": [
+      {
+        "url": "https://github.com/unitreerobotics/unitree_ros/blob/7d6075f7f58588b189b940130e3edab3c839b2df/robots/g1_description/g1_29dof.urdf",
+        "sha256": "e1dc89366bf96aa33ba4ef211884f6d81320ddd2ac6f8b1ad82986e64008be31",
+        "origins": {
+          "waist_roll_joint": [
+            -0.0039635,
+            0.0,
+            0.035
+          ],
+          "waist_pitch_joint": [
+            0.0,
+            0.0,
+            0.019
+          ],
+          "left_shoulder_pitch_joint": [
+            0.0039563,
+            0.10022,
+            0.23778
+          ],
+          "right_shoulder_pitch_joint": [
+            0.0039563,
+            -0.10021,
+            0.23778
+          ]
+        },
+        "torso_mesh": "meshes/torso_link.STL",
+        "neutral_shoulder_pelvis_z": 0.29178
+      },
+      {
+        "url": "https://github.com/unitreerobotics/unitree_ros/blob/7d6075f7f58588b189b940130e3edab3c839b2df/robots/g1_description/g1_29dof_with_hand.urdf",
+        "sha256": "553bf05fe09513d374d2133421ef3e122b41aba1a6a4781477c3926d88406fd7",
+        "origins": {
+          "waist_roll_joint": [
+            -0.0039635,
+            0.0,
+            0.035
+          ],
+          "waist_pitch_joint": [
+            0.0,
+            0.0,
+            0.019
+          ],
+          "left_shoulder_pitch_joint": [
+            0.0039563,
+            0.10022,
+            0.23778
+          ],
+          "right_shoulder_pitch_joint": [
+            0.0039563,
+            -0.10021,
+            0.23778
+          ]
+        },
+        "torso_mesh": "meshes/torso_link.STL",
+        "neutral_shoulder_pelvis_z": 0.29178
+      },
+      {
+        "url": "https://github.com/unitreerobotics/unitree_ros/blob/7d6075f7f58588b189b940130e3edab3c839b2df/robots/g1_description/g1_29dof_rev_1_0.urdf",
+        "sha256": "c0ae739c640c3e2c00d1bdd8810b5d6e59601487bd1a3995859f9543269ee5c8",
+        "origins": {
+          "waist_roll_joint": [
+            -0.0039635,
+            0.0,
+            0.044
+          ],
+          "waist_pitch_joint": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "left_shoulder_pitch_joint": [
+            0.0039563,
+            0.10022,
+            0.24778
+          ],
+          "right_shoulder_pitch_joint": [
+            0.0039563,
+            -0.10021,
+            0.24778
+          ]
+        },
+        "torso_mesh": "meshes/torso_link_rev_1_0.STL",
+        "neutral_shoulder_pelvis_z": 0.29178
+      },
+      {
+        "url": "https://github.com/unitreerobotics/unitree_ros/blob/7d6075f7f58588b189b940130e3edab3c839b2df/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf",
+        "sha256": "97da67732d067c3147fc5fb7b7bafc8982718f4e7f8c92ff82266a4d9c07200d",
+        "origins": {
+          "waist_roll_joint": [
+            -0.0039635,
+            0.0,
+            0.044
+          ],
+          "waist_pitch_joint": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "left_shoulder_pitch_joint": [
+            0.0039563,
+            0.10022,
+            0.24778
+          ],
+          "right_shoulder_pitch_joint": [
+            0.0039563,
+            -0.10021,
+            0.24778
+          ]
+        },
+        "torso_mesh": "meshes/torso_link_rev_1_0.STL",
+        "neutral_shoulder_pelvis_z": 0.29178
+      }
+    ],
+    "mode_table_url": "https://github.com/unitreerobotics/unitree_ros/blob/7d6075f7f58588b189b940130e3edab3c839b2df/robots/g1_description/README.md",
+    "unitreerobotics/xr_teleoperate": [
+      {
+        "sha": "f7bdf9ce4819a050010ac745c720062cde9a2f63",
+        "date": "2024-12-04T13:07:29Z",
+        "message": "[update] 1. upgrade URDF 2. fix kp/kd bug 3. support new dex3 hand",
+        "url": "https://github.com/unitreerobotics/xr_teleoperate/commit/f7bdf9ce4819a050010ac745c720062cde9a2f63"
+      },
+      {
+        "sha": "68549a7920ffb23b77f0a6b9c2e2fcddff06df15",
+        "date": "2024-08-29T12:57:18Z",
+        "message": "g1(7 DoF arm) IK test.",
+        "url": "https://github.com/unitreerobotics/xr_teleoperate/commit/68549a7920ffb23b77f0a6b9c2e2fcddff06df15"
+      }
+    ],
+    "xr_urdf_versions": [
+      {
+        "revision": "f7bdf9ce4819a050010ac745c720062cde9a2f63",
+        "url": "https://github.com/unitreerobotics/xr_teleoperate/blob/f7bdf9ce4819a050010ac745c720062cde9a2f63/assets/g1/g1_body29_hand14.urdf",
+        "sha256": "8bbf006633fc50b616f665c7a970780cc296577a0adfd7d28b049e751c238735",
+        "origins": {
+          "waist_roll_joint": [
+            -0.0039635,
+            0.0,
+            0.044
+          ],
+          "waist_pitch_joint": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "left_shoulder_pitch_joint": [
+            0.0039563,
+            0.10022,
+            0.24778
+          ],
+          "right_shoulder_pitch_joint": [
+            0.0039563,
+            -0.10021,
+            0.24778
+          ]
+        },
+        "torso_mesh": "meshes/torso_link_rev_1_0.STL",
+        "neutral_shoulder_pelvis_z": 0.29178
+      },
+      {
+        "revision": "68549a7920ffb23b77f0a6b9c2e2fcddff06df15",
+        "url": "https://github.com/unitreerobotics/xr_teleoperate/blob/68549a7920ffb23b77f0a6b9c2e2fcddff06df15/assets/g1/g1_body29_hand14.urdf",
+        "sha256": "2c666a4da0c43972ae39ec24d4cdfb959b7e3285f9bba516a3e27c9571a77c80",
+        "origins": {
+          "waist_roll_joint": [
+            -0.0039635,
+            0.0,
+            0.035
+          ],
+          "waist_pitch_joint": [
+            0.0,
+            0.0,
+            0.019
+          ],
+          "left_shoulder_pitch_joint": [
+            0.0039563,
+            0.10022,
+            0.23778
+          ],
+          "right_shoulder_pitch_joint": [
+            0.0039563,
+            -0.10021,
+            0.23778
+          ]
+        },
+        "torso_mesh": "meshes/torso_link.STL",
+        "neutral_shoulder_pelvis_z": 0.29178
+      }
+    ],
+    "unitreerobotics/unitree_mujoco": [
+      {
+        "sha": "ab03eec53238487c4a7c7f61dd8e29a2f66abc04",
+        "date": "2025-11-05T10:04:47Z",
+        "message": "add support for secondary imu topic",
+        "url": "https://github.com/unitreerobotics/unitree_mujoco/commit/ab03eec53238487c4a7c7f61dd8e29a2f66abc04"
+      },
+      {
+        "sha": "f40370e1ea64b1464018a66dee576d1a55fabc73",
+        "date": "2025-03-31T08:47:35Z",
+        "message": "Fix joint index errors of g1_23dof.xml && move imu of G1 robot to pelvis link",
+        "url": "https://github.com/unitreerobotics/unitree_mujoco/commit/f40370e1ea64b1464018a66dee576d1a55fabc73"
+      },
+      {
+        "sha": "464fd5e154ec8edb2248e875eeab7ee3c8d1b7d0",
+        "date": "2024-09-19T02:52:12Z",
+        "message": "add  G1 robot  and support unitree_hg idl",
+        "url": "https://github.com/unitreerobotics/unitree_mujoco/commit/464fd5e154ec8edb2248e875eeab7ee3c8d1b7d0"
+      }
+    ]
+  }
+}

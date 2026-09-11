@@ -21,6 +21,9 @@ systematic controller lifecycle testing, and physical-robot validation remain pe
 **Future experiments:** [non-physical acceptance and reliability work](docs/future-non-physical-work.md).
 **Live acceptance:** `./run_verify_live_control.sh` runs headless joint and IK/DDS checks
 on both embodiments; see [coverage and reports](docs/live-control-acceptance.md).
+Add `--geometry` for [independent MuJoCo checks](docs/independent-geometry.md).
+The [source audit](docs/g1-model-source-audit.md) corrects the initial torso-frame
+interpretation and identifies G1-29 model-family differences relevant to waist motion.
 **Design:** [architecture and upstream boundaries](docs/architecture.md).
 **Physical Stage 0:** [read-only preflight, lifecycle audit, and offline verification](docs/physical-preflight.md).
 The [rung ladder](docs/vr-teleop-g1-23-ladder.md) preserves earlier acceptance milestones;
