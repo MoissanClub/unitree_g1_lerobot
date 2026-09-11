@@ -72,9 +72,9 @@ See [corrected live evidence](verification/independent-geometry-pelvis-20260910.
 ## Reproduce
 
 ```bash
-conda run --no-capture-output -n lerobot-g1 python -m unitree_g1_lerobot.diagnostics.audit_g1_sources --report outputs/model-audit.json
+conda run --no-capture-output -n lerobot-g1 python -m unitree_g1_lerobot.diagnostics.simulation.audit_g1_sources --report outputs/model-audit.json
 # Also refresh and pin upstream source signatures/history:
-conda run --no-capture-output -n lerobot-g1 python -m unitree_g1_lerobot.diagnostics.audit_g1_sources --upstream --report outputs/model-audit-upstream.json
+conda run --no-capture-output -n lerobot-g1 python -m unitree_g1_lerobot.diagnostics.simulation.audit_g1_sources --upstream --report outputs/model-audit-upstream.json
 ./run_verify_live_control.sh --geometry
 ```
 

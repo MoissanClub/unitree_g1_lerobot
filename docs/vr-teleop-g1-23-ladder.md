@@ -455,7 +455,7 @@ next-action list. Upstream issue reporting remains separate from Rung 4 acceptan
 
 - [Rung 0 install notes](Rung0_isaac-teleop-install-notes.md) — rung 0 install
 - [Rung 2 install notes](Rung2_lerobot-g1-mujoco-install-notes.md) — rung 2 install
-- `unitree_g1_lerobot/diagnostics/verify_g1_ik.py`, `unitree_g1_lerobot/diagnostics/verify_g1_ik_mujoco.py` — validation scripts
+- `unitree_g1_lerobot/diagnostics/simulation/verify_g1_ik.py`, `unitree_g1_lerobot/diagnostics/simulation/verify_g1_ik_mujoco.py` — validation scripts
 
 ## Production Teleop Design Note
 

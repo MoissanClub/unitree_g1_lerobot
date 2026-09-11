@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace as NS
 from unittest.mock import patch
 
-import test_lerobot_physical_initialization as initialization
+from . import test_lerobot_physical_initialization as initialization
 
 
 class ReadOnlyConnectionTests(initialization.PhysicalInitializationTests):

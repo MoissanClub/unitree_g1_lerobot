@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import mujoco
 
-from unitree_g1_lerobot.diagnostics.motor_suite import SUITE, ready, target
+from unitree_g1_lerobot.diagnostics.shared.motor_suite import SUITE, ready, target
 from unitree_g1_lerobot.robots.motor_configs import derive_profile, load_profile, lerobot_profile
 from unitree_g1_lerobot.simulation.motor_bench import MotorPlant, mesh_directory, run_trial
 
@@ -114,7 +114,7 @@ class MotorConfigTests(unittest.TestCase):
                 np.testing.assert_allclose(target(test, test.seconds, plant.joints), ready(plant.joints))
 
     def test_summary_panel_order(self):
-        from unitree_g1_lerobot.diagnostics.compare_motor_configs import comparison_cases
+        from unitree_g1_lerobot.diagnostics.simulation.compare_motor_configs import comparison_cases
         cases = comparison_cases("summary")
         self.assertEqual([mode for _, mode in cases], [False] * 3 + [True] * 3)
         self.assertEqual([p["name"] for p, _ in cases[:3]],

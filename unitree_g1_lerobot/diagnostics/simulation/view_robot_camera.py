@@ -7,7 +7,7 @@ import time
 import numpy as np
 from PIL import Image
 
-from ..simulation.camera_frames import default_channel, read_frame
+from unitree_g1_lerobot.simulation.camera_frames import default_channel, read_frame
 
 
 def main():

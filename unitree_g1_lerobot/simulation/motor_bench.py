@@ -8,7 +8,7 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
-from unitree_g1_lerobot.diagnostics.motor_suite import MotorTest, ready, target
+from unitree_g1_lerobot.diagnostics.shared.motor_suite import MotorTest, ready, target
 from unitree_g1_lerobot.robots.motor_configs import SOURCES
 
 DT = 0.002

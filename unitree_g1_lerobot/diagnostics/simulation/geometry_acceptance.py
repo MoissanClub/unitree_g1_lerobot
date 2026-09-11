@@ -7,9 +7,9 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import pinocchio as pin
 
-from ..simulation.geometry_trace import state_key
-from .verify_live_control import pose_errors
-from ..robots.motor_configs import load_profile
+from unitree_g1_lerobot.simulation.geometry_trace import state_key
+from unitree_g1_lerobot.diagnostics.shared.acceptance_metrics import pose_errors
+from unitree_g1_lerobot.robots.motor_configs import load_profile
 
 GEOMETRY_LIMITS = dict(position_m=.001, rotation_rad=.002, joint_rad=1e-6, minimum_samples_per_case=10)
 

@@ -10,7 +10,7 @@ import mujoco
 import numpy as np
 import pinocchio as pin
 
-from .verify_live_control import pose_errors
+from unitree_g1_lerobot.diagnostics.shared.acceptance_metrics import pose_errors
 
 HUB_REVISION = "a38dc8617f0fca51b38e9354dc58ee35ad850fb5"
 

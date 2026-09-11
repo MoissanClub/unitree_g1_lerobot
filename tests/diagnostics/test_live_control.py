@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from unitree_g1_lerobot.diagnostics.verify_live_control import joint_result, pose_errors, trajectory_result
+from unitree_g1_lerobot.diagnostics.shared.acceptance_metrics import joint_result, pose_errors, trajectory_result
 
 
 class LiveControlMetricsTests(unittest.TestCase):

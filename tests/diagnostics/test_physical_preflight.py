@@ -5,7 +5,7 @@ from types import SimpleNamespace as NS
 import unittest
 from unittest.mock import patch
 
-from unitree_g1_lerobot.diagnostics import physical_preflight as p
+from unitree_g1_lerobot.diagnostics.physical import physical_preflight as p
 
 
 class PreflightTests(unittest.TestCase):

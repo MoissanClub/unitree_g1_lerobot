@@ -89,7 +89,7 @@ claim of zero-copy GPU transport.
 Code ownership:
 - `simulation/robot_camera.py`: mounted optics, isolated rendering, state offers/lifetime.
 - `simulation/camera_frames.py`: dependency-light frame protocol; no MuJoCo/DDS/XR imports.
-- `diagnostics/view_robot_camera.py`: independent local reader and preview.
+- `diagnostics/simulation/view_robot_camera.py`: independent local reader and preview.
 - `xr/camera_display.py`: CUDA upload and SDK `VizSession` mono quad presentation.
 - `xr/video_controller.py`: isolated graphics/input worker sharing one OpenXR session.
   The parent IK/DDS loop reads a bounded mailbox; input older than 250 ms releases clutches.
@@ -101,7 +101,7 @@ Code ownership:
 From an idle simulator/CloudXR setup:
 
 ```bash
-conda run --no-capture-output -n lerobot-g1 python -m unitree_g1_lerobot.diagnostics.verify_xr_headless --video
+conda run --no-capture-output -n lerobot-g1 python -m unitree_g1_lerobot.diagnostics.xr.verify_xr_headless --video
 ```
 
 This runs the real simulator, XR bridge, and CloudXR launchers with `--headless` on

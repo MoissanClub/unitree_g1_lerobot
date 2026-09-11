@@ -16,7 +16,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from unitree_g1_lerobot.diagnostics.physical_preflight import ROOT, audit_checkout
+from unitree_g1_lerobot.diagnostics.physical.physical_preflight import ROOT, audit_checkout
 
 
 class PhysicalInitializationTests(unittest.TestCase):

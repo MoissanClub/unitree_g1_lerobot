@@ -9,13 +9,13 @@ import mujoco
 import numpy as np
 
 from unitree_g1_lerobot.simulation.geometry_trace import GeometryTrace, state_key
-from unitree_g1_lerobot.diagnostics.geometry_acceptance import compare_trace
+from unitree_g1_lerobot.diagnostics.simulation.geometry_acceptance import compare_trace
 
 
 class GeometryTraceTests(unittest.TestCase):
     def test_full_chain_model_family_audit(self):
         from huggingface_hub import snapshot_download
-        from unitree_g1_lerobot.diagnostics.audit_g1_sources import compare_models, HUB_REVISION
+        from unitree_g1_lerobot.diagnostics.simulation.audit_g1_sources import compare_models, HUB_REVISION
         assets = Path(snapshot_download("lerobot/unitree-g1-mujoco", revision=HUB_REVISION, local_files_only=True))/"assets"
         cases = compare_models(assets/"g1_body29_hand14.urdf", assets/"g1_29dof_with_hand.xml")
         for case in cases:

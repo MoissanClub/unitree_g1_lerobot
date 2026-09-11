@@ -17,7 +17,7 @@ import threading
 import time
 import xml.etree.ElementTree as ET
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 CONTRACT_FIELDS = (
     "physical_identity", "mapping_verification", "control_mode_evidence",
     "arm_owner", "legs_waist_balance_owner", "physical_support", "command_interface",

@@ -10,7 +10,7 @@ from unitree_g1_lerobot.robots.unitree_g1 import get_g1_embodiment
 from unitree_g1_lerobot.robots.control import fk, make_ready_targets, solve_ready_q
 from unitree_g1_lerobot.xr.xr_to_g1_mujoco import ArmTargets, parse_args
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT.parent / "lerobot"))
 
 

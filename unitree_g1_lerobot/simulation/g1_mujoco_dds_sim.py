@@ -138,7 +138,7 @@ def run_raise_arm_diagnostic(env, args: argparse.Namespace, *, drive_steps: bool
     if args.skip_startup_diagnostic or os.environ.get("SKIP_G1_STARTUP_DIAGNOSTIC", "").strip() == "1":
         return 0
 
-    from unitree_g1_lerobot.diagnostics.g1_startup_diagnostic import run_diagnostic
+    from unitree_g1_lerobot.diagnostics.simulation.g1_startup_diagnostic import run_diagnostic
 
     stop_event = threading.Event()
     thread = None

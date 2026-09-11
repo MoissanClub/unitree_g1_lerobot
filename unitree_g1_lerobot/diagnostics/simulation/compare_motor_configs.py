@@ -15,7 +15,7 @@ os.environ.setdefault("MUJOCO_GL", "egl")
 import mujoco
 import numpy as np
 
-from unitree_g1_lerobot.diagnostics.motor_suite import SUITE
+from unitree_g1_lerobot.diagnostics.shared.motor_suite import SUITE
 from unitree_g1_lerobot.robots.motor_configs import ROOT, load_profile, lerobot_profile
 from unitree_g1_lerobot.simulation.motor_bench import DT, MESH_REVISION, MotorPlant, mesh_directory, run_trial
 

@@ -117,7 +117,7 @@ after startup diagnostics; CloudXR's duration begins after service readiness.
 Reproduce automated checks for both variants from an idle simulation/CloudXR session:
 
 ```bash
-conda run --no-capture-output -n lerobot-g1 python -m unitree_g1_lerobot.diagnostics.verify_xr_headless
+conda run --no-capture-output -n lerobot-g1 python -m unitree_g1_lerobot.diagnostics.xr.verify_xr_headless
 ```
 
 The harness removes `DISPLAY`/`WAYLAND_DISPLAY`, runs actual launchers, exercises
@@ -181,12 +181,12 @@ unitree_g1_lerobot/
   robots/          # Track 1: embodiment, IK, motor data, shared G1 integration
   xr/              # Track 2: XR input, clutch, retargeting orchestration
   simulation/      # Track 3: MuJoCo models, viewers, runtime and DDS adapters
-  diagnostics/     # Cross-track startup checks and verification suites
+  diagnostics/     # shared/, backends/, simulation/, xr/, physical/ verification tools
 assets/g1/         # Robot assets and pinned source provenance
 configs/           # Motor profiles and CloudXR settings
 patches/           # Reproducible changes to the adjacent LeRobot checkout
 docs/              # Project plan, operator guide, architecture, acceptance history
-tests/             # Contract, physics, and optional real-viewer regression tests
+tests/             # robots/, simulation/, xr/, diagnostics/, fixtures/
 *.sh               # Stable root launch/setup commands
 ```
 
@@ -196,7 +196,16 @@ Use the existing `lerobot-g1` environment for robot/simulation work and the sepa
 Isaac Teleop environment for CloudXR. The G1-23 class extension requires the patch above;
 cloning this integration repository alone does not modify LeRobot.
 
+See [verification organization](docs/verification-organization.md) for module locations,
+test discovery, simulation/physical reuse boundaries, and opt-in integration checks.
+
 ## Verification and Next Work
+
+The [diagnostic/test organization migration](docs/verification-organization.md#migration-verification-2026-09-10)
+passed the 72-test regression run, separate SDK/offline physical checks, both live
+geometry and headless XR/video matrices, and all seven comparison launchers with Tk/EGL.
+Root launcher names and arguments are unchanged; direct diagnostic module paths are
+now domain-qualified. Broader workspace acceptance remains the next non-physical task.
 
 The structural refactor passed 25 project tests (including real viewers) and 92
 existing LeRobot G1 robot/configuration/teleoperator tests. Geometry, IK, and motor

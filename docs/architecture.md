@@ -8,7 +8,7 @@ that replaces or vendors LeRobot.
 
 Package filenames, comments, and identifiers describe functionality, not planning stages.
 The XR entry point is `xr.xr_to_g1_mujoco`; isolated IK and simulated execution checks
-are `diagnostics.verify_g1_ik` and `diagnostics.verify_g1_ik_mujoco`. The comparison
+are `diagnostics.simulation.verify_g1_ik` and `diagnostics.simulation.verify_g1_ik_mujoco`. The comparison
 viewer's repeating motion profile is `cartesian_orientation_sweep`. Root operator
 launcher names are unchanged; rung labels remain only in planning documentation.
 
@@ -33,10 +33,13 @@ headset display/streaming belongs to Track 2. Their frame contract is shared wor
   maintains per-hand tracking, clutch, and targets, then solves bilateral IK once and
   publishes one combined command. Named arm masks are converted to Pinocchio order;
   inactive arms retain their last command despite IK filtering/regularization.
-- `diagnostics/`: startup motions, bridge diagnostic requests, and rung smoke tests.
+- `diagnostics/`: reusable cases/metrics/reports under `shared/`, simulation session
+  management under `backends/`, and domain-specific tools under `simulation/`, `xr/`,
+  and `physical/`. The live verification entry point remains shared and simulation-only.
+  See [verification organization](verification-organization.md) for boundaries and discovery.
 - `simulation/robot_camera.py`: opt-in rendering in a child process, fed bounded state
   snapshots after physics steps. `simulation/camera_frames.py` defines dependency-light
-  latest-frame IPC; `diagnostics/view_robot_camera.py` consumes it without robot control.
+  latest-frame IPC; `diagnostics/simulation/view_robot_camera.py` consumes it without robot control.
   See the [camera frame contract](camera-streaming.md). `xr/camera_display.py` uploads
   frames to an SDK VizSession quad. `xr/video_controller.py` owns graphics and input
   in one worker process/shared OpenXR session, separate from the parent IK/DDS loop.
@@ -132,7 +135,7 @@ next step; see [Finding 10](vr-teleop-g1-23-ladder.md#finding-10-dds-session-tea
 The updated LeRobot patch also guards a missing image-publisher process during G1-29
 headless shutdown. That separate cleanup bug is fixed; the callback crash remains open.
 
-Tests: `tests/test_g1_runtime.py` exercises defaults, config round-trips/factory,
+Tests: `tests/robots/test_g1_runtime.py` exercises defaults, config round-trips/factory,
 active features, sparse commands/torques, real G1-23 gravity ordering, and early backend
 guards without commanding hardware. Existing LeRobot G1 tests cover backward compatibility.
 

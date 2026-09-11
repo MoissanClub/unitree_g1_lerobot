@@ -1,5 +1,20 @@
 # Rung 4 Handoff
 
+## Verification Organization Migration
+
+Diagnostics now separate shared calculations, simulation session management, and
+simulation/XR/physical tools. Tests are grouped by subsystem with recursive unittest
+discovery preserved. Root shell launchers retain their names and arguments; direct
+Python diagnostic paths are now domain-qualified. See [layout and execution gates](verification-organization.md).
+No gains, model assets, IK algorithm, baseline trajectory, or acceptance budget changed.
+The broader motion suite remains the next task; this migration does not implement it.
+
+Migration verification passed: both live geometry matrices; both real headless
+XR/CloudXR/video matrices; all seven comparison launchers with actual Tk/EGL;
+and the 72-test regression run (`OK`, three environment-gated skips). The skipped
+SDK and audited physical-oriented checks passed separately without hardware access.
+See [verification results and environment prerequisites](verification-organization.md#migration-verification-2026-09-10).
+
 ## Independent Geometry Checkpoint
 
 `./run_verify_live_control.sh --geometry` now compares actual MuJoCo hand poses with
@@ -117,7 +132,7 @@ robot work out of this session. G1-23 remains supported-arm simulation, not full
 - `simulation/native_g1.py`, `simulation/native_g1_viewer.py`: native G1-23 physics/viewer.
 - `xr/xr_to_g1_mujoco.py`, `xr/both_controllers.py`: XR session/input and bilateral control.
 - `xr/cloudxr_session.py`, `run_isaac_teleop.sh`: robot-independent CloudXR service lifetime.
-- `diagnostics/verify_xr_headless.py`: preserve the real three-launcher regression matrix.
+- `diagnostics/xr/verify_xr_headless.py`: preserve the real three-launcher regression matrix.
 - Package paths above are under `unitree_g1_lerobot/`. Use descriptive filenames, not rung numbers.
 - Robot Python: `/home/dwei/miniforge3/envs/lerobot-g1/bin/python`.
 - XR Python/SDK: `/home/dwei/.venvs/isaacteleop/bin/python` and its Python 3.12 site-packages.
@@ -155,7 +170,7 @@ no lowering diagnostic, embodiment/gravity parameter, confirmation prompt, or Le
 checkout/G1 conda dependency. Start it with `./run_isaac_teleop.sh`, in either service order.
 
 Package modules now use descriptive names: `xr.xr_to_g1_mujoco`,
-`diagnostics.verify_g1_ik`, and `diagnostics.verify_g1_ik_mujoco`. Root shell launchers
+`diagnostics.simulation.verify_g1_ik`, and `diagnostics.simulation.verify_g1_ik_mujoco`. Root shell launchers
 are unchanged. The IK comparison motion profile is `cartesian_orientation_sweep`.
 Do not restore planning-stage numbers in package filenames, comments, or identifiers.
 
@@ -207,8 +222,8 @@ Python environment: `~/miniforge3/envs/lerobot-g1/bin/python`.
   Derivation and pinned upstream provenance live in
   `unitree_g1_lerobot/robots/motor_configs.py` and `assets/g1/motor_sources/`.
 - Physics benchmark: `unitree_g1_lerobot/simulation/motor_bench.py`.
-- Shared 34-case suite: `unitree_g1_lerobot/diagnostics/motor_suite.py`.
-- Reports and Tk replay: `unitree_g1_lerobot/diagnostics/compare_motor_configs.py`.
+- Shared 34-case suite: `unitree_g1_lerobot/diagnostics/shared/motor_suite.py`.
+- Reports and Tk replay: `unitree_g1_lerobot/diagnostics/simulation/compare_motor_configs.py`.
 
 From an `ssh -Y` terminal, run one launcher at a time:
 

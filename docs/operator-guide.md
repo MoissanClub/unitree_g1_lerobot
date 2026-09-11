@@ -13,11 +13,11 @@ unitree_g1_lerobot/
   robots/          # Embodiment specs, IK, shared arm control
   simulation/      # MuJoCo viewers/simulator and DDS adapters
   xr/              # XR bridge and CloudXR controller smoke test
-  diagnostics/     # Startup checks and rung verification
+  diagnostics/     # shared/, backends/, simulation/, xr/, physical/ verification tools
 assets/g1/         # Vendored robot assets
 configs/           # CloudXR runtime configuration
 docs/              # Validation ladder and installation notes
-tests/             # Package and launcher regression checks
+tests/             # robots/, simulation/, xr/, diagnostics/, fixtures/
 run_*.sh           # Stable root launch commands
 ```
 

@@ -1,0 +1,1 @@
+"""Shared diagnostic support."""

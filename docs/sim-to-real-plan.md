@@ -62,8 +62,8 @@ preflight plus this bounded joint-motion diagnostic.
 
 ## Stage 2: Scripted physical IK verification
 
-Build `unitree_g1_lerobot/diagnostics/verify_g1_ik_physical.py`, comparable in purpose to
-[the MuJoCo diagnostic](../unitree_g1_lerobot/diagnostics/verify_g1_ik_mujoco.py), and run
+Build `unitree_g1_lerobot/diagnostics/physical/verify_g1_ik_physical.py`, comparable in purpose to
+[the MuJoCo diagnostic](../unitree_g1_lerobot/diagnostics/simulation/verify_g1_ik_mujoco.py), and run
 it on the physical machine after Stage 1 passes. Reuse shared IK and trajectory helpers
 where appropriate; keep hardware startup, command limits, and shutdown explicit.
 

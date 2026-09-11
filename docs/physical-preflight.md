@@ -82,7 +82,7 @@ All source paths below are under `src/lerobot/robots/unitree_g1/` in that checko
 | `run_g1_server.py`: forwarding/exit | Forwards incoming commands; no command-age watchdog or explicit hold/handover is implemented in the inspected loop. | Server exit or client loss cannot be used as a verified stopping mechanism. |
 | `g1_runtime.py` / local G1-23 registration | G1-23 hardware capability remains false. | Passive G1-23 observation does not enable or validate actuation. |
 
-Local `diagnostics/g1_startup_diagnostic.py` publishes IK startup sequences; the XR bridge
+Local `diagnostics/simulation/g1_startup_diagnostic.py` publishes IK startup sequences; the XR bridge
 also raises/reorients arms during startup. These simulation launchers are not used by
 preflight. No changes to their control behavior or the LeRobot patch are made here.
 

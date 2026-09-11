@@ -1,61 +1,17 @@
 """Owned loopback-only joint and IK/DDS acceptance sessions; no XR or hardware."""
 import argparse
 from collections import OrderedDict
-import fcntl
-import hashlib
-import json
-import os
 from pathlib import Path
-import signal
-import subprocess
-import sys
 import time
 
 import numpy as np
 
+from .backends.simulation import run_matrix
+from .shared.acceptance_metrics import LIMITS, joint_result, pose_errors, trajectory_result
+from .shared.motion_cases import baseline_pose, cartesian_targets
+from .shared.reporting import write_report
+
 ROOT = Path(__file__).resolve().parents[2]
-LIMITS = dict(settled_joint_rad=.04, cross_joint_rad=.04, minimum_response_rad=.06,
-              moving_joint_p95_rad=.08, actuator_position_p95_m=.035,
-              actuator_rotation_p95_rad=.20, ik_position_p95_m=.04, ik_rotation_p95_rad=.50)
-
-
-def pose_errors(reference, actual):
-    return [dict(position_m=float(np.linalg.norm(a[:3, 3]-b[:3, 3])),
-                 rotation_rad=float(np.arccos(np.clip((np.trace(a[:3, :3].T @ b[:3, :3])-1)/2, -1, 1))))
-            for a, b in zip(reference, actual)]
-
-
-def joint_result(samples, baseline, target, index):
-    settled = np.median(np.array([s["measured"] for s in samples[-10:]]), axis=0)
-    response = float((settled[index]-baseline[index]) * np.sign(target[index]-baseline[index]))
-    error = float(np.max(np.abs(settled-target)))
-    cross = float(np.max(np.abs(np.delete(settled-baseline, index))))
-    return dict(response_rad=response, settled_error_rad=error, cross_joint_rad=cross,
-                passed=bool(response >= LIMITS["minimum_response_rad"] and
-                            error <= LIMITS["settled_joint_rad"] and cross <= LIMITS["cross_joint_rad"]))
-
-
-def trajectory_result(rows):
-    # Worst per-joint/per-hand p95 prevents an inactive arm diluting the metric.
-    metrics = dict(joint_p95_rad=float(np.max(np.percentile(np.abs(
-        np.array([s["command"] for s in rows])-np.array([s["measured"] for s in rows])), 95, axis=0))))
-    for kind in ("ik", "actuator", "total"):
-        for field in ("position_m", "rotation_rad"):
-            metrics[f"{kind}_{field}"] = max(float(np.percentile([s[kind][hand][field] for s in rows], 95))
-                                             for hand in range(2))
-    passed = metrics["joint_p95_rad"] <= LIMITS["moving_joint_p95_rad"]
-    for kind in ("ik", "actuator"):
-        passed &= metrics[f"{kind}_position_m"] <= LIMITS[f"{kind}_position_p95_m"]
-        passed &= metrics[f"{kind}_rotation_rad"] <= LIMITS[f"{kind}_rotation_p95_rad"]
-    side = rows[0]["case"].split("/")[1]
-    count = len(rows[0]["command"])//2
-    for hand in ((0, 1) if side == "both" else (0,) if side == "left" else (1,)):
-        indices = slice(hand*count, (hand+1)*count)
-        for key in ("command", "measured"):
-            span = float(np.max(np.ptp(np.array([s[key] for s in rows])[:, indices], axis=0)))
-            metrics[f"{key}_span_{hand}_rad"] = span
-            passed &= span > .005
-    return dict(passed=bool(passed), **metrics)
 
 
 def run_child(args):
@@ -63,7 +19,6 @@ def run_child(args):
     from ..robots.control import action_from_arm_q, fk
     from ..simulation.dds import connect_unitree_g1_external_dds, patch_unitree_dds_config
     from lerobot.robots.unitree_g1 import unitree_g1 as g1_module
-    import pinocchio as pin
 
     spec = get_g1_embodiment(args.child)
     ik = spec.make_ik()
@@ -74,14 +29,7 @@ def run_child(args):
     inverse = np.argsort(reorder)
     joints = list(spec.arm_index)
     lower, upper = model.lowerPositionLimit[reorder], model.upperPositionLimit[reorder]
-    base = np.zeros(len(joints))
-    for i, joint in enumerate(joints):
-        if "ShoulderPitch" in joint.name:
-            base[i] = -.4
-        elif "ShoulderRoll" in joint.name:
-            base[i] = .15 if "Left" in joint.name else -.15
-        elif "Elbow" in joint.name:
-            base[i] = .8
+    base = baseline_pose([joint.name for joint in joints])
     if np.any(base-.12 < lower) or np.any(base+.12 > upper):
         raise ValueError("Test pose lacks joint-limit margin")
     patch_unitree_dds_config()
@@ -172,17 +120,7 @@ def run_child(args):
                 start = len(samples)
                 for step in range(90):
                     started = time.monotonic()
-                    targets = [p.copy() for p in homes]
-                    phase = np.sin(2*np.pi*step/89)
-                    for hand in range(2):
-                        if side != "both" and hand != (0 if side == "left" else 1):
-                            continue
-                        if axis < 3:
-                            targets[hand][axis, 3] += .015*phase
-                        else:
-                            rotation = np.zeros(3)
-                            rotation[axis-3] = .08*phase
-                            targets[hand][:3, :3] = homes[hand][:3, :3] @ pin.exp3(rotation)
+                    targets = cartesian_targets(homes, side, axis, step)
                     q, _ = ik.solve_ik(*targets, q)
                     q = np.asarray(q)
                     if side != "both":
@@ -196,7 +134,7 @@ def run_child(args):
         hold(base, "final_hold")
         result["passed"] = all(case["passed"] for case in result["cases"])
         if args.geometry_log:
-            from .geometry_acceptance import compare_trace
+            from .simulation.geometry_acceptance import compare_trace
             result["geometry"] = compare_trace(args.geometry_log, dict(received), ik, joints, args.child,
                                                 [case["name"] for case in result["cases"]])
             result["passed"] &= result["geometry"]["passed"]
@@ -207,58 +145,11 @@ def run_child(args):
         result["error"] = repr(exc)
         raise
     finally:
-        args.report.write_text(json.dumps(result, indent=2, allow_nan=False)+"\n")
+        write_report(args.report, result)
         if observer is not None:
             observer.Close()
         robot.disconnect()
     return 0 if result["passed"] else 1
-
-
-def run_matrix(args):
-    with open(f"/tmp/lerobot-g1-sim-{os.getuid()}.lock", "a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    output = args.output.resolve()
-    output.mkdir(parents=True, exist_ok=False)
-    def revision(path):
-        return subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()
-    metadata = dict(project_revision=revision(ROOT), lerobot_revision=revision(ROOT.parent/"lerobot"),
-                    diagnostic_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                    thresholds=LIMITS, python=sys.version, outcomes={})
-    metadata["geometry_enabled"] = args.geometry
-    print(f"Reports: {output}", flush=True)
-    env = dict(os.environ, HF_HUB_OFFLINE="1", PYTHONUNBUFFERED="1")
-    env.pop("DISPLAY", None)
-    for variant in args.embodiment or ("g1_29", "g1_23"):
-        sim = None
-        try:
-            geometry_options = ["--geometry-log", str(output/f"{variant}-geometry.jsonl")] if args.geometry else []
-            with (output/f"{variant}-sim.log").open("w") as log:
-                sim = subprocess.Popen([str(ROOT/"run_g1_mujoco_dds_sim.sh"), "--embodiment", variant,
-                                        "--headless", "--skip-startup-diagnostic", "--duration-s", "240", *geometry_options],
-                                       cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-            time.sleep(5)
-            if sim.poll() is not None:
-                raise RuntimeError(f"Simulator exited; inspect {variant}-sim.log")
-            with (output/f"{variant}-control.log").open("w") as log:
-                child = subprocess.run([sys.executable, "-m", "unitree_g1_lerobot.diagnostics.verify_live_control",
-                                        "--child", variant, "--report", str(output/f"{variant}.json"), *geometry_options],
-                                       cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=220)
-            metadata["outcomes"][variant] = child.returncode
-            if sim.poll() is not None:
-                raise RuntimeError("Simulator stopped before acceptance completed")
-            print(f"{variant}: {'PASS' if child.returncode == 0 else 'FAIL'}", flush=True)
-        finally:
-            if sim is not None and sim.poll() is None:
-                os.killpg(sim.pid, signal.SIGINT)
-                try:
-                    sim.wait(timeout=15)
-                except subprocess.TimeoutExpired:
-                    os.killpg(sim.pid, signal.SIGKILL)
-                    sim.wait()
-            if sim is not None:
-                metadata.setdefault("simulator_exit_codes", {})[variant] = sim.returncode
-            (output/"manifest.json").write_text(json.dumps(metadata, indent=2)+"\n")
-    return int(any(metadata["outcomes"].values()) or any(metadata["simulator_exit_codes"].values()))
 
 
 def main():

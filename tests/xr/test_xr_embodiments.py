@@ -9,8 +9,8 @@ from unittest.mock import Mock, patch
 import numpy as np
 
 from unitree_g1_lerobot.robots.unitree_g1 import get_g1_embodiment
-from unitree_g1_lerobot.diagnostics.g1_startup_diagnostic import build_actions
-from unitree_g1_lerobot.diagnostics.requests import StartupDiagnosticRequests
+from unitree_g1_lerobot.diagnostics.simulation.g1_startup_diagnostic import build_actions
+from unitree_g1_lerobot.diagnostics.xr.requests import StartupDiagnosticRequests
 from unitree_g1_lerobot.xr.xr_to_g1_mujoco import parse_args
 
 
@@ -26,7 +26,7 @@ class XREmbodimentTests(unittest.TestCase):
 
     def test_gravity_defaults_and_explicit_opt_out(self):
         from unitree_g1_lerobot.simulation.g1_mujoco_dds_sim import parse_args as sim_args
-        from unitree_g1_lerobot.diagnostics.g1_startup_diagnostic import parse_args as diagnostic_args
+        from unitree_g1_lerobot.diagnostics.simulation.g1_startup_diagnostic import parse_args as diagnostic_args
         for parse, prefix in ((parse_args, []), (sim_args, []), (diagnostic_args, ["raise"])):
             for embodiment in ("g1_29", "g1_23"):
                 for flags, expected in (([], True), (["--no-gravity-compensation"], False),
@@ -40,7 +40,7 @@ class XREmbodimentTests(unittest.TestCase):
             with patch("sys.argv", ["sim", "--headless"]):
                 args = sim_args()
             args.gravity_compensation = enabled
-            with patch("unitree_g1_lerobot.diagnostics.g1_startup_diagnostic.run_diagnostic", return_value=0) as diagnostic:
+            with patch("unitree_g1_lerobot.diagnostics.simulation.g1_startup_diagnostic.run_diagnostic", return_value=0) as diagnostic:
                 self.assertEqual(run_raise_arm_diagnostic(Mock(), args, drive_steps=False), 0)
             self.assertEqual(diagnostic.call_args.args[0].gravity_compensation, enabled)
             self.assertEqual(diagnostic.call_args.args[0].embodiment, "g1_29")
@@ -72,7 +72,7 @@ class XREmbodimentTests(unittest.TestCase):
             request.write_text(json.dumps({"id": "test", "mode": "lower_hold", "embodiment": "g1_23"}))
             def published(*_):
                 self.assertFalse(ack.exists())
-            with patch("unitree_g1_lerobot.diagnostics.requests.publish_ready_for", side_effect=published) as publish:
+            with patch("unitree_g1_lerobot.diagnostics.xr.requests.publish_ready_for", side_effect=published) as publish:
                 self.assertTrue(service.step(robot))
             self.assertEqual(publish.call_count, 2)
             self.assertEqual(publish.call_args.args[1], {"down": 1})

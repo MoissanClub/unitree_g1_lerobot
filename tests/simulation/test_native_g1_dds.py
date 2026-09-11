@@ -19,12 +19,12 @@ def isolated_dds(test):
             return test(self)
         # SDK publication-matched callbacks can outlive Python listeners during
         # GC between sessions. Match the real launchers' process isolation.
-        root = Path(__file__).resolve().parents[1]
+        root = Path(__file__).resolve().parents[2]
         env = dict(os.environ, G1_DDS_TEST_CHILD=test.__name__,
                    PYTHONPATH=str(root) + os.pathsep + os.environ.get("PYTHONPATH", ""))
         result = subprocess.run(
-            [sys.executable, "-m", "unittest", f"test_native_g1_dds.NativeG1DDSTests.{test.__name__}", "-v"],
-            cwd=root / "tests", env=env, capture_output=True, text=True, timeout=45,
+            [sys.executable, "-m", "unittest", f"tests.simulation.test_native_g1_dds.NativeG1DDSTests.{test.__name__}", "-v"],
+            cwd=root, env=env, capture_output=True, text=True, timeout=45,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
     return run
@@ -36,7 +36,7 @@ class NativeG1DDSTests(unittest.TestCase):
     def test_standalone_command_and_feedback(self):
         from unitree_g1_lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config
         from lerobot.robots.unitree_g1 import unitree_g1 as g1_module
-        root = Path(__file__).resolve().parents[1]
+        root = Path(__file__).resolve().parents[2]
         process = subprocess.Popen([str(root / "run_g1_mujoco_dds_sim.sh"), "--embodiment", "g1_23",
                                     "--no-view", "--skip-startup-diagnostic", "--duration-s", "12"],
                                    cwd=root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)

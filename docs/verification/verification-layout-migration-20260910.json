@@ -1,0 +1,406 @@
+{
+  "date": "2026-09-10",
+  "project_base_revision": "e0b95bde180b801329b26aafa1ee43a59a13362f",
+  "working_tree_migration": true,
+  "hardware_actuation": false,
+  "headset_review_repeated": false,
+  "regression": {
+    "command": "G1_TEST_DDS=1 G1_TEST_CAMERA=1 G1_TEST_VIEWER=1 MUJOCO_GL=egl HF_HUB_OFFLINE=1 xvfb-run -a /home/dwei/miniforge3/envs/lerobot-g1/bin/python -m unittest discover -s tests -t . -v",
+    "unittest_tests_run": 72,
+    "unittest_skipped_entries": 3,
+    "failures": 0,
+    "errors": 0,
+    "seconds": 59.102,
+    "exit_code": 0,
+    "skips": [
+      "two physical test classes require the audited checkout",
+      "one SDK/CUDA video test requires Isaac Teleop environment"
+    ]
+  },
+  "separate_checks": {
+    "sdk_video": {
+      "command": "G1_TEST_VIDEO=1 /home/dwei/.venvs/isaacteleop/bin/python -m unittest tests.xr.test_camera_display -v",
+      "tests_run": 2,
+      "exit_code": 0
+    },
+    "offline_preflight": {
+      "command": "./verify_g1_physical_preflight.sh",
+      "tests_run": 11,
+      "exit_code": 0
+    },
+    "offline_construction": {
+      "command": "LEROBOT_ROOT=/tmp/g1-migration-audited G1_INIT_PYTHON=/home/dwei/miniforge3/envs/lerobot-g1/bin/python ./verify_g1_lerobot_initialization.sh",
+      "tests_run": 3,
+      "exit_code": 0
+    },
+    "fake_dds_readonly": {
+      "command": "LEROBOT_ROOT=/tmp/g1-migration-audited /home/dwei/miniforge3/envs/lerobot-g1/bin/python -m unittest discover -s tests -t . -p test_lerobot_readonly_connection.py -v",
+      "tests_run": 7,
+      "exit_code": 0
+    },
+    "pure_ik": {
+      "module": "diagnostics.simulation.verify_g1_ik",
+      "static_residual_mm": 2.3363,
+      "exit_code": 0
+    },
+    "legacy_ik_mujoco": {
+      "module": "diagnostics.simulation.verify_g1_ik_mujoco",
+      "exit_code": 0,
+      "acceptance": "legacy smoke only; use live_control for numerical budgets"
+    },
+    "dds_smoke": {
+      "module": "diagnostics.simulation.dds_smoke",
+      "exit_code": 0
+    },
+    "source_audit": {
+      "module": "diagnostics.simulation.audit_g1_sources",
+      "report": "outputs/migration-model-audit-20260910.json",
+      "exit_code": 0
+    }
+  },
+  "physical_prerequisite": {
+    "initial_adjacent_checkout": "rejected by unchanged audit hashes; preserved without modification",
+    "verification_checkout": "/tmp/g1-migration-audited",
+    "revision": "3f2c29ef7e44b1ddccbcda3b6a63939e53639e9e",
+    "patch_sha256": "f31ce0f1ddfff00ad038a981565a9f4c43a347ac7b2a6f2e31a1f15603e0ebd6",
+    "actual_physical_connection": "not attempted"
+  },
+  "live_control_manifest": {
+    "project_revision": "e0b95bde180b801329b26aafa1ee43a59a13362f",
+    "lerobot_revision": "b6ec0060779550c0a157ae34feb89e0cf86012a8",
+    "diagnostic_sha256": "d25578d81fbd2982fa7e526d24d6823613fdc9ab3ca1df32f600377d020cec8a",
+    "thresholds": {
+      "settled_joint_rad": 0.04,
+      "cross_joint_rad": 0.04,
+      "minimum_response_rad": 0.06,
+      "moving_joint_p95_rad": 0.08,
+      "actuator_position_p95_m": 0.035,
+      "actuator_rotation_p95_rad": 0.2,
+      "ik_position_p95_m": 0.04,
+      "ik_rotation_p95_rad": 0.5
+    },
+    "python": "3.12.14 (main, Sep  2 2026, 23:27:36) [GCC 15.3.0]",
+    "outcomes": {
+      "g1_29": 0,
+      "g1_23": 0
+    },
+    "geometry_enabled": true,
+    "diagnostic_source_sha256": {
+      "unitree_g1_lerobot/diagnostics/__init__.py": "6d5a3b18d6ee4d0ac41992b8e3abdc59e305cea03529459f5cb116931fce3c47",
+      "unitree_g1_lerobot/diagnostics/backends/__init__.py": "862d22441ead82764ceb62b39b03bdd61c2b79ec118d888bfe15b02e7da6423b",
+      "unitree_g1_lerobot/diagnostics/backends/simulation.py": "67644fccf943e6816f036331180f2cd979cdc54901c5bd011698834a33488188",
+      "unitree_g1_lerobot/diagnostics/physical/__init__.py": "897d7efe961c53e0d91584c3b4cd522532a792f45cacd87691e7a58393f44226",
+      "unitree_g1_lerobot/diagnostics/physical/physical_preflight.py": "86b616ceb3277e105eb8f0ad9c66df1c06810925817a5a43b04c15c2e8606484",
+      "unitree_g1_lerobot/diagnostics/physical/verify_lerobot_connection.py": "0fab9de56912425c6f22a3fed0447ebaa1c3f6f15c65268077de77b87c05a723",
+      "unitree_g1_lerobot/diagnostics/shared/__init__.py": "a714bf8bd332c4c45caee1105b1f7ecdfd320192afc9835c6f14e9ab1b21ea74",
+      "unitree_g1_lerobot/diagnostics/shared/acceptance_metrics.py": "27fdb4f510398f2226e2a23542a3d21e7efd7e922bfb006eea1b6f2116d318c4",
+      "unitree_g1_lerobot/diagnostics/shared/motion_cases.py": "b5ce9770daa3660d3f2dd907ae7bcc45073d1a2b79ea3df4f09bc4679af502dd",
+      "unitree_g1_lerobot/diagnostics/shared/motor_suite.py": "4c9a061cb3e1c9a70c17b6c9f37fe08ebdc7b496ee7edf31154042457698096c",
+      "unitree_g1_lerobot/diagnostics/shared/reporting.py": "51fbe31756adcefe3041f1f29c6e0ffedd9c236efd350ef4912f31abe1f69ca0",
+      "unitree_g1_lerobot/diagnostics/simulation/__init__.py": "0dca3cf1f374ffb56c17ceeb42cf04c74a4b8a99f6bdaae6fc3a2997f2ed1bf4",
+      "unitree_g1_lerobot/diagnostics/simulation/audit_g1_sources.py": "8dcce264fa43873a81c83b63848cb1d523345d3e8de727c6cb3935bc724088bd",
+      "unitree_g1_lerobot/diagnostics/simulation/compare_motor_configs.py": "ee00edd5dcf642a9570bb9e6fb7ea8e42d2398c2c4a126222e873f1477a90590",
+      "unitree_g1_lerobot/diagnostics/simulation/dds_smoke.py": "d57133ce6a385ef08eac15822f36ce6da60af496df68814e43a5e341f92b3539",
+      "unitree_g1_lerobot/diagnostics/simulation/g1_startup_diagnostic.py": "06a2658f43788640d973abec1aa05de2c53a0df0b0c7eb6712e0c4f52eaaa6b5",
+      "unitree_g1_lerobot/diagnostics/simulation/geometry_acceptance.py": "43ea9d45f892e5459c533b49b78be14f0012c4b2590b646e05619b72c5b1bd0d",
+      "unitree_g1_lerobot/diagnostics/simulation/verify_g1_ik.py": "6e347a2fac5060f146d405455add88482cf0e7eb34666d289922625b574a0c76",
+      "unitree_g1_lerobot/diagnostics/simulation/verify_g1_ik_mujoco.py": "cb3cb746cb2ba7340c207e550f37e82609a70db435d82b9f4caf63b93809928f",
+      "unitree_g1_lerobot/diagnostics/simulation/view_robot_camera.py": "366bf31ecd1196b92bd97b34657b2a8b1b124ba39d60bf85041b16ad12676c61",
+      "unitree_g1_lerobot/diagnostics/verify_live_control.py": "d25578d81fbd2982fa7e526d24d6823613fdc9ab3ca1df32f600377d020cec8a",
+      "unitree_g1_lerobot/diagnostics/xr/__init__.py": "71189615608809a3c5d17d85f67f567db8c489f9764928fa0ba93354cdeb51cb",
+      "unitree_g1_lerobot/diagnostics/xr/requests.py": "ae9e17eb31a8cb16f2f22d1abc96dc996111060248908286b8e872108e5f3cef",
+      "unitree_g1_lerobot/diagnostics/xr/verify_xr_headless.py": "c463de2042c884653f0b98982a804955e46e47cb9087a8474f21ca9ca00f174f"
+    },
+    "simulator_exit_codes": {
+      "g1_29": 0,
+      "g1_23": 0
+    }
+  },
+  "live_control": {
+    "g1_29": {
+      "report": "outputs/live-control-20260910-212656/g1_29.json",
+      "sha256": "ed81b4850920f2e0808d9d181a0ae03ed2362c1cc8be037197fe86a99869ba6e",
+      "passed": true,
+      "cases": 46,
+      "gravity_compensation": true,
+      "geometry_passed": true,
+      "paired_samples": 3953,
+      "geometry_max_position_m": 0.0001352124234980159
+    },
+    "g1_23": {
+      "report": "outputs/live-control-20260910-212656/g1_23.json",
+      "sha256": "16071c76fb90f1302d45b12ede1e1fe66482816a115a42f46a6f9031c71cbc9b",
+      "passed": true,
+      "cases": 38,
+      "gravity_compensation": true,
+      "geometry_passed": true,
+      "paired_samples": 3452,
+      "geometry_max_position_m": 5.397004460676699e-07
+    }
+  },
+  "comparison_launchers": [
+    {
+      "script": "run_compare_g1_29_g1_23_urdf_mesh.sh",
+      "command": [
+        "xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1800x1200x24",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/run_compare_g1_29_g1_23_urdf_mesh.sh",
+        "--duration-s",
+        "2",
+        "--save-final-frame",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/urdf.png"
+      ],
+      "exit_code": 0,
+      "seconds": 8.028589436999027,
+      "log": "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/run_compare_g1_29_g1_23_urdf_mesh.log"
+    },
+    {
+      "script": "run_compare_g1_29_g1_23_ik.sh",
+      "command": [
+        "xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1800x1200x24",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/run_compare_g1_29_g1_23_ik.sh",
+        "--duration-s",
+        "24",
+        "--save-phase-frames",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/ik-phases",
+        "--save-final-frame",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/ik.png"
+      ],
+      "exit_code": 0,
+      "seconds": 47.43554759499966,
+      "log": "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/run_compare_g1_29_g1_23_ik.log"
+    },
+    {
+      "script": "run_compare_g1_29_motor_configs_no_gravity_compensation.sh",
+      "command": [
+        "xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1800x1200x24",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/run_compare_g1_29_motor_configs_no_gravity_compensation.sh",
+        "--gui-seconds",
+        "2",
+        "--output-dir",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/run_compare_g1_29_motor_configs_no_gravity_compensation"
+      ],
+      "exit_code": 0,
+      "seconds": 34.818464135001705,
+      "log": "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/run_compare_g1_29_motor_configs_no_gravity_compensation.log",
+      "test_cases": 34,
+      "profile_trials": 68,
+      "summary_sha256": "c431e6525254e073c8b2cb18bc018d3a2b47bb43dfda8ec09598af09e1533ca8"
+    },
+    {
+      "script": "run_compare_g1_29_motor_configs_with_gravity_compensation.sh",
+      "command": [
+        "xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1800x1200x24",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/run_compare_g1_29_motor_configs_with_gravity_compensation.sh",
+        "--gui-seconds",
+        "2",
+        "--output-dir",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/run_compare_g1_29_motor_configs_with_gravity_compensation"
+      ],
+      "exit_code": 0,
+      "seconds": 37.22179038199829,
+      "log": "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/run_compare_g1_29_motor_configs_with_gravity_compensation.log",
+      "test_cases": 34,
+      "profile_trials": 68,
+      "summary_sha256": "12c5f5375c7f18761aa62afdab4dcef5ee16f1c3adce76024310b29d405d593d"
+    },
+    {
+      "script": "run_compare_g1_29_g1_23_motor_configs_no_gravity_compensation.sh",
+      "command": [
+        "xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1800x1200x24",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/run_compare_g1_29_g1_23_motor_configs_no_gravity_compensation.sh",
+        "--gui-seconds",
+        "2",
+        "--output-dir",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/run_compare_g1_29_g1_23_motor_configs_no_gravity_compensation"
+      ],
+      "exit_code": 0,
+      "seconds": 33.31767001099797,
+      "log": "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/run_compare_g1_29_g1_23_motor_configs_no_gravity_compensation.log",
+      "test_cases": 34,
+      "profile_trials": 68,
+      "summary_sha256": "dfec9ed2b285236e78700d843b83aa4d7fd7a4e318cbf8c3346b173648ec5c54"
+    },
+    {
+      "script": "run_compare_g1_29_g1_23_motor_configs_with_gravity_compensation.sh",
+      "command": [
+        "xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1800x1200x24",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/run_compare_g1_29_g1_23_motor_configs_with_gravity_compensation.sh",
+        "--gui-seconds",
+        "2",
+        "--output-dir",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/run_compare_g1_29_g1_23_motor_configs_with_gravity_compensation"
+      ],
+      "exit_code": 0,
+      "seconds": 35.36866038799781,
+      "log": "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/run_compare_g1_29_g1_23_motor_configs_with_gravity_compensation.log",
+      "test_cases": 34,
+      "profile_trials": 68,
+      "summary_sha256": "be8aaca59c3214d605104b64bac5580ef9d611ac401f8ff90080fb01b77d89fb"
+    },
+    {
+      "script": "compare_motor_config.sh",
+      "command": [
+        "xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1800x1200x24",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/compare_motor_config.sh",
+        "--gui-seconds",
+        "2",
+        "--output-dir",
+        "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/compare_motor_config"
+      ],
+      "exit_code": 0,
+      "seconds": 92.61345582699869,
+      "log": "/home/dwei/lerobot-sim/unitree_g1_lerobot/outputs/migration-launchers-20260910/compare_motor_config.log",
+      "test_cases": 34,
+      "profile_trials": 204,
+      "summary_sha256": "662b96b245edbcab1c086c737d2e67baa5874ddfa77fbb23559380aed5543464"
+    }
+  ],
+  "xr": {
+    "g1_29": {
+      "real-openxr": {
+        "report": "outputs/migration-xr-20260910/g1_29-real-openxr.json",
+        "sha256": "79237039f3fa9ad5726af00f5fb14a084e2cd6a59c5bc6a1c85a20be19a654ff",
+        "samples": 246,
+        "camera_uploads": 157,
+        "video_enabled": true
+      },
+      "mock-right": {
+        "report": "outputs/migration-xr-20260910/g1_29-mock-right.json",
+        "sha256": "653e183928e74f8aab135731dd56aa3607025731de55dae6307849db27d5e031",
+        "samples": 304,
+        "camera_uploads": 192,
+        "video_enabled": true
+      },
+      "mock-left": {
+        "report": "outputs/migration-xr-20260910/g1_29-mock-left.json",
+        "sha256": "47faa7d5d2329437b92de9053762d20069433f5d2ad55b967cf985923436c399",
+        "samples": 302,
+        "camera_uploads": 193,
+        "video_enabled": true
+      },
+      "mock-both": {
+        "report": "outputs/migration-xr-20260910/g1_29-mock-both.json",
+        "sha256": "c3e5ea03b8ff65d2039b2eac05d26bdf741bcba18a63afddfe3bc4ac19caf46a",
+        "samples": 303,
+        "camera_uploads": 194,
+        "video_enabled": true
+      },
+      "camera": {
+        "samples": 227,
+        "fps": 18.78530236310618
+      }
+    },
+    "g1_23": {
+      "real-openxr": {
+        "report": "outputs/migration-xr-20260910/g1_23-real-openxr.json",
+        "sha256": "c782f37dd4acb438281d58d9a83134acd8abbf086fca9488d9d3b1eda7cd86d3",
+        "samples": 246,
+        "camera_uploads": 156,
+        "video_enabled": true
+      },
+      "mock-right": {
+        "report": "outputs/migration-xr-20260910/g1_23-mock-right.json",
+        "sha256": "6bace1cc364792ecd2c6dfefc04e65a18bfa2dd585e04bfb7cf5d754f5631d9d",
+        "samples": 304,
+        "camera_uploads": 194,
+        "video_enabled": true
+      },
+      "mock-left": {
+        "report": "outputs/migration-xr-20260910/g1_23-mock-left.json",
+        "sha256": "915389bac458ff0c32a26bf604231cb5897ed6ef561a3c2709cf7a4ac89461ab",
+        "samples": 304,
+        "camera_uploads": 194,
+        "video_enabled": true
+      },
+      "mock-both": {
+        "report": "outputs/migration-xr-20260910/g1_23-mock-both.json",
+        "sha256": "ae713030f2e676269cc83da6d56effa7d04909191afcd7c76eb08811232e2a56",
+        "samples": 305,
+        "camera_uploads": 195,
+        "video_enabled": true
+      },
+      "camera": {
+        "samples": 225,
+        "fps": 18.676822104640365
+      }
+    }
+  },
+  "current_source_sha256": {
+    "unitree_g1_lerobot/diagnostics/__init__.py": "6d5a3b18d6ee4d0ac41992b8e3abdc59e305cea03529459f5cb116931fce3c47",
+    "unitree_g1_lerobot/diagnostics/backends/__init__.py": "862d22441ead82764ceb62b39b03bdd61c2b79ec118d888bfe15b02e7da6423b",
+    "unitree_g1_lerobot/diagnostics/backends/simulation.py": "9866f59ec4c5e67860cfe056ac35f1c4c85b689423c1f3d42d2878776aa93fab",
+    "unitree_g1_lerobot/diagnostics/physical/__init__.py": "897d7efe961c53e0d91584c3b4cd522532a792f45cacd87691e7a58393f44226",
+    "unitree_g1_lerobot/diagnostics/physical/physical_preflight.py": "86b616ceb3277e105eb8f0ad9c66df1c06810925817a5a43b04c15c2e8606484",
+    "unitree_g1_lerobot/diagnostics/physical/verify_lerobot_connection.py": "0fab9de56912425c6f22a3fed0447ebaa1c3f6f15c65268077de77b87c05a723",
+    "unitree_g1_lerobot/diagnostics/shared/__init__.py": "a714bf8bd332c4c45caee1105b1f7ecdfd320192afc9835c6f14e9ab1b21ea74",
+    "unitree_g1_lerobot/diagnostics/shared/acceptance_metrics.py": "bada7fa252d43c0cf6f23e8853b250cd8097df95cd8caddc08820f3cbd993ffe",
+    "unitree_g1_lerobot/diagnostics/shared/motion_cases.py": "b5ce9770daa3660d3f2dd907ae7bcc45073d1a2b79ea3df4f09bc4679af502dd",
+    "unitree_g1_lerobot/diagnostics/shared/motor_suite.py": "4c9a061cb3e1c9a70c17b6c9f37fe08ebdc7b496ee7edf31154042457698096c",
+    "unitree_g1_lerobot/diagnostics/shared/reporting.py": "51fbe31756adcefe3041f1f29c6e0ffedd9c236efd350ef4912f31abe1f69ca0",
+    "unitree_g1_lerobot/diagnostics/simulation/__init__.py": "0dca3cf1f374ffb56c17ceeb42cf04c74a4b8a99f6bdaae6fc3a2997f2ed1bf4",
+    "unitree_g1_lerobot/diagnostics/simulation/audit_g1_sources.py": "8dcce264fa43873a81c83b63848cb1d523345d3e8de727c6cb3935bc724088bd",
+    "unitree_g1_lerobot/diagnostics/simulation/compare_motor_configs.py": "ee00edd5dcf642a9570bb9e6fb7ea8e42d2398c2c4a126222e873f1477a90590",
+    "unitree_g1_lerobot/diagnostics/simulation/dds_smoke.py": "d57133ce6a385ef08eac15822f36ce6da60af496df68814e43a5e341f92b3539",
+    "unitree_g1_lerobot/diagnostics/simulation/g1_startup_diagnostic.py": "06a2658f43788640d973abec1aa05de2c53a0df0b0c7eb6712e0c4f52eaaa6b5",
+    "unitree_g1_lerobot/diagnostics/simulation/geometry_acceptance.py": "43ea9d45f892e5459c533b49b78be14f0012c4b2590b646e05619b72c5b1bd0d",
+    "unitree_g1_lerobot/diagnostics/simulation/verify_g1_ik.py": "6e347a2fac5060f146d405455add88482cf0e7eb34666d289922625b574a0c76",
+    "unitree_g1_lerobot/diagnostics/simulation/verify_g1_ik_mujoco.py": "cb3cb746cb2ba7340c207e550f37e82609a70db435d82b9f4caf63b93809928f",
+    "unitree_g1_lerobot/diagnostics/simulation/view_robot_camera.py": "366bf31ecd1196b92bd97b34657b2a8b1b124ba39d60bf85041b16ad12676c61",
+    "unitree_g1_lerobot/diagnostics/verify_live_control.py": "7d0c0475e09ebfd3f7764458ee31796c759845a728912b609278c52fa8870e96",
+    "unitree_g1_lerobot/diagnostics/xr/__init__.py": "71189615608809a3c5d17d85f67f567db8c489f9764928fa0ba93354cdeb51cb",
+    "unitree_g1_lerobot/diagnostics/xr/requests.py": "ae9e17eb31a8cb16f2f22d1abc96dc996111060248908286b8e872108e5f3cef",
+    "unitree_g1_lerobot/diagnostics/xr/verify_xr_headless.py": "c463de2042c884653f0b98982a804955e46e47cb9087a8474f21ca9ca00f174f",
+    "tests/__init__.py": "cdd8a4d63f4b30477276f706156e95cf4fc70f0f7a0425305cccd8a079d5efc2",
+    "tests/diagnostics/__init__.py": "cdd8a4d63f4b30477276f706156e95cf4fc70f0f7a0425305cccd8a079d5efc2",
+    "tests/diagnostics/test_geometry_acceptance.py": "cab06aaf88e097c7eedfb512ac1ee3d4cf67f4fbbc21c77c9de131ec472e870b",
+    "tests/diagnostics/test_layout.py": "0f1077edde1a59d62bffbf5b6001b7cf0a479730c00cb61cb4e5af3b4511d859",
+    "tests/diagnostics/test_live_control.py": "c1751e34fe0669fd4df9a458787f9be9664789d05ff1241c26024a7e2e0c48eb",
+    "tests/diagnostics/test_motion_cases.py": "447236935a44b843253e4bff2b2efa03228bc3ea30640302b3023dc82dc7353d",
+    "tests/diagnostics/test_physical_preflight.py": "3de3b2a5686f63effa8d8f507eeadcacc7294c3f7d958f8cc8529e8abb2058d7",
+    "tests/diagnostics/test_reporting.py": "41ca17b8e0b0d8eed85c45535c2bb422cc58472034801a41e7de99dbd116ee5e",
+    "tests/fixtures/__init__.py": "cdd8a4d63f4b30477276f706156e95cf4fc70f0f7a0425305cccd8a079d5efc2",
+    "tests/robots/__init__.py": "cdd8a4d63f4b30477276f706156e95cf4fc70f0f7a0425305cccd8a079d5efc2",
+    "tests/robots/test_g1_runtime.py": "95eea100772c54a9f07ffa550cfdea673b5341174e97287e7dd2425f7830c8ee",
+    "tests/robots/test_lerobot_physical_initialization.py": "befc73925e31b09f965f0170fd0e6436e812ba8860d88cc49569e93048249e85",
+    "tests/robots/test_lerobot_readonly_connection.py": "791cc9fe35026b4242da4ef3da79bbaae84c284296c6da1821f63725ea92b48c",
+    "tests/simulation/__init__.py": "cdd8a4d63f4b30477276f706156e95cf4fc70f0f7a0425305cccd8a079d5efc2",
+    "tests/simulation/test_camera_frames.py": "42f332815fc2fdd44d035107ecd185a4798c543b00b633d7ac7a498bac53f9f1",
+    "tests/simulation/test_motor_configs.py": "b8cedfdc618ca4be9e6d0432fb95d749054cb5adc23e1a6828a57f48d1c43e81",
+    "tests/simulation/test_motor_viewer.py": "17d20aeb53e398b8218ba3d442f6b824e7c55d4d4fa62239ce75679832d92806",
+    "tests/simulation/test_native_g1_commands.py": "719fdf1861424df7721b737d1d70b7a543f2b8ddb176ad7c9adc28b0de2e4d06",
+    "tests/simulation/test_native_g1_dds.py": "68bd9c681f619131c7b15a5d907c76abec043a4cabf0041d136b313840dadc8e",
+    "tests/simulation/test_robot_camera.py": "9dfcfee159ab04e2430850f722fec1aa528f8c2ec8eb147c3c563ca77f9e0e83",
+    "tests/xr/__init__.py": "cdd8a4d63f4b30477276f706156e95cf4fc70f0f7a0425305cccd8a079d5efc2",
+    "tests/xr/test_both_arms.py": "020d11b3f0739ec2d223fb20a988c4600e046201636aab3bcb2db0981f457638",
+    "tests/xr/test_camera_display.py": "b5f5f07d50afc7596938dbb6822a064c074f7517fcdf97cb9c10487df3ef6a6c",
+    "tests/xr/test_xr_embodiments.py": "81f2f225727dcf2fe79ebf649f5c9966f303edae53c83041cff1755102ca7c6c"
+  },
+  "notes": [
+    "All seven comparison launchers ran from /tmp using Xvfb, real EGL rendering, and bounded Tk replay.",
+    "XR used the actual three launchers for both embodiments with camera uploads and clean shutdown; no headset was worn.",
+    "Existing numerical thresholds, gains, IK, model assets and baseline motion samples were preserved.",
+    "Live manifest records source hashes at execution; the final runner differs only in import ordering.",
+    "Historical verification artifacts retain their original file paths and hashes."
+  ]
+}

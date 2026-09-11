@@ -12,8 +12,8 @@ class MotorViewerTests(unittest.TestCase):
     def test_pair_and_summary_controls(self):
         import tkinter as tk
         from tkinter import ttk
-        from unitree_g1_lerobot.diagnostics.compare_motor_configs import PairRenderer, comparison_cases, replay
-        from unitree_g1_lerobot.diagnostics.motor_suite import SUITE
+        from unitree_g1_lerobot.diagnostics.simulation.compare_motor_configs import PairRenderer, comparison_cases, replay
+        from unitree_g1_lerobot.diagnostics.shared.motor_suite import SUITE
         from unitree_g1_lerobot.simulation.motor_bench import MotorPlant, mesh_directory, run_trial
 
         meshes = mesh_directory()

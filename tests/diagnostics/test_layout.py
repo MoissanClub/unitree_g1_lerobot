@@ -1,6 +1,7 @@
 """Regression checks for package boundaries, assets, and operator entry points."""
 
 import os
+import ast
 from pathlib import Path
 import re
 import subprocess
@@ -9,10 +10,32 @@ import tempfile
 import unittest
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 class LayoutTests(unittest.TestCase):
+    def test_nested_tests_remain_discoverable(self):
+        self.assertTrue((ROOT / "tests/__init__.py").is_file())
+        for group in ("robots", "simulation", "xr", "diagnostics", "fixtures"):
+            self.assertTrue((ROOT / "tests" / group / "__init__.py").is_file())
+        for source in (ROOT / "tests").rglob("test_*.py"):
+            self.assertNotEqual(source.parent, ROOT / "tests")
+            self.assertTrue((source.parent / "__init__.py").is_file())
+
+    def test_dependency_direction(self):
+        for source in (ROOT / "unitree_g1_lerobot").rglob("*.py"):
+            for node in ast.walk(ast.parse(source.read_text())):
+                if isinstance(node, ast.Import):
+                    modules = [alias.name for alias in node.names]
+                elif isinstance(node, ast.ImportFrom):
+                    modules = [node.module or ""]
+                else:
+                    continue
+                for module in modules:
+                    self.assertNotEqual(module.split(".")[0], "tests", str(source))
+                    if "robots" in source.relative_to(ROOT).parts:
+                        self.assertNotIn("diagnostics", module.split("."), str(source))
+
     def test_package_uses_descriptive_names(self):
         stage_name = re.compile(r"rung|step[ _-]?\d", re.IGNORECASE)
         for source in (ROOT / "unitree_g1_lerobot").rglob("*.py"):
@@ -38,9 +61,14 @@ class LayoutTests(unittest.TestCase):
         for module in (
             "simulation.g1_compare_ik_viewer",
             "simulation.g1_mujoco_dds_sim",
-            "diagnostics.g1_startup_diagnostic",
-            "diagnostics.view_robot_camera",
+            "diagnostics.simulation.g1_startup_diagnostic",
+            "diagnostics.simulation.view_robot_camera",
             "diagnostics.verify_live_control",
+            "diagnostics.simulation.compare_motor_configs",
+            "diagnostics.simulation.audit_g1_sources",
+            "diagnostics.xr.verify_xr_headless",
+            "diagnostics.physical.physical_preflight",
+            "diagnostics.physical.verify_lerobot_connection",
             "xr.xr_to_g1_mujoco",
             "xr.xr_controller_cloudxr_smoke_test",
         ):
@@ -67,6 +95,8 @@ class LayoutTests(unittest.TestCase):
                 "run_xr_g1_mujoco.sh",
                 "view_g1_camera.sh",
                 "run_verify_live_control.sh",
+                "run_g1_physical_preflight.sh",
+                "verify_g1_lerobot_connection.sh",
                 "run_compare_g1_29_motor_configs_no_gravity_compensation.sh",
                 "compare_motor_config.sh",
                 "run_compare_g1_29_motor_configs_with_gravity_compensation.sh",

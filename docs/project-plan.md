@@ -125,7 +125,9 @@ user-verified. Follow the [non-physical plan](future-non-physical-work.md) for s
 joint DDS and numerical IK-to-physics acceptance, then lifecycle and performance work.
 
 **Owner:** `unitree_g1_lerobot/simulation/`. Benchmark orchestration and startup checks
-are shared verification tooling under `diagnostics/`.
+are shared verification tooling under `diagnostics/`. Its `shared/`, `backends/`, and
+domain-specific folders separate reusable calculations from execution; subsystem-based
+`tests/` validates them. See [verification organization](verification-organization.md).
 
 **Purpose:** provide native MuJoCo models, motor-driven simulation, rendering, and a
 live command/state backend that the shared robot interface can use.

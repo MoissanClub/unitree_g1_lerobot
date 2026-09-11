@@ -10,7 +10,7 @@ import tempfile
 import time
 from unittest.mock import patch
 
-from .physical_preflight import ROOT, Observation, audit_checkout, positive, file_hash
+from unitree_g1_lerobot.diagnostics.physical.physical_preflight import ROOT, Observation, audit_checkout, positive, file_hash
 
 
 def main(argv=None):

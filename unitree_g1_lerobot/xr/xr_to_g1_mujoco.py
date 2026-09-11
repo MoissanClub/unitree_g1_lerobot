@@ -35,7 +35,7 @@ from unitree_g1_lerobot.simulation.dds import (
     connect_unitree_g1_external_dds,
 )
 
-from unitree_g1_lerobot.diagnostics.requests import (
+from unitree_g1_lerobot.diagnostics.xr.requests import (
     StartupDiagnosticRequests,
 )
 
@@ -456,7 +456,7 @@ def run(args, cleanup) -> int:
         robot.connect()
     scale_arm_gains(robot, arm_index, args.arm_kp_scale, args.arm_kd_scale)
     if not args.skip_startup_diagnostic and os.environ.get("SKIP_G1_STARTUP_DIAGNOSTIC") != "1":
-        from unitree_g1_lerobot.diagnostics.g1_startup_diagnostic import build_actions
+        from unitree_g1_lerobot.diagnostics.simulation.g1_startup_diagnostic import build_actions
         diag_args = argparse.Namespace(**vars(args), orientation_deg=35.0, hands_up_deg=90.0,
                                        hands_up_direction="inward")
         # Diagnostic solves must not change the steady-state IK filter history.

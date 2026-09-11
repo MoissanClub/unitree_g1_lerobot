@@ -122,7 +122,7 @@ articulated waist control or selecting hardware models. The exact-state comparis
 the small-signal live suite; larger workspace/limit-boundary cases and service-failure
 experiments remain in the [non-physical backlog](future-non-physical-work.md).
 
-Code: `simulation/geometry_trace.py`, `diagnostics/geometry_acceptance.py`, and
-`tests/test_geometry_acceptance.py`. The tests cover torso-frame invariance, private-data
+Code: `simulation/geometry_trace.py`, `diagnostics/simulation/geometry_acceptance.py`, and
+`tests/diagnostics/test_geometry_acceptance.py`. The tests cover torso-frame invariance, private-data
 kinematics, wire quantization/ticks, pinned source mismatch, wrong offsets, wrong mapping,
 and missing pairing. They do not claim real-world geometric calibration.
