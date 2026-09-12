@@ -47,7 +47,7 @@ experimental runtime patch. Do not run two installers concurrently.
 `tools/g1_vr_service.py`:
 
 1. **simulator:** selected LeRobot/MuJoCo embodiment, fixed-base arm dynamics,
-   gravity and gravity feedforward enabled, spectator Tk window, robot-camera
+   gravity and gravity feedforward enabled, an isolated spectator Tk child, robot-camera
    publication, and local command/feedback endpoint.
 2. **cloudxr:** the installed Isaac Teleop `CloudXRLauncher`, with the existing
    `configs/cloudxr_quest3.env` profile. It exports its resolved OpenXR environment
@@ -65,6 +65,14 @@ Commands use a private per-run Unix IPC endpoint, not a network robot transport.
 Stale/mismatched/out-of-limit commands are rejected. A command timeout holds the
 measured arm position. This is simulation behavior, not a physical safety system.
 Legs/waist/fingers are fixed and collisions are disabled in the native fork model.
+
+The Tk child only reads latest-frame snapshots; X forwarding and window resize
+cannot block the simulator's command loop. A crashed viewer does not stop headset
+control. Closing the viewer normally requests shutdown of the entire session.
+Expired valid commands are discarded with measured-position holding and a clutch
+reset. On a transport timeout, the bridge replaces its request socket and queries
+fresh feedback rather than resending the old target. Persistent loss of feedback
+still fails the session after a bounded recovery interval (about 10 seconds).
 
 Review the NVIDIA CloudXR EULA before first live startup. If you accept it, run:
 
@@ -131,3 +139,23 @@ The known SDK/runtime `XR_ERROR_SESSION_NOT_STOPPING` warning still appeared
 during live shutdown despite process exit code 0. Do not interpret successful
 startup or cleanup as a fix for that lifecycle issue. Headset and X acceptance
 of this new operator path is still required before shipping it as fully reviewed.
+
+## SSH Window Resize Fix
+
+The original operator implementation ran Tk updates inside the physics/command
+loop. A stalled forwarded X window could therefore age camera frames and commands,
+and the bridge treated the expired command as fatal. The viewer now runs in a
+separate process, and expired commands take the hold/rebase recovery path above.
+
+Headless regression after this fix: **21 tests passed**, including blocked viewer
+children on both embodiments and simulator pauses of 0.8 and 3 seconds exercising
+expired-command and socket-timeout recovery. No real X resize or headset test was
+performed automatically; that visual review remains with the operator.
+
+Immediate workaround for an older checkout (no desktop spectator window):
+
+```bash
+./run_g1_vr_sim.sh --embodiment g1_23 --headless --live-xr
+```
+
+After obtaining the updated operator code, no dependency reinstall is required.

@@ -6,6 +6,8 @@ import json
 import math
 import os
 from pathlib import Path
+import subprocess
+import sys
 import time
 
 
@@ -24,14 +26,18 @@ def stopped(args):
     return (args.run_dir / "stop").exists()
 
 
+class ExpiredCommand(ValueError):
+    """A valid command arrived too late and must never be replayed."""
+
+
 def validate_command(message, embodiment, size, lower, upper):
     import numpy as np
 
     if message.get("embodiment") != embodiment:
         raise ValueError("Simulator/bridge embodiment mismatch")
     age = time.monotonic() - float(message["sent_at"])
-    if not 0 <= age <= 0.5:
-        raise ValueError("Stale or future command")
+    if not math.isfinite(age) or age < 0:
+        raise ValueError("Invalid or future command timestamp")
     q = np.asarray(message["q"], dtype=float)
     if (
         q.shape != (size,)
@@ -40,7 +46,63 @@ def validate_command(message, embodiment, size, lower, upper):
         or np.any(q > upper)
     ):
         raise ValueError("Invalid or out-of-limit arm command")
+    if age > 0.5:
+        raise ExpiredCommand("Expired command discarded")
     return q
+
+
+def start_viewer(args):
+    return subprocess.Popen(
+        [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "viewer",
+            "--run-dir",
+            str(args.run_dir),
+            "--assets",
+            str(args.assets),
+            "--embodiment",
+            args.embodiment,
+        ]
+    )
+
+
+def viewer(args):
+    # X calls may block while an SSH-forwarded window is resized. This process
+    # only consumes owned RGB copies; it never owns physics or the command socket.
+    import tkinter as tk
+    from PIL import Image, ImageOps, ImageTk
+    from lerobot.cameras.frame_channel import read_frame
+
+    window = tk.Tk()
+    window.title(f"LeRobot {args.embodiment} MuJoCo")
+    window.geometry("640x480")
+    window.minsize(320, 240)
+    label = tk.Label(window, bg="black")
+    label.pack(fill="both", expand=True)
+    window.protocol("WM_DELETE_WINDOW", lambda: (args.run_dir / "stop").touch())
+
+    def refresh():
+        if stopped(args):
+            window.destroy()
+            return
+        frame = read_frame(args.run_dir / "spectator.rgb")
+        if frame is not None:
+            image = Image.fromarray(frame[1])
+            image = ImageOps.contain(
+                image,
+                (
+                    max(1, min(1920, label.winfo_width())),
+                    max(1, min(1080, label.winfo_height())),
+                ),
+            )
+            photo = ImageTk.PhotoImage(image)
+            label.configure(image=photo)
+            label.image = photo
+        window.after(50, refresh)
+
+    window.after(0, refresh)
+    window.mainloop()
 
 
 def simulator(args):
@@ -61,22 +123,15 @@ def simulator(args):
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.setsockopt(zmq.LINGER, 0)
-    writer = window = None
+    writer = spectator = viewer_process = None
     try:
         robot.connect()
         sim = robot._native
         writer = FrameWriter(args.run_dir / "camera.rgb", 320, 240)
         socket.bind(endpoint(args))
         if not args.headless:
-            import tkinter as tk
-            from PIL import Image, ImageTk
-
-            window = tk.Tk()
-            window.title(f"LeRobot {args.embodiment} MuJoCo")
-            label = tk.Label(window)
-            label.pack()
-            window.protocol("WM_DELETE_WINDOW", lambda: (args.run_dir / "stop").touch())
-            window.update()
+            spectator = FrameWriter(args.run_dir / "spectator.rgb", 320, 240)
+            viewer_process = start_viewer(args)
         q = np.zeros(sim.ik.size)
         q[[0, sim.ik.size // 2]] = -0.4
         q[[3, sim.ik.size // 2 + 3]] = 0.7
@@ -109,6 +164,18 @@ def simulator(args):
                             "captured_at": time.monotonic(),
                         }
                     )
+                except ExpiredCommand:
+                    robot.send_action(sim.ik.arm_action(sim.data.qpos[sim.qadr].copy()))
+                    advanced += 1
+                    holding = True
+                    socket.send_json(
+                        {
+                            "status": "expired_command",
+                            "embodiment": args.embodiment,
+                            "q": sim.data.qpos[sim.qadr].tolist(),
+                            "captured_at": time.monotonic(),
+                        }
+                    )
                 except (ValueError, KeyError, TypeError) as exc:
                     socket.send_json({"error": str(exc)})
             if not holding and time.monotonic() - last_command > 0.5:
@@ -125,25 +192,39 @@ def simulator(args):
                     pixels,
                     {"captured_monotonic_ns": captured, "embodiment": args.embodiment},
                 )
-                if window is not None:
-                    photo = ImageTk.PhotoImage(
-                        Image.fromarray(robot.render_simulation(320, 240, False))
+                if spectator is not None:
+                    captured = time.monotonic_ns()
+                    spectator.publish(
+                        robot.render_simulation(320, 240, False),
+                        {
+                            "captured_monotonic_ns": captured,
+                            "embodiment": args.embodiment,
+                        },
                     )
-                    label.configure(image=photo)
-                    label.image = photo
                 if frame == 0:
                     ready(args, "simulator")
                     print(
                         "Simulator ready; gravity and measured-pose gravity compensation ON",
                         flush=True,
                     )
-            if window is not None:
-                window.update()
+            if viewer_process is not None and viewer_process.poll() is not None:
+                print(
+                    "Viewer exited; simulation and headset control remain active.",
+                    flush=True,
+                )
+                viewer_process = None
             frame += 1
             time.sleep(max(0, 0.02 - (time.monotonic() - start)))
     finally:
-        if window is not None:
-            window.destroy()
+        if viewer_process is not None:
+            viewer_process.terminate()
+            try:
+                viewer_process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                viewer_process.kill()
+                viewer_process.wait()
+        if spectator is not None:
+            spectator.close()
         if writer is not None:
             writer.close()
         socket.close()
@@ -208,23 +289,53 @@ def bridge(args):
     )
     control = G1XRControl(ik)
     context = zmq.Context()
-    socket = context.socket(zmq.REQ)
-    socket.setsockopt(zmq.LINGER, 0)
-    socket.setsockopt(zmq.RCVTIMEO, 2000)
-    socket.setsockopt(zmq.SNDTIMEO, 2000)
-    socket.connect(endpoint(args))
+
+    def connect_socket():
+        result = context.socket(zmq.REQ)
+        result.setsockopt(zmq.LINGER, 0)
+        result.setsockopt(zmq.RCVTIMEO, 2000)
+        result.setsockopt(zmq.SNDTIMEO, 2000)
+        result.connect(endpoint(args))
+        return result
+
+    socket = connect_socket()
     reader = None
 
     def exchange(message):
-        socket.send_json(message)
-        response = socket.recv_json()
-        if "error" in response:
-            raise RuntimeError(response["error"])
-        if response["embodiment"] != args.embodiment:
-            raise RuntimeError("Simulator embodiment mismatch")
-        if not 0 <= time.monotonic() - response["captured_at"] <= 0.5:
-            raise RuntimeError("Stale simulator feedback")
-        return np.array(response["q"])
+        nonlocal socket
+        deadline = time.monotonic() + 10
+        while not stopped(args):
+            try:
+                socket.send_json(message)
+                response = socket.recv_json()
+            except zmq.Again:
+                # A REQ socket cannot send again after a receive timeout. Replace
+                # it and query measured state, never retransmit the old target.
+                socket.close()
+                socket = connect_socket()
+                response = None
+            if response is not None:
+                if "error" in response:
+                    raise RuntimeError(response["error"])
+                if response["embodiment"] != args.embodiment:
+                    raise RuntimeError("Simulator embodiment mismatch")
+                if response.get("status") == "expired_command":
+                    control.reset()
+                    print(
+                        "Expired command discarded; arms held, clutches rebasing.",
+                        flush=True,
+                    )
+                if 0 <= time.monotonic() - response["captured_at"] <= 0.5:
+                    return np.array(response["q"])
+            control.reset()
+            if time.monotonic() >= deadline:
+                raise RuntimeError("Simulator unresponsive for 10 seconds")
+            print(
+                "Waiting for fresh simulator feedback; old target discarded.",
+                flush=True,
+            )
+            message = {}
+        raise KeyboardInterrupt
 
     try:
         q = initial = exchange({})
@@ -296,7 +407,7 @@ def bridge(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("role", choices=("simulator", "bridge", "cloudxr"))
+    parser.add_argument("role", choices=("simulator", "bridge", "cloudxr", "viewer"))
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--assets", type=Path, required=True)
     parser.add_argument("--embodiment", choices=("g1_29", "g1_23"), required=True)

@@ -65,6 +65,18 @@ def test_bad_commands_rejected(override):
         service.validate_command(msg, "g1_23", 10, -np.ones(10), np.ones(10))
 
 
+def test_expired_command_is_recoverable_but_future_or_invalid_is_not():
+    msg = dict(embodiment="g1_23", q=[0] * 10, sent_at=time.monotonic() - 1)
+    with pytest.raises(service.ExpiredCommand):
+        service.validate_command(msg, "g1_23", 10, -np.ones(10), np.ones(10))
+    for update in ({"q": [2] * 10}, {"sent_at": time.monotonic() + 1}):
+        with pytest.raises(ValueError) as error:
+            service.validate_command(
+                msg | update, "g1_23", 10, -np.ones(10), np.ones(10)
+            )
+        assert not isinstance(error.value, service.ExpiredCommand)
+
+
 def test_readiness_rejects_dead_child(tmp_path):
     class Child:
         returncode = 7
