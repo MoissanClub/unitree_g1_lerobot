@@ -1,5 +1,10 @@
 # G1 and CloudXR Operator Guide
 
+For a coworker's new fork-based setup, use the
+[installer and single VR launcher](coworker-installation.md). It installs its own
+LeRobot dependency and supervises three native service processes. The detailed
+DDS commands below remain a separate, preserved workflow.
+
 Supporting Unitree G1 integration in LeRobot for MuJoCo simulation and real robot workflows across G1-29 and G1-23 variants.
 
 This guide preserves detailed launch procedures. The [three-track project plan](project-plan.md)

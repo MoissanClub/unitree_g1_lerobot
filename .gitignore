@@ -2,3 +2,6 @@ __pycache__/
 *.py[cod]
 artifacts/
 outputs/
+.vr-sim/
+.vr-sim.json
+.vr-sim.tmp

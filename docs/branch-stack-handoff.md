@@ -1,5 +1,14 @@
 # LeRobot Branch Reorganization Handoff
 
+## Operator Packaging Follow-Up
+
+The new [coworker installation path](coworker-installation.md) adds
+`install_g1_vr_sim.sh` and `run_g1_vr_sim.sh --embodiment g1_29|g1_23` to this
+repository. It pins the acceptance commit below and supervises native simulator,
+XR bridge, and CloudXR services without replacing the legacy DDS scripts.
+Both replay and real headless CloudXR startups passed for both embodiments;
+X/headset review remains pending, and the known OpenXR shutdown warning persists.
+
 ## Verified Checkpoint: 2026-09-11
 
 All seven remote branches passed branch-local regression and conflict-free

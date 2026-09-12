@@ -3,6 +3,20 @@
 Unitree G1 support for LeRobot across G1-29 and G1-23, with separate robot, XR,
 and simulation work tracks. Simulation and physical-robot acceptance are distinct.
 
+## Coworker Quick Start
+
+For the new fork-based VR simulator, see [installation and host prerequisites](docs/coworker-installation.md):
+
+```bash
+./install_g1_vr_sim.sh
+./run_g1_vr_sim.sh --embodiment g1_29
+# Or --embodiment g1_23
+```
+
+This installs an isolated, pinned LeRobot dependency and starts native simulation,
+the XR bridge, and CloudXR. The older DDS launchers documented below are preserved.
+CloudXR license acceptance is explicit; X/headset verification remains manual.
+
 ## Three Tracks
 
 | Track | Code Owner | Current Status | Next Milestone |
