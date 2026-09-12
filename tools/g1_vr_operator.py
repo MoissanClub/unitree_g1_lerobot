@@ -12,6 +12,30 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def shutdown_services(run, children):
+    """Keep camera and runtime alive until the XR consumer has finished teardown."""
+    by_role = dict(children)
+    problems = []
+    for role in ("bridge", "simulator", "cloudxr"):
+        child = by_role.get(role)
+        if child is None:
+            continue
+        (run / f"stop.{role}").touch()
+        try:
+            child.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            problems.append(f"{role} required forced termination")
+            os.killpg(child.pid, signal.SIGTERM)
+            try:
+                child.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(child.pid, signal.SIGKILL)
+                child.wait()
+        if child.returncode:
+            problems.append(f"{role} exited with code {child.returncode}")
+    return problems
+
+
 def wait_ready(path, children, timeout=180):
     deadline = time.monotonic() + timeout
     while not path.exists():
@@ -78,6 +102,7 @@ def main():
     print(f"Logs: {logdir}", flush=True)
     with tempfile.TemporaryDirectory(prefix="g1-vr-") as folder:
         run = Path(folder)
+        (run / "managed").touch()
         common = [
             "--run-dir",
             folder,
@@ -155,7 +180,6 @@ def main():
                 raise RuntimeError(
                     f"Bridge failed ({bridge.returncode}); inspect {logdir}"
                 )
-            print((logdir / "bridge.log").read_text()[-2000:], flush=True)
         except KeyboardInterrupt:
             print("Stopping session.", flush=True)
         except Exception:
@@ -167,19 +191,42 @@ def main():
                 )
             raise
         finally:
-            (run / "stop").touch()
-            for _, child in reversed(children):
-                try:
-                    child.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    os.killpg(child.pid, signal.SIGTERM)
-                    try:
-                        child.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        os.killpg(child.pid, signal.SIGKILL)
-                        child.wait()
-            for stream in logs:
-                stream.close()
+            previous = {
+                sig: signal.signal(sig, signal.SIG_IGN)
+                for sig in (signal.SIGINT, signal.SIGTERM)
+            }
+            try:
+                print(
+                    "Stopping XR bridge/video, then simulator, then CloudXR...",
+                    flush=True,
+                )
+                problems = shutdown_services(run, children)
+            finally:
+                for stream in logs:
+                    stream.close()
+                for sig, handler in previous.items():
+                    signal.signal(sig, handler)
+            bridge_log = logdir / "bridge.log"
+            if bridge_log.exists():
+                for line in bridge_log.read_text().splitlines():
+                    if line.startswith(
+                        (
+                            "PASS ",
+                            "STOPPED ",
+                            "COMPLETED ",
+                            "ERROR ",
+                            "XR_ERROR_",
+                            "Traceback",
+                            "Expired command",
+                            "Waiting for fresh",
+                        )
+                    ):
+                        print(line, flush=True)
+            if problems:
+                raise RuntimeError(
+                    f"Shutdown problems: {'; '.join(problems)}. Logs: {logdir}"
+                )
+            print(f"Session stopped. Logs: {logdir}", flush=True)
 
 
 if __name__ == "__main__":

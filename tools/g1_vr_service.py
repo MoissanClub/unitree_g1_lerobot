@@ -23,7 +23,14 @@ def endpoint(args):
 
 
 def stopped(args):
-    return (args.run_dir / "stop").exists()
+    role = getattr(args, "role", "simulator")
+    if (args.run_dir / f"stop.{role}").exists():
+        return True
+    # A viewer close is a request to the supervisor, not permission for the
+    # runtime and camera producer to exit before their XR consumer disconnects.
+    if role in ("bridge", "viewer") or not (args.run_dir / "managed").exists():
+        return (args.run_dir / "stop").exists()
+    return False
 
 
 class ExpiredCommand(ValueError):
@@ -386,16 +393,19 @@ def bridge(args):
                 sequences.add(camera[0]["sequence"])
             step += 1
             time.sleep(max(0, 0.02 - (time.monotonic() - start)))
-        if args.replay and (motion < 0.01 or len(sequences) < 2):
+        if args.replay and not stopped(args) and (motion < 0.01 or len(sequences) < 2):
             raise RuntimeError(
                 f"Replay failed: motion={motion}, camera frames={len(sequences)}"
             )
         print(
-            f"{'PASS' if args.replay else 'COMPLETED live startup'} {args.embodiment}: "
+            f"{'STOPPED' if stopped(args) else 'PASS' if args.replay else 'COMPLETED live startup'} {args.embodiment}: "
             f"{step} frames, motion={motion:.4f}rad, "
             f"{len(sequences)} distinct camera frames",
             flush=True,
         )
+    except KeyboardInterrupt:
+        if not stopped(args):
+            raise
     finally:
         try:
             if reader is not None:

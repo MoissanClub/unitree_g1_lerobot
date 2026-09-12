@@ -3,6 +3,7 @@
 import importlib.util
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -96,3 +97,38 @@ def test_readiness_timeout(tmp_path):
 def test_readiness_success(tmp_path):
     (tmp_path / "ready").touch()
     operator.wait_ready(tmp_path / "ready", [])
+
+
+def test_shutdown_waits_for_consumers_before_producers(tmp_path):
+    events = []
+
+    class Child:
+        returncode = 0
+
+        def __init__(self, role):
+            self.role = role
+
+        def wait(self, timeout):
+            assert (tmp_path / f"stop.{self.role}").exists()
+            if self.role == "bridge":
+                assert not (tmp_path / "stop.simulator").exists()
+                assert not (tmp_path / "stop.cloudxr").exists()
+            if self.role == "simulator":
+                assert events == ["bridge"]
+                assert not (tmp_path / "stop.cloudxr").exists()
+            events.append(self.role)
+
+    children = [(role, Child(role)) for role in ("simulator", "cloudxr", "bridge")]
+    assert operator.shutdown_services(tmp_path, children) == []
+    assert events == ["bridge", "simulator", "cloudxr"]
+
+
+def test_viewer_close_is_not_a_shared_producer_stop(tmp_path):
+    (tmp_path / "managed").touch()
+    (tmp_path / "stop").touch()
+    for role in ("simulator", "cloudxr"):
+        args = SimpleNamespace(role=role, run_dir=tmp_path)
+        assert not service.stopped(args)
+        (tmp_path / f"stop.{role}").touch()
+        assert service.stopped(args)
+    assert service.stopped(SimpleNamespace(role="bridge", run_dir=tmp_path))

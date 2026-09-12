@@ -201,3 +201,70 @@ def test_bridge_recovers_after_simulator_stall(embodiment, delay):
         if process.poll() is None:
             process.terminate()
             process.communicate(timeout=30)
+
+
+@pytest.mark.parametrize("stop_method", ["viewer_close", "ctrl_c"])
+def test_orderly_shutdown(stop_method):
+    live = bool(os.environ.get("G1_VR_LIVE_SHUTDOWN"))
+    process = subprocess.Popen(
+        [
+            str(ROOT / "run_g1_vr_sim.sh"),
+            "--embodiment",
+            "g1_23",
+            "--headless",
+            "--steps",
+            "10000",
+            *(["--live-xr"] if live else []),
+        ],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    run_dir = None
+    try:
+        deadline = time.monotonic() + 90
+        while time.monotonic() < deadline:
+            ids = subprocess.run(
+                ["pgrep", "-P", str(process.pid)], text=True, capture_output=True
+            )
+            for pid in ids.stdout.split():
+                try:
+                    cmd = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+                except FileNotFoundError:
+                    continue
+                if b"bridge" in cmd:
+                    candidate = Path(os.fsdecode(cmd[cmd.index(b"--run-dir") + 1]))
+                    if (candidate / "bridge.ready").exists():
+                        run_dir = candidate
+            if run_dir:
+                break
+            assert process.poll() is None, process.communicate()[0]
+            time.sleep(0.05)
+        assert run_dir is not None
+        time.sleep(1)
+        if stop_method == "viewer_close":
+            (run_dir / "stop").touch()
+        else:
+            process.send_signal(signal.SIGINT)
+        output, _ = process.communicate(timeout=30)
+        assert process.returncode == 0, output
+        assert "Session stopped." in output
+        logdir = Path(
+            next(
+                line.removeprefix("Logs: ")
+                for line in output.splitlines()
+                if line.startswith("Logs: ")
+            )
+        )
+        logs = "\n".join(path.read_text() for path in logdir.glob("*.log"))
+        for error in (
+            "Broken pipe",
+            "XRT_ERROR_IPC_FAILURE",
+            "XR_ERROR_INSTANCE_LOST",
+            "Traceback",
+        ):
+            assert error not in logs, logs
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            process.communicate(timeout=30)

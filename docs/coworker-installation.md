@@ -89,7 +89,9 @@ IP. If prompted, accept the workstation's TLS certificate at
 that arm; release to disengage. The video is a mono head-following display of the
 torso-mounted robot camera, not stereoscopic or head-steered robot vision.
 
-Ctrl+C stops the owned services. Per-service logs remain in `outputs/vr-sim-*`.
+Ctrl+C or a normal viewer close requests an ordered shutdown: the XR bridge and
+video worker disconnect first while camera frames and CloudXR are still available;
+then the simulator stops, and CloudXR stops last. Per-service logs remain in `outputs/vr-sim-*`.
 Startup failures stop the other owned processes and print recent logs. Do not
 start an additional CloudXR launcher alongside this one.
 
@@ -159,3 +161,30 @@ Immediate workaround for an older checkout (no desktop spectator window):
 ```
 
 After obtaining the updated operator code, no dependency reinstall is required.
+
+## Ordered Shutdown Fix
+
+The old shared stop flag let CloudXR exit while the video worker was still using
+OpenXR. Waiting for the processes in a loop did not prevent concurrent teardown.
+That race produced `Broken pipe`, `XRT_ERROR_IPC_FAILURE`, and
+`XR_ERROR_INSTANCE_LOST` during otherwise normal exit.
+
+Managed services now use separate stop signals and ordered waits. The common
+viewer-close flag is only a shutdown request; it cannot stop the simulator or
+CloudXR ahead of the bridge. The launcher prints a concise completion summary
+instead of replaying the last 2,000 characters of startup logs. Errors remain in
+the full logs and reported error lines are still shown; forced/nonzero shutdown
+is reported as failure, not silently treated as a clean exit.
+
+Both real headless CloudXR exit paths (viewer-close request and Ctrl+C) passed
+with no broken pipe, IPC failure, instance loss, or traceback in any service log.
+Reproduce on the installed GPU host, with no other CloudXR session running:
+
+```bash
+G1_VR_OPERATOR_TESTS=1 G1_VR_LIVE_SHUTDOWN=1 .vr-sim/env/bin/python -m pytest -q \
+  tests/simulation/test_vr_operator_processes.py -k orderly_shutdown
+```
+
+The SDK's separate `XR_ERROR_SESSION_NOT_STOPPING` diagnostic may still appear;
+the ordered shutdown fix does not claim to repair that native SDK lifecycle issue.
+No dependency reinstall is needed for this operator-only change.
