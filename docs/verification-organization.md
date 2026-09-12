@@ -5,6 +5,18 @@ code. Test folders follow LeRobot's subsystem-oriented layout rather than separa
 all unit tests from all integration tests. This repository remains a checkout-based
 integration workspace; this migration does not add distribution packaging.
 
+## Separate Fork Verification
+
+The contribution branches are tested against their own `src/lerobot` and
+`tests/robots`, `tests/teleoperators`, and `tests/integration` suites, not this
+experimental package's tests. `tools/verify_lerobot_branch_stack.py` is a new
+repository-level orchestrator: it clones the fork, tests branches independently,
+merges them sequentially, and records results after each merge. It does not import
+the experimental runtime or replace any diagnostic/launcher below. See
+[headless verification and evidence](branch-stack-verification.md).
+
+## Experimental Layout
+
 ```text
 unitree_g1_lerobot/diagnostics/
   shared/        # Baseline motion cases, motor suite, metrics, JSON/provenance

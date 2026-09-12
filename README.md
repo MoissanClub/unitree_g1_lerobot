@@ -17,7 +17,8 @@ headset is implemented and user-verified in the VR headset;
 systematic controller lifecycle testing, and physical-robot validation remain pending.
 
 **Roadmap:** [three-track project plan](docs/project-plan.md).
-**Resume:** [handoff](docs/rung4-handoff.md).
+**Resume contribution review:** [branch-stack handoff](docs/branch-stack-handoff.md).
+**Experimental history:** [Rung 4 handoff](docs/rung4-handoff.md).
 **Future experiments:** [non-physical acceptance and reliability work](docs/future-non-physical-work.md).
 The LeRobot contribution work now lives in the separate `../lerobot-upstream`
 checkout and seven feature branches on `MoissanClub/lerobot`. See
@@ -25,6 +26,16 @@ checkout and seven feature branches on `MoissanClub/lerobot`. See
 [branch plan](docs/lerobot_g1_branching_refactor_plan.md). This does not replace the
 experimental runtime or close the broader motion, recovery, endurance, and native
 cleanup backlog. Matched waist models remain a separate prerequisite for waist work.
+
+**2026-09-11 contribution checkpoint:** all seven branches passed independently
+and after sequential merges in a fresh clone. `integration/g1-acceptance` at
+`d5e400bc` passed 275 regressions (one optional SONIC skip) plus one offscreen GPU
+test. Review checkout: `../lerobot-g1-review`. Fork `main` is unchanged; no GitHub
+PRs were created/merged. X/headset review of this new implementation remains yours.
+This repository's runtime, configurations, tests, and launchers were preserved;
+only documentation and the new branch-stack verification tool/evidence changed.
+Do not apply the experimental patch below to the contribution/review checkouts.
+
 **Live acceptance:** `./run_verify_live_control.sh` runs headless joint and IK/DDS checks
 on both embodiments; see [coverage and reports](docs/live-control-acceptance.md).
 Add `--geometry` for [independent MuJoCo checks](docs/independent-geometry.md).

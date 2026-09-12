@@ -1,5 +1,12 @@
 # Robot Camera and Headset Video
 
+This guide describes the preserved experimental three-script DDS workflow.
+The new `g1/xr-video` contribution uses a generic same-host RGB channel and shared
+OpenXR input/display worker; its offscreen GPU and simulated-camera checks passed.
+Headset review of the merged fork is still pending and is not covered by the
+2026-09-10 confirmation below. Use the [fork verification guide](branch-stack-verification.md)
+for that implementation's commands and limitations.
+
 Local camera capture and OpenXR image submission are implemented for both G1-29 and G1-23.
 The user verified video in the VR headset on 2026-09-10. This confirmation does not
 specify an embodiment or establish exhaustive reconnect, latency, or lifecycle acceptance.

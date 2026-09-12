@@ -7,9 +7,17 @@ repository root. This is a checkout-based integration workspace, not a new distr
 that replaces or vendors LeRobot.
 
 The diagnostic/test organization migration is complete in `bbc08f4`; no further folder
-refactor is required before the next experiments. The [latest handoff](rung4-handoff.md)
+refactor is required before the next experiments. The [experimental handoff](rung4-handoff.md)
 and [non-physical backlog](future-non-physical-work.md) specify broader motion acceptance
 as the next task, reusing shared cases/metrics and the simulation backend described below.
+
+The separate LeRobot contribution stack is now implemented and headless-verified;
+see the [branch plan](lerobot_g1_branching_refactor_plan.md). This document describes
+the preserved experimental package. The fork uses native `UnitreeG1` embodiment
+configuration and Cartesian control, a generic XR reader plus `G1XRControl`,
+`lerobot.cameras.frame_channel`, and a `G1WithHands` wrapper with optional drivers.
+Its opt-in native simulator is in-process and fixes non-arm joints with collisions
+disabled; it is not a port of the DDS launcher architecture described below.
 
 Package filenames, comments, and identifiers describe functionality, not planning stages.
 The XR entry point is `xr.xr_to_g1_mujoco`; isolated IK and simulated execution checks
@@ -55,7 +63,12 @@ headset display/streaming belongs to Track 2. Their frame contract is shared wor
   The legacy `start_quest3_cloudxr.sh` retains its LeRobot example configuration default.
 - `docs/`: installation history and the validation ladder.
 
-## Future LeRobot Contribution
+## LeRobot Contribution Boundaries
+
+The selective port is complete in seven branches on `MoissanClub/lerobot`; API,
+packaging, licensing, and upstream review remain separate gates. Experimental
+runtime files and launchers were not replaced. Do not apply this repository's
+runtime patch to `lerobot-upstream/` or `lerobot-g1-review/`.
 
 Keep upstream changes reviewable by responsibility. Robot embodiment/IK work is a
 candidate for LeRobot's existing Unitree G1 integration; simulation changes belong with
@@ -70,7 +83,7 @@ separate contribution tasks; this structural refactor does not claim to complete
 
 The refactor preserves algorithm bodies, control defaults, DDS topics, and launcher names.
 It extracts shared helpers from the XR bridge without changing their behavior. Remaining
-G1-23 physics/DDS work stays in the [Rung 4 plan](vr-teleop-g1-23-ladder.md).
+G1-23 broader physics/DDS acceptance stays in the [Rung 4 plan](vr-teleop-g1-23-ladder.md).
 
 ## Configurable G1 Runtime Structure
 

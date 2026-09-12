@@ -9,11 +9,20 @@ experimental runtime refactor. Resume from the
 workflow and its broader non-physical backlog remain intact. The dated sections
 below preserve earlier experiment history.
 
-## Latest End-of-Day Handoff: 2026-09-10
+Checkpoint 2026-09-11: `integration/g1-acceptance` @ `d5e400bc` is pushed and
+headless-verified (275 regressions, one optional SONIC skip, one GPU test).
+`../lerobot-g1-review` is the final review checkout. The next contribution actions
+are PR/diff review and user-run X/headset tests; no physical validation is claimed.
+The experimental source/configs/launchers/tests were preserved. Documentation and
+the new branch-stack verification runner/evidence changed, so preservation does
+not mean that every file in this repository is byte-for-byte unchanged.
+
+## Historical Experimental Handoff: 2026-09-10
 
 The user concluded work after the verification organization migration. **Resume with
 broader motion acceptance for both embodiments**, not camera bring-up or another refactor.
-The ordered [non-physical backlog](future-non-physical-work.md) is the current next-action list.
+The ordered [non-physical backlog](future-non-physical-work.md) remains the experimental
+next-action list, separate from contribution review above.
 
 1. Extend baseline motion coverage: larger workspace sweeps, near-limit approaches with
    margins, holds/reversals, bilateral motion, and hand orientation. Preserve the baseline

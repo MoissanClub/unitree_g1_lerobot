@@ -13,6 +13,15 @@ XR, XR-video, generic-hand, and BrainCo feature branches. See the
 fresh-checkout merge reproduction. This contribution effort does not replace the
 experimental three-script DDS workflow or its remaining acceptance work.
 
+As of 2026-09-11, all seven branches are implemented and pushed. Fresh-clone
+sequential merges passed through `integration/g1-acceptance` at `d5e400bc`:
+275 targeted regressions, one optional SONIC skip, and one separate offscreen GPU
+test. Next for this workstream is branch/PR review and manual X/headset acceptance
+on `../lerobot-g1-review`, not branch creation. See the
+[current branch plan](lerobot_g1_branching_refactor_plan.md) and
+[contribution handoff](branch-stack-handoff.md). The status table and numerical
+history below describe the preserved experimental runtime, not the new fork.
+
 The [simulation and sim-to-real plan](sim-to-real-plan.md) records the 2026-09-11
 split into simulation follow-ups and physical embodiment testing. Simulation follows
 the existing non-physical handoff. Physical work progresses through read-only preflight,
@@ -23,7 +32,7 @@ These workstreams span the three ownership tracks below and keep separate accept
 
 | Track | Implemented and Verified | Remaining |
 |---|---|---|
-| 1. G1-23 in LeRobot | Native embodiment/IK, sparse mapping, runtime gains/feedforward, shared G1 interface; both variants pass small-signal live and geometry suites | Broader workspace/near-limit acceptance, hardware support, contribution preparation |
+| 1. G1-23 in LeRobot | Native embodiment/IK, sparse mapping, runtime gains/feedforward, shared G1 interface; both variants pass small-signal live and geometry suites | Broader workspace/near-limit acceptance, hardware support; review the completed contribution branches |
 | 2. XR for LeRobot | Both-arm bridge and real headless CloudXR/OpenXR/video for both variants; headset control and basic video reviewed | Failure/recovery, reconnect, and video timing/endurance acceptance |
 | 3. G1 simulation | Live supported-arm backends; reviewed benchmarks; independent geometry, DDS baseline, camera capture and delivery tested | Larger trajectory/limit coverage, performance/endurance, native cleanup; matched models before waist control |
 

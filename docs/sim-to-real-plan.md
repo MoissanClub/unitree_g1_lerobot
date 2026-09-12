@@ -7,6 +7,13 @@ and `sim-to-real` starting from a shared checkpoint. This document records the p
 it does not establish that those Git branches exist or that hardware acceptance has passed.
 The workstreams span the existing robot, XR, and simulation code ownership tracks.
 
+These proposed experimental branch names are distinct from the completed
+`MoissanClub/lerobot` feature stack, including `g1/simulation`. That stack passed
+headless branch-local and sequential-merge tests; see the
+[branch plan](lerobot_g1_branching_refactor_plan.md). Its native arm simulator and
+BrainCo fake-SDK checks do not establish physical G1/hand acceptance or supersede
+the Stage 0 gates below. Merged-fork X/headset review also remains pending.
+
 - **Simulation:** follow the [non-physical acceptance plan](future-non-physical-work.md)
   and [handoff](rung4-handoff.md). Small-signal per-joint DDS, IK-to-physics, and independent
   geometry checks already pass. Next is broader motion acceptance, followed by recovery,

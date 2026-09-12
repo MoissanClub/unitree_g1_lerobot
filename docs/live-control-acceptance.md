@@ -1,5 +1,10 @@
 # Live Control Acceptance
 
+This is experimental DDS acceptance, not the separate contribution branch suite.
+Its preserved case counts do not need to match the fork's pytest counts. The
+[branch-stack runner](branch-stack-verification.md) verifies the fresh LeRobot
+source checkout and native in-process simulator independently.
+
 ## Run
 
 Stop existing simulator and bridge sessions, then run:

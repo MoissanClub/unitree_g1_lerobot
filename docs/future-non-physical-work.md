@@ -1,8 +1,17 @@
 # Future Non-Physical Work
 
-## End-of-Day Checkpoint: 2026-09-10
+## Contribution Update: 2026-09-11
 
-Work is concluded for today. Resume with item 1 below; do not restart camera bring-up,
+The seven-branch LeRobot port is implemented, pushed, and headless-verified in a
+fresh clone (275 cumulative regressions plus one GPU test; one optional SONIC skip).
+See the [branch plan](lerobot_g1_branching_refactor_plan.md) and
+[current handoff](branch-stack-handoff.md). Manual X/headset review of the merged
+fork and PR review are next for that workstream. Its unit/integration recovery
+tests do not close the experimental DDS/headset/endurance backlog below.
+
+## Preserved Experimental Checkpoint: 2026-09-10
+
+For experimental development, resume with item 1 below; do not restart camera bring-up,
 the organization migration, or the completed small-signal acceptance work.
 
 Completed baseline:
@@ -53,10 +62,10 @@ Keep physical robot actuation out of this backlog.
    experiments, select a matched G1-29 URDF/MJCF family and reverify full-chain FK,
    gravity/inertias, limits, meshes, and control. This is not a prerequisite for continuing
    the supported-arm baseline. Physical model selection must use actual hardware identity.
-6. **Upstream contribution preparation.** Separate reusable LeRobot embodiment/control
-   changes from simulation and XR tooling; review dependencies, API boundaries, tests,
-   provenance/licensing, and reproducible setup. Prepare focused patches aligned with
-   LeRobot subsystem/script conventions. This is separate from experimental acceptance.
+6. **Upstream contribution review.** The seven feature branches and fresh-clone merge
+   verification are complete. Review dependencies, API boundaries, provenance/licensing,
+   and setup reproducibility; perform merged-fork X/headset checks and submit focused
+   PRs. Do not redo the extraction. This is separate from experimental acceptance.
 
 ## First Task Implementation Scope
 

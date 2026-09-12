@@ -16,6 +16,66 @@ The current work has several major threads:
 
 The goal is to separate these into dependency-ordered branches that are easy to review, collaborate on, and eventually submit upstream to Hugging Face LeRobot.
 
+## Current Status: 2026-09-11
+
+**Branch reconstruction and headless regression verification are complete.** All
+seven feature branches and `integration/g1-acceptance` are pushed to
+`MoissanClub/lerobot`. Do not recreate them or repeat the initial porting steps.
+Fork `main` remains at `b6ec0060779550c0a157ae34feb89e0cf86012a8`.
+
+| Workspace checkout | Role and preservation boundary |
+|---|---|
+| `lerobot-upstream/` | Contribution source checkout; feature branches live here, not in the experimental repository. |
+| `lerobot-g1-review/` | Fresh origin clone on the verified cumulative `integration/g1-acceptance` branch. Use for final manual review. |
+| `unitree_g1_lerobot/` | Existing runtime, configurations, tests, and root launchers preserved. Documentation and a new `tools/verify_lerobot_branch_stack.py` acceptance runner were added/updated. |
+| `lerobot/` | Original editable checkout and its pre-existing local modifications preserved; not the contribution test source. |
+
+Paths above are relative to the workspace root. The tracked copy of this plan is
+`unitree_g1_lerobot/docs/lerobot_g1_branching_refactor_plan.md`; the workspace-root
+copy is a convenience mirror.
+
+### Verified Branch Checkpoints
+
+Each row passed independently and after merging into the cumulative branch.
+Counts below exclude one optional SONIC module skip per regression run.
+
+| Milestone | Pushed feature tip | Branch-local passes | Cumulative passes | Cumulative merge |
+|---|---|---:|---:|---|
+| 1 | `g1/embodiments` @ `ec59825d` | 128 | 128 | `82eaf567` |
+| 2 | `g1/cartesian-control` @ `cef08462` | 181 | 181 | `83598b7a` |
+| 3 | `g1/simulation` @ `5884e6b9` | 195 | 195 | `4f04ab44` |
+| 4 | `g1/xr` @ `6e6d3147` | 206 | 222 | `bfccdba8` |
+| 5 | `g1/xr-video` @ `4b2d23b2` | 217 | 235 | `1e5821f5` |
+| 6 | `g1/hand-support` @ `9f285fd8` | 192 | 246 | `e8e33351` |
+| 7 | `g1/brainco-hands` @ `d732e701` | 221 | 275 | `d5e400bc` |
+
+One separate offscreen GPU pixel test also passed on branch 5 and cumulative
+milestones 5-7. Ruff lint/format passed at every stage; camera-channel mypy and
+both embodiments' headless examples passed. These are targeted regressions, not
+the entire upstream test tree. The source clone was fresh; the Python environment
+was reused, not installed from a blank machine.
+
+### Remaining Review Gates
+
+1. Review feature diffs against their declared parents and the recorded evidence.
+2. For a PR-by-PR trial, create a **new** acceptance branch from the pinned base,
+   merge milestones 1-7 with merge commits, and rerun each cumulative suite.
+   The existing acceptance branch already contains every feature; opening the
+   same feature PRs against it would not reproduce the original merge sequence.
+3. Manually review X viewers and headset control/video for both embodiments on
+   the merged fork. Prior headset acceptance belongs to the experimental runtime,
+   not automatically to this port. Automated continuation remains headless-only.
+4. Review packaging, provenance/licensing, and API compatibility before upstream
+   submission. No GitHub PR has been created or merged as part of verification.
+5. Keep physical G1 and BrainCo acceptance separately gated. Fake-SDK and installed
+   SDK interface tests do not validate hand anatomy, tactile units, or stop behavior.
+
+The native fork simulator is fixed-base, arm-only, collision-free and in-process;
+it does not replace the experimental multiprocess DDS launchers or fix their
+native teardown issue. Broader motion, recovery, and endurance work remains in
+the experimental backlog. Follow the [verification guide](branch-stack-verification.md)
+for commands and evidence and the [current handoff](branch-stack-handoff.md) to resume.
+
 ---
 
 ## High-Level Repository Strategy
@@ -44,7 +104,7 @@ Do not rewrite or destroy the current history.
 
 ### `MoissanClub/lerobot`
 
-Create this as a fork of:
+The fork already exists, based on:
 
 ```text
 huggingface/lerobot
@@ -131,10 +191,12 @@ for internal feature merges rather than merging the feature stack into `main`.
 
 1. Fetch `origin`, check out each feature branch in an isolated checkout/worktree,
    and run its branch-local suites. Review the diff against its declared parent.
-2. Create and push `integration/g1-acceptance` from the recorded fork `main` base.
+2. For a new PR trial, create and push `integration/g1-pr-review` (or another unused
+   name) from the recorded fork `main` base. Preserve the already-verified
+   `integration/g1-acceptance` branch.
    This is an internal PR target, not a feature branch for upstream submission or
    the source base for new feature work.
-3. Open and merge one internal PR per milestone into `integration/g1-acceptance`,
+3. Open and merge one internal PR per milestone into the new acceptance branch,
    in order 1 through 7. Preserve ancestry using merge commits while branches are
    stacked; do not squash/rebase-merge shared dependency commits into this branch.
    Review any sibling conflicts and ensure later PR diffs contain only unmerged
@@ -157,6 +219,11 @@ force-rewriting reviewed integration history.
 
 # Phase 1 — Create and Prepare the MoissanClub LeRobot Fork
 
+**Procedure reference:** Phases 1-10 describe the already-completed reconstruction.
+Their creation/porting commands are historical recipes, not the next actions to
+execute in this workspace. Phases 11 onward describe ongoing collaboration and
+future upstream submission. Use the status and review gates above for current work.
+
 ## Step 1 — Fork Hugging Face LeRobot
 
 Fork:
@@ -178,8 +245,8 @@ Do not use `unitree_g1_lerobot` as the upstream fork.
 ## Step 2 — Clone the MoissanClub fork
 
 ```bash
-git clone git@github.com:MoissanClub/lerobot.git
-cd lerobot
+git clone git@github.com:MoissanClub/lerobot.git lerobot-upstream
+cd lerobot-upstream
 ```
 
 Configure Hugging Face as the upstream remote:
@@ -246,7 +313,10 @@ git tag pre-upstream-reorg-2026-09-10
 git push origin pre-upstream-reorg-2026-09-10
 ```
 
-This repository remains the source of working/proven changes that will be selectively ported into the clean LeRobot fork.
+This repository remains the experimental reference. The selective port is complete;
+its runtime and launchers were preserved, while documentation and the fresh-clone
+acceptance runner were updated. The optional tag recipe above is not evidence that
+the tag was created.
 
 ---
 
@@ -805,11 +875,16 @@ If Hugging Face merges `g1/embodiments`:
 git checkout main
 git fetch upstream
 
-git reset --hard upstream/main
-git push --force-with-lease origin main
+git merge --ff-only upstream/main
+git push origin main
 ```
 
 `MoissanClub/lerobot:main` should again match upstream.
+
+If fast-forward fails, stop and inspect the divergence rather than resetting or
+force-pushing main. Coordinate any published feature rebase with collaborators,
+record the old tips, and rerun branch-local and fresh sequential-merge verification
+afterward. Preserve the existing acceptance history.
 
 ---
 
@@ -1002,7 +1077,10 @@ Examples:
 
 # Final Execution Order
 
-Codex should perform the repository reconstruction in this order:
+The reconstruction below is retained as a workflow reference. Items 1-14 have
+been completed to the pinned checkpoint (runtime preservation does not prohibit
+documentation/evidence changes). Items 15-19 describe subsequent review and
+maintenance; the current actionable gates are listed at the top of this document.
 
 ```text
 1. Verify/create MoissanClub/lerobot fork.
@@ -1015,7 +1093,7 @@ Codex should perform the repository reconstruction in this order:
 
 4. Synchronize origin/main with upstream/main.
 
-5. Preserve MoissanClub/unitree_g1_lerobot unchanged as reference.
+5. Preserve MoissanClub/unitree_g1_lerobot runtime and launchers as reference.
 
 6. Create g1/embodiments.
        Port only G1-23/G1-29 embodiment support.
@@ -1094,6 +1172,7 @@ MoissanClub/lerobot
     g1/xr-video
     g1/hand-support
     g1/brainco-hands
+    integration/g1-acceptance  # Verified cumulative merge, not an upstream PR source
 
 huggingface/lerobot
     = eventual upstream destination

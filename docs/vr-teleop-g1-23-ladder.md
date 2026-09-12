@@ -19,12 +19,20 @@ not separate source-code tracks.
 
 Working method and status log. September 2026.
 
-Current end-of-day checkpoint (2026-09-10): both embodiments pass small-signal joint/IK/DDS
+Current contribution checkpoint (2026-09-11): all seven feature branches and their
+fresh-clone sequential merges pass headless verification. The final fork checkpoint
+is `integration/g1-acceptance` @ `d5e400bc` (275 regressions plus one GPU test, one
+optional SONIC skip). See the [branch plan](lerobot_g1_branching_refactor_plan.md)
+and [current handoff](branch-stack-handoff.md). Branch milestones 1-7 are not these
+rung numbers. Fork X/headset review is still pending; the earlier headset evidence
+below applies to the preserved experimental runtime. Physical gates remain open.
+
+Preserved experimental checkpoint (2026-09-10): both embodiments pass small-signal joint/IK/DDS
 and independent geometry suites. Bilateral headset control and basic camera video have
 been user-reviewed; headless XR/video regression covers both embodiments. Diagnostic/test
 organization and launcher verification are committed in `bbc08f4`. Broader motion,
-recovery, and sustained-performance acceptance remain open. Work is concluded today;
-resume from the [latest handoff](rung4-handoff.md) and [ordered backlog](future-non-physical-work.md).
+recovery, and sustained-performance acceptance remain open. For that workstream,
+resume from the [experimental handoff](rung4-handoff.md) and [ordered backlog](future-non-physical-work.md).
 
 **Goal:** drive a Unitree **G1-23** (5-DoF arms) from a VR headset through the **LeRobot**
 stack, and contribute the result upstream.

@@ -12,6 +12,11 @@ in a fresh clone of origin. No merge conflicts. Final acceptance commit:
 `d5e400bcefeccc93ba956ce876530e5283512df1` on `integration/g1-acceptance`.
 The review checkout is `../lerobot-g1-review`.
 
+This repository's runtime, configurations, existing tests, and shell launchers
+were preserved. Documentation plus the new branch-stack runner and evidence were
+committed at `4a47665`. The original `../lerobot` still has its pre-existing local
+changes; a clean contribution checkout does not imply a clean original checkout.
+
 | Merge milestone | Passing regression tests | Separate GPU pixel tests |
 |---|---:|---:|
 | 1 | 128 | Not applicable |
@@ -103,6 +108,18 @@ branches in the order shown above using merge commits. The exact suites and thei
 dependencies are in `SUITES` and `LOCAL` in the runner; recorded command logs also
 give the full commands for every tested commit. Keep all model/render/integration
 flags enabled when running the associated suites. Do not squash shared ancestry.
+
+For example, from a new clone with no local changes:
+
+```bash
+git fetch origin
+git switch -c integration/g1-pr-review b6ec0060779550c0a157ae34feb89e0cf86012a8
+git push -u origin integration/g1-pr-review
+```
+
+Target your seven internal PRs at that new branch, not the already-merged
+`integration/g1-acceptance`. Merge one at a time and test before continuing.
+The runner automates local merge verification; it does not manage GitHub PRs.
 
 ## Manual X and Headset Review
 

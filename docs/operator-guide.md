@@ -6,6 +6,12 @@ This guide preserves detailed launch procedures. The [three-track project plan](
 and [README](../README.md) define current ownership and status. Commands below run
 from the repository root, not from this docs directory.
 
+**Repository scope:** these are the preserved experimental DDS/CloudXR launchers.
+The separate contribution stack is complete and headless-verified; use the
+[branch verification guide](branch-stack-verification.md) for commands in
+`../lerobot-g1-review`. Do not mix its environment/setup with the patch procedure
+below. X/headset acceptance of the new fork remains a separate manual review.
+
 ## Repository Layout
 
 ```text

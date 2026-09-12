@@ -3,6 +3,12 @@
 Stage 0 tooling is implemented. Physical acceptance and the command/stop contract remain
 pending operator review. This tool never enables motion, even when feedback checks pass.
 
+The completed LeRobot branch stack is a non-physical checkpoint only. Its BrainCo
+adapter defaults hardware access off; fake-SDK and installed-interface tests do not
+validate anatomical motor mapping, tactile calibration, or stop behavior. Neither
+those tests nor native MuJoCo acceptance bypass the gates in this document. See
+the [contribution handoff](branch-stack-handoff.md) for the separate review status.
+
 Run from a host on the robot's DDS network using Python with `unitree-sdk2py` installed.
 LeRobot, IK, MuJoCo, XR, and the LeRobot ZMQ server are not required for this passive probe.
 Use a fresh process for each observation; the native DDS teardown finding remains open.

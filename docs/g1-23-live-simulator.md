@@ -1,5 +1,10 @@
 # Native G1-23 Live Simulator
 
+This document covers the existing experimental DDS backend and stable launcher.
+The fork's `g1/simulation` branch instead provides an opt-in in-process native
+arm simulator for both embodiments, without DDS. Both implementations remain
+separate; see [fork verification](branch-stack-verification.md) for its commands.
+
 From an `ssh -Y` terminal in the repository root:
 
 ```bash

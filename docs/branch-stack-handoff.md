@@ -19,7 +19,11 @@ See [verification and reproduction](branch-stack-verification.md) and the
 [branch plan](lerobot_g1_branching_refactor_plan.md).
 
 The original `../lerobot` user changes and this project's working DDS/XR scripts
-were preserved. No physical robot/hand was contacted. After the user's headless-only
+were preserved. This project's runtime package, configurations, and existing tests
+were also preserved; documentation, the new `tools/verify_lerobot_branch_stack.py`,
+and verification evidence changed (checkpoint `4a47665`). Preservation refers to
+the working runtime, not an entirely untouched repository. No physical robot/hand
+was contacted. After the user's headless-only
 instruction, no X viewer or headset session was launched. Offscreen GPU tests are
 not headset acceptance. No GitHub PRs were created or merged by the runner; it
 reproduces the merge sequence locally with ordinary merge commits.
