@@ -20,6 +20,25 @@ service = module("g1_vr_service")
 operator = module("g1_vr_operator")
 
 
+def test_installation_completion_guidance(capsys):
+    installer = module("install_g1_vr_sim")
+    installer.print_next_steps(Path("/tmp/checkout with spaces"))
+    output = capsys.readouterr().out
+    for expected in (
+        "INSTALLATION SUCCESSFUL",
+        "ssh -Y YOUR_USER@WORKSTATION_IP",
+        "cd '/tmp/checkout with spaces'",
+        "--accept-cloudxr-eula",
+        "--embodiment g1_29",
+        "--embodiment g1_23",
+        "--headless --live-xr",
+        "Installation did not accept it",
+        "Ctrl+C",
+        "visual review",
+    ):
+        assert expected in output
+
+
 @pytest.mark.parametrize("size,embodiment", [(10, "g1_23"), (14, "g1_29")])
 def test_command_validation(size, embodiment):
     msg = dict(embodiment=embodiment, q=[0.1] * size, sent_at=time.monotonic())
