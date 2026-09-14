@@ -37,6 +37,44 @@ class ExpiredCommand(ValueError):
     """A valid command arrived too late and must never be replayed."""
 
 
+class CameraMonitor:
+    """Track camera content without treating an empty view as a broken stream."""
+
+    def __init__(self, embodiment):
+        self.embodiment = embodiment
+        self.sequences = set()
+        self.uniform = None
+        self.saw_nonuniform = False
+
+    def observe(self, camera):
+        import numpy as np
+
+        if camera is None:
+            return
+        metadata, pixels = camera
+        source = metadata.get("embodiment")
+        if source != self.embodiment:
+            raise RuntimeError(
+                f"Camera source mismatch: expected {self.embodiment!r}, got {source!r}"
+            )
+        uniform = bool(np.ptp(pixels) == 0)
+        if uniform != self.uniform:
+            if uniform:
+                print("Camera image is uniform; stream remains active.", flush=True)
+            elif self.uniform is True:
+                print("Camera image has visible detail again.", flush=True)
+        self.uniform = uniform
+        self.saw_nonuniform |= not uniform
+        self.sequences.add((metadata["session_id"], metadata["sequence"]))
+
+    def verify_replay(self, motion):
+        if motion < 0.01 or len(self.sequences) < 2 or not self.saw_nonuniform:
+            raise RuntimeError(
+                f"Replay failed: motion={motion}, camera frames={len(self.sequences)}, "
+                f"nonuniform frame observed={self.saw_nonuniform}"
+            )
+
+
 def validate_command(message, embodiment, size, lower, upper):
     import numpy as np
 
@@ -56,6 +94,13 @@ def validate_command(message, embodiment, size, lower, upper):
     if age > 0.5:
         raise ExpiredCommand("Expired command discarded")
     return q
+
+
+def hold_measured_positions(robot):
+    """Hold a valid target even when soft simulation limits permit overshoot."""
+    sim = robot._native
+    target = sim.ik.project_arm_positions(sim.data.qpos[sim.qadr])
+    robot.send_action(sim.ik.arm_action(target))
 
 
 def start_viewer(args):
@@ -172,7 +217,7 @@ def simulator(args):
                         }
                     )
                 except ExpiredCommand:
-                    robot.send_action(sim.ik.arm_action(sim.data.qpos[sim.qadr].copy()))
+                    hold_measured_positions(robot)
                     advanced += 1
                     holding = True
                     socket.send_json(
@@ -186,10 +231,10 @@ def simulator(args):
                 except (ValueError, KeyError, TypeError) as exc:
                     socket.send_json({"error": str(exc)})
             if not holding and time.monotonic() - last_command > 0.5:
-                robot.send_action(sim.ik.arm_action(sim.data.qpos[sim.qadr].copy()))
+                hold_measured_positions(robot)
                 advanced += 1
                 holding = True
-                print("Command timeout: holding measured arm positions", flush=True)
+                print("Command timeout: holding bounded measured arm positions", flush=True)
             for _ in range(5 - advanced):
                 robot.step_simulation()
             if frame % 2 == 0:
@@ -359,7 +404,8 @@ def bridge(args):
             )
             reader.connect()
         ready(args, "bridge")
-        motion, step, sequences = 0.0, 0, set()
+        motion, step = 0.0, 0
+        camera_monitor = CameraMonitor(args.embodiment)
         while not stopped(args) and (not args.steps or step < args.steps):
             start = time.monotonic()
             if reader is None:
@@ -386,21 +432,15 @@ def bridge(args):
                 }
             )
             motion = max(motion, float(np.max(abs(q - initial))))
-            camera = read_frame(args.run_dir / "camera.rgb")
-            if camera is not None:
-                if camera[0]["embodiment"] != args.embodiment or np.ptp(camera[1]) == 0:
-                    raise RuntimeError("Wrong or blank camera frame")
-                sequences.add(camera[0]["sequence"])
+            camera_monitor.observe(read_frame(args.run_dir / "camera.rgb"))
             step += 1
             time.sleep(max(0, 0.02 - (time.monotonic() - start)))
-        if args.replay and not stopped(args) and (motion < 0.01 or len(sequences) < 2):
-            raise RuntimeError(
-                f"Replay failed: motion={motion}, camera frames={len(sequences)}"
-            )
+        if args.replay and not stopped(args):
+            camera_monitor.verify_replay(motion)
         print(
             f"{'STOPPED' if stopped(args) else 'PASS' if args.replay else 'COMPLETED live startup'} {args.embodiment}: "
             f"{step} frames, motion={motion:.4f}rad, "
-            f"{len(sequences)} distinct camera frames",
+            f"{len(camera_monitor.sequences)} distinct camera frames",
             flush=True,
         )
     except KeyboardInterrupt:

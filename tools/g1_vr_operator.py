@@ -12,7 +12,7 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def shutdown_services(run, children):
+def shutdown_services(run, children, known_failures=()):
     """Keep camera and runtime alive until the XR consumer has finished teardown."""
     by_role = dict(children)
     problems = []
@@ -31,7 +31,7 @@ def shutdown_services(run, children):
             except subprocess.TimeoutExpired:
                 os.killpg(child.pid, signal.SIGKILL)
                 child.wait()
-        if child.returncode:
+        if child.returncode and role not in known_failures:
             problems.append(f"{role} exited with code {child.returncode}")
     return problems
 
@@ -135,6 +135,8 @@ def main():
             raise KeyboardInterrupt
 
         signal.signal(signal.SIGTERM, interrupted)
+        primary_error = None
+        known_failures = set()
         try:
             start("simulator", ["--headless"] if args.headless else [])
             wait_ready(run / "simulator.ready", children)
@@ -182,7 +184,11 @@ def main():
                 )
         except KeyboardInterrupt:
             print("Stopping session.", flush=True)
-        except Exception:
+        except Exception as exc:
+            primary_error = exc
+            known_failures = {
+                name for name, child in children if child.poll() not in (None, 0)
+            }
             for name, _ in children:
                 print(
                     f"--- {name} log ---\n"
@@ -200,7 +206,7 @@ def main():
                     "Stopping XR bridge/video, then simulator, then CloudXR...",
                     flush=True,
                 )
-                problems = shutdown_services(run, children)
+                problems = shutdown_services(run, children, known_failures)
             finally:
                 for stream in logs:
                     stream.close()
@@ -223,10 +229,13 @@ def main():
                     ):
                         print(line, flush=True)
             if problems:
-                raise RuntimeError(
-                    f"Shutdown problems: {'; '.join(problems)}. Logs: {logdir}"
-                )
-            print(f"Session stopped. Logs: {logdir}", flush=True)
+                message = f"Shutdown problems: {'; '.join(problems)}. Logs: {logdir}"
+                if primary_error is None:
+                    raise RuntimeError(message)
+                print(message, flush=True)
+                primary_error.add_note(message)
+            if primary_error is None:
+                print(f"Session stopped. Logs: {logdir}", flush=True)
 
 
 if __name__ == "__main__":
