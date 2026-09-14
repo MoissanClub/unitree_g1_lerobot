@@ -23,7 +23,12 @@ DDS launchers. Clone `MoissanClub/unitree_g1_lerobot`, then run from its root:
   deliberately; this installer does not change firewall rules or request sudo.
 
 The installer clones `MoissanClub/lerobot`'s `integration/g1-acceptance` branch
-and checks out verified commit `d5e400bcefeccc93ba956ce876530e5283512df1` detached.
+and imports `patches/lerobot-g1-vr-fixes.bundle`, then checks out verified
+commit `c269dd926e87b53d11004aa1a40aecc33fb2694b` detached. The bundle contains two
+fork commits based on `d5e400bcefeccc93ba956ce876530e5283512df1`: render-only
+floor/backdrop scenery and measured joint-limit overshoot recovery, with regression
+tests for both embodiments. It makes the pin
+available to clean installs without requiring a remote merge.
 The correct spelling is **acceptance**, not `acceptanc`. An existing clean checkout
 at that exact commit is reused; a different or modified checkout is never reset.
 
@@ -188,3 +193,17 @@ G1_VR_OPERATOR_TESTS=1 G1_VR_LIVE_SHUTDOWN=1 .vr-sim/env/bin/python -m pytest -q
 The SDK's separate `XR_ERROR_SESSION_NOT_STOPPING` diagnostic may still appear;
 the ordered shutdown fix does not claim to repair that native SDK lifecycle issue.
 No dependency reinstall is needed for this operator-only change.
+
+
+## Measured Joint-Limit Overshoot
+
+MuJoCo soft joint constraints can allow measured positions slightly beyond the
+command limits. The VR controller uses bounded copies for IK seeds and inactive-arm
+holds, and the simulator does the same for command-timeout and expired-command
+holds. Raw feedback and clutch rebasing still use the actual measured pose.
+External command limits, physics state, and gravity compensation remain unchanged.
+
+`Measured joint limit overshoot` diagnostics identify affected joints and the
+maximum excess in radians, at most once per second per kinematics instance.
+Tracking can return for either arm or both arms without requiring an extra clutch
+release. Malformed or nonfinite measurements still fail validation.

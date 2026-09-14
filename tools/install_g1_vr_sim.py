@@ -10,7 +10,7 @@ import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-COMMIT = "d5e400bcefeccc93ba956ce876530e5283512df1"
+COMMIT = "c269dd926e87b53d11004aa1a40aecc33fb2694b"
 BRANCH = "integration/g1-acceptance"
 REPOSITORY = "https://github.com/MoissanClub/lerobot.git"
 
@@ -85,6 +85,10 @@ def main():
     checkout, env, assets = prefix / "lerobot", prefix / "env", prefix / "assets"
     if not checkout.exists():
         run("git", "clone", "--branch", BRANCH, REPOSITORY, checkout)
+        # The bundle carries the tested fork commit until it is available upstream.
+        bundle = ROOT / "patches/lerobot-g1-vr-fixes.bundle"
+        run("git", "-C", checkout, "bundle", "verify", bundle)
+        run("git", "-C", checkout, "fetch", bundle, "refs/heads/fix/g1-vr-recovery")
         run("git", "-C", checkout, "checkout", "--detach", COMMIT)
     head = subprocess.check_output(
         ["git", "-C", str(checkout), "rev-parse", "HEAD"], text=True
