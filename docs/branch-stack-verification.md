@@ -7,7 +7,7 @@ Local fork `main` now tracks upstream `5aa74557f84c54d4b458f8b9643c5aa2982acfed`
 The [September 17 revision](branch-stack-update-20260917.md) adds a bug-fix-first
 stage and updates the verification runner. Results and branch tables below are
 the historical September 11 checkpoint; use the revision page for the current
-base, dependency graph, local-source command and publication status.
+base, dependency graph, reproduction command and publication status.
 
 ## Recorded Result: 2026-09-11
 
@@ -61,7 +61,7 @@ These counts cover the plan's targeted regressions, not the entire LeRobot test
 tree. Branches 4/5 intentionally do not depend on simulation in source history.
 Their actual MuJoCo integration suites run after merging them with milestone 3.
 
-## Reproduce Current Local Stack
+## Reproduce Published Stack
 
 Use the conda-forge Pinocchio/CasADi environment documented in the fork's
 `examples/unitree_g1/README.md`, with pytest, Ruff 0.14.1, mypy 1.19.1, MuJoCo, Pillow, LeRobot dependencies,
@@ -73,7 +73,7 @@ From this experimental repository:
 
 ```bash
 python tools/verify_lerobot_branch_stack.py \
-  --remote ../lerobot-upstream \
+  --remote git@github.com:MoissanClub/lerobot.git \
   --checkout ../lerobot-review-fresh \
   --output artifacts/branch-review-fresh \
   --assets ../.cache/g1-cartesian-assets \
@@ -82,8 +82,7 @@ python tools/verify_lerobot_branch_stack.py \
   --gpu
 ```
 
-Once the revised branches are pushed, replace `--remote ../lerobot-upstream`
-with `--remote git@github.com:MoissanClub/lerobot.git`. The runner now requires
+The revised branches are published on origin. The runner now requires
 `g1/bugfixes` and the updated branch graph; it cannot verify old origin tips as
 though they were the new stack.
 

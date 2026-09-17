@@ -68,13 +68,15 @@ Earlier attempts remain available: v1 caught formatting, v2 identified sandbox
 GPU visibility, and v3 caught another formatting issue. The successful v4 run
 used approved GPU access, remained headless and opened no hardware transport.
 
-**Publication:** source and documentation changes are committed locally. No
-branches were force-rewritten or pushed, and no GitHub PR was opened. The original
+**Publication:** all eight contribution branches, updated fork `main`, and
+`integration/g1-acceptance-20260917` are pushed to `MoissanClub/lerobot`.
+Documentation and verification evidence are published in `MoissanClub/unitree_g1_lerobot`.
+No branches were force-rewritten, and no GitHub PR was opened. The original
 `integration/g1-acceptance` remote and installer commit pin remain unchanged.
 
 ```bash
 python tools/verify_lerobot_branch_stack.py \
-  --remote ../lerobot-upstream \
+  --remote git@github.com:MoissanClub/lerobot.git \
   --checkout ../lerobot-review-updated \
   --output outputs/branch-review-updated \
   --assets ../.cache/g1-cartesian-assets \
@@ -83,10 +85,9 @@ python tools/verify_lerobot_branch_stack.py \
   --gpu --integration-branch integration/g1-acceptance-20260917
 ```
 
-Use a new checkout/output path for each run. The local source repository is
-intentional: until the updated branches are published, origin still contains
-the earlier implementation. The dependency environment is reused; this is not
-a clean-OS installer test.
+Use a new checkout/output path for each run. The recorded verification cloned
+the local contribution repository; its exact tested branch tips are now published
+on origin. The dependency environment is reused; this is not a clean-OS installer test.
 
 ## Remaining Boundaries
 

@@ -2,7 +2,7 @@
 
 ## Resume Point: 2026-09-17
 
-The stack is updated locally to September 17 upstream, with a new bug-fix-first
+The stack is updated and pushed against September 17 upstream, with a new bug-fix-first
 branch, action-processor IK and standard G1 optional-hand composition. Start with
 the [current revision and verification](branch-stack-update-20260917.md) and the
 new dependency table in the [branch plan](lerobot_g1_branching_refactor_plan.md).
@@ -12,9 +12,9 @@ Do not overwrite the coworker installer pin merely because a newer local branch 
 The updated cumulative branch is `integration/g1-acceptance-20260917` at
 `9936da56`. All branch and fresh sequential-merge checks passed; final result is
 287 targeted tests, one optional SONIC skip and one separate GPU test, plus both
-embodiments' headless examples. The new stack is committed locally, not pushed.
-Next: review the current diff/dependency graph, publish with ordinary fast-forward
-pushes, then perform manual X/headset acceptance before changing the installer pin.
+embodiments' headless examples. The new stack is committed and pushed.
+Next: review the current diff/dependency graph, then perform manual X/headset
+acceptance before changing the installer pin.
 
 ## Operator Packaging Follow-Up
 

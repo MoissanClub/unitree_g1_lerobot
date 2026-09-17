@@ -48,7 +48,7 @@ XR and video retain simulation-independent source ancestry.
 All eight branch suites and all eight sequential merges passed in a fresh local
 clone. The final merge `9936da56` passed 287 targeted regressions, one optional
 SONIC skip and one separate offscreen GPU test. Both embodiments' headless
-examples passed. Updated branches are committed locally, not yet pushed.
+examples passed. Updated branches are committed and pushed to `MoissanClub/lerobot`.
 
 See [September 17 integration revision](branch-stack-update-20260917.md) for
 verification, scope limits, and publication status. The coworker installer remains
