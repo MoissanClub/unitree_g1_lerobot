@@ -7,25 +7,20 @@ sequence and historical record, not the source-code ownership structure.
 
 ## Development Workstreams
 
-The upstream-oriented fork now has separate embodiment, Cartesian, simulation,
-XR, XR-video, generic-hand, and BrainCo feature branches. See the
+The upstream-oriented fork has a standalone bug-fix branch followed by embodiment,
+Cartesian, simulation, XR, XR-video, generic-hand, and BrainCo feature branches. See the
 [branch stack verification](branch-stack-verification.md) for exact suites and
 fresh-checkout merge reproduction. This contribution effort does not replace the
 experimental three-script DDS workflow or its remaining acceptance work.
 
-The [September 17 revision](branch-stack-update-20260917.md) updates the local
-stack against upstream, adds a bug-fix-first branch and revises processor/hand
-integration. It supersedes the old source dependency graph, not the installed
-coworker release pin.
-
-At the historical 2026-09-11 checkpoint, all seven branches were implemented and pushed. Fresh-clone
-sequential merges passed through `integration/g1-acceptance` at `d5e400bc`:
-275 targeted regressions, one optional SONIC skip, and one separate offscreen GPU
-test. Next for this workstream is branch/PR review and manual X/headset acceptance
-on `../lerobot-g1-review`, not branch creation. See the
-[current branch plan](lerobot_g1_branching_refactor_plan.md) and
-[contribution handoff](branch-stack-handoff.md). The status table and numerical
-history below describe the preserved experimental runtime, not the new fork.
+The published review candidate is `integration/g1-acceptance-20260917` at `9936da56`.
+Next is branch/PR review and manual X/headset acceptance, not branch creation.
+The installer remains pinned to the earlier `d5e400bc` operator release.
+Use the [branch plan](lerobot_g1_branching_refactor_plan.md) for the current graph,
+the [contribution handoff](branch-stack-handoff.md) to resume, and the
+[dated revision note](branch-stack-update-20260917.md) for what changed.
+The status table and numerical history below describe the preserved experimental
+runtime, not the contribution stack.
 
 The [simulation and sim-to-real plan](sim-to-real-plan.md) records the 2026-09-11
 split into simulation follow-ups and physical embodiment testing. Simulation follows

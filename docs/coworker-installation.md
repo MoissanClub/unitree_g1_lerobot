@@ -27,6 +27,11 @@ and checks out verified commit `d5e400bcefeccc93ba956ce876530e5283512df1` detach
 The correct spelling is **acceptance**, not `acceptanc`. An existing clean checkout
 at that exact commit is reused; a different or modified checkout is never reset.
 
+The newer `integration/g1-acceptance-20260917` contribution branch is a separate
+review candidate, not what this installer installs. See the
+[contribution handoff](branch-stack-handoff.md) for its acceptance status.
+Updating this repository does not automatically promote the dependency pin.
+
 It creates `.vr-sim/env` with Python 3.12, conda-forge Pinocchio 3.9.0/CasADi 3.7.2,
 LeRobot, MuJoCo 3.12.0, Tk/Pillow, ZeroMQ, Isaac Teleop 1.3.132rc1, and CUDA 12.8
 PyTorch 2.11.0. It verifies real offscreen Vulkan/CUDA pixel delivery, downloads

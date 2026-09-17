@@ -1,172 +1,178 @@
-# LeRobot Branch Stack Verification
+# G1 Branch Stack Verification
 
-The contribution checkout is `../lerobot-upstream`, with origin
-`git@github.com:MoissanClub/lerobot.git`. The original `../lerobot` and this
-experimental repository's runtime remain separate and are not replaced by the port.
-Local fork `main` now tracks upstream `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
-The [September 17 revision](branch-stack-update-20260917.md) adds a bug-fix-first
-stage and updates the verification runner. Results and branch tables below are
-the historical September 11 checkpoint; use the revision page for the current
-base, dependency graph, reproduction command and publication status.
+## Verified Checkpoint
 
-## Recorded Result: 2026-09-11
+All eight branch-local suites and eight sequential merges passed without merge
+conflicts. The final cumulative commit is
+`9936da569a19707c13b4d3de4f8f178dd1012ad9` on the published
+`integration/g1-acceptance-20260917` branch.
 
-**Passed:** all seven branch-local suites and all seven sequential merge suites
-in a fresh clone of origin. No merge conflicts. Final acceptance commit:
-`d5e400bcefeccc93ba956ce876530e5283512df1` on `integration/g1-acceptance`.
-The review checkout is `../lerobot-g1-review`.
+Upstream base: `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
+The [branch plan](lerobot_g1_branching_refactor_plan.md) owns the dependency graph
+and acceptance goals; this guide owns test definitions, evidence and commands.
 
-This repository's runtime, configurations, existing tests, and shell launchers
-were preserved. Documentation plus the new branch-stack runner and evidence were
-committed at `4a47665`. The original `../lerobot` still has its pre-existing local
-changes; a clean contribution checkout does not imply a clean original checkout.
+| Order | Branch | Tested tip | Branch-local passes | Cumulative passes |
+|---|---|---|---:|---:|
+| 0 | `g1/bugfixes` | `f2579395` | 95 | 95 |
+| 1 | `g1/embodiments` | `3e7a7167` | 131 | 131 |
+| 2 | `g1/cartesian-control` | `157611d1` | 187 | 187 |
+| 3 | `g1/simulation` | `097b6872` | 202 | 202 |
+| 4 | `g1/xr` | `a4621adf` | 212 | 229 |
+| 5 | `g1/xr-video` | `9739dd17` | 223 | 242 |
+| 6 | `g1/hand-support` | `571854d6` | 217 | 257 |
+| 7 | `g1/brainco-hands` | `2d9d762b` | 247 | 287 |
 
-| Merge milestone | Passing regression tests | Separate GPU pixel tests |
-|---|---:|---:|
-| 1 | 128 | Not applicable |
-| 2 | 181 | Not applicable |
-| 3 | 195 | Not applicable |
-| 4 | 222 | Not applicable |
-| 5 | 235 | 1 |
-| 6 | 246 | 1 |
-| 7 | 275 | 1 |
+Each non-bugfix stage had one optional SONIC module skip. The video branch and
+cumulative stages 5-7 each also passed one separate offscreen GPU pixel test.
+Ruff lint/format, camera-channel mypy, installed SDK contract checks and both
+embodiments' headless launchers passed. No X, headset or physical acceptance is
+claimed for this revision. These are targeted suites, not the full LeRobot test tree.
 
-Each regression run had one optional SONIC module skip (ONNX unavailable).
-All required model/render/integration and installed BrainCo SDK checks ran.
-Ruff lint/format passed at every stage; the new camera channel also passed mypy.
-Both embodiments passed the headless gravity-on/off simulation examples and
-100-frame synthetic XR runs, each publishing 50 camera frames. Native kinematic
-playback produced 63 changing frames out of 64 for each model; workspace-probe
-residuals remain explicitly best-effort rather than 5 mm convergence claims.
+[Machine-readable commands and results](verification/lerobot-branch-stack-20260917.json).
+Full logs/JUnit XML remain locally in `outputs/branch-stack-20260917-v4/`.
+The fresh source clone came from the local contribution repository; its exact
+tested branch tips are now published on origin. The Python environment was reused,
+so this does not establish clean-OS installation. The [September 11 report](verification/lerobot-branch-stack-20260911.json)
+is historical evidence for the older installer pin, not the current stack.
 
-[Recorded commands, branch SHAs, and per-merge results](verification/lerobot-branch-stack-20260911.json).
-Full logs, JUnit XML and playback output are retained locally under
-`artifacts/branch-stack-headless/`; rerunning the tool regenerates them.
-The tested Python environment was reused; the source checkout was fresh.
-No X/headset/physical acceptance is claimed for this merged fork.
+## Test Suites
 
-## Feature Branches
+Paths below are relative to a checked-out LeRobot fork. Suite identifiers match
+the branch plan and the runner's `SUITES` / `LOCAL` definitions.
 
-| Milestone | Branch | Source parent | Branch-local regression |
-|---|---|---|---|
-| 1 | `g1/embodiments` | fork main | 128 passed, 1 optional SONIC skip |
-| 2 | `g1/cartesian-control` | embodiments | 181 passed, 1 optional SONIC skip |
-| 3 | `g1/simulation` | Cartesian | 195 passed, 1 optional SONIC skip |
-| 4 | `g1/xr` | Cartesian | 206 passed, 1 optional SONIC skip; installed SDK pipeline check |
-| 5 | `g1/xr-video` | XR | 217 passed, 1 optional SONIC skip; 1 separate offscreen GPU test |
-| 6 | `g1/hand-support` | Cartesian | 192 passed, 1 optional SONIC skip |
-| 7 | `g1/brainco-hands` | hand support | 221 passed, 1 optional SONIC skip, including installed SDK contract |
+| Suite | Pytest paths |
+|---|---|
+| F: standalone fix | `tests/robots/test_unitree_g1.py`, `tests/robots/test_unitree_g1_utils.py`, `tests/teleoperators/test_unitree_g1_teleoperator.py` |
+| B: embodiment baseline | F plus `tests/robots/test_unitree_g1_embodiments.py`, `tests/robots/test_sonic_whole_body.py` |
+| C: Cartesian | `tests/robots/test_unitree_g1_cartesian_control.py`, `tests/robots/test_unitree_g1_kinematics.py`, `tests/robots/test_unitree_g1_action_processor.py` |
+| S: simulation | `tests/robots/test_unitree_g1_simulation.py`, `tests/integration/test_unitree_g1_mujoco_runtime.py` |
+| X: XR | `tests/teleoperators/test_unitree_g1_xr.py` |
+| V: video | `tests/teleoperators/test_unitree_g1_xr_video.py` |
+| H: hands | `tests/robots/test_unitree_g1_hands.py` (standard G1 composition is also tested in B) |
+| R: BrainCo | `tests/robots/test_unitree_g1_brainco_hands.py` |
 
-These counts cover the plan's targeted regressions, not the entire LeRobot test
-tree. Branches 4/5 intentionally do not depend on simulation in source history.
-Their actual MuJoCo integration suites run after merging them with milestone 3.
+After cumulative merge 4, add `tests/integration/test_unitree_g1_xr_mujoco.py`.
+After cumulative merge 5, also add `tests/integration/test_unitree_g1_xr_video_mujoco.py`.
+Cumulative stages retain all earlier suites; do not add these integration modules
+to simulation-independent XR branch-local runs.
 
-## Reproduce Published Stack
+The runner enables `G1_KINEMATICS_ASSETS`, `G1_RENDER_TESTS=1` and
+`G1_BRAINCO_SDK_TESTS=1`; combined XR runs also use `G1_INTEGRATION_TESTS=1`.
+It runs the ordinary video suite excluding `real_offscreen_delivery_and_recovery`,
+then runs that test separately with `G1_VIDEO_GPU_TESTS=1` when `--gpu` is selected.
+Missing required dependencies/assets or unexpected skips fail acceptance.
 
-Use the conda-forge Pinocchio/CasADi environment documented in the fork's
-`examples/unitree_g1/README.md`, with pytest, Ruff 0.14.1, mypy 1.19.1, MuJoCo, Pillow, LeRobot dependencies,
-and `bc-stark-sdk==2.0.2`. Install Isaac Teleop using its existing example guide.
-Vulkan/CUDA device access is required for the offscreen GPU gate. No X server,
-headset, physical robot, or hand is required. The new checkout must not exist.
+## Reproduce Headlessly
 
-From this experimental repository:
+Use the conda-forge Pinocchio/CasADi setup in the fork's
+`examples/unitree_g1/README.md`, plus pytest, Ruff 0.14.1, mypy 1.19.1, MuJoCo,
+Pillow, LeRobot dependencies and `bc-stark-sdk==2.0.2`. Isaac Teleop is required
+for the SDK pipeline and video checks. Offscreen Vulkan/CUDA requires GPU access,
+but no X server, headset, physical robot or serial hand is needed.
+
+Prepare pinned assets from a fork checkout using that environment:
+
+```bash
+PYTHONPATH=src python examples/unitree_g1/prepare_cartesian_assets.py \
+  --output ../.cache/g1-cartesian-assets --meshes
+```
+
+Then, from this `unitree_g1_lerobot` repository:
 
 ```bash
 python tools/verify_lerobot_branch_stack.py \
   --remote git@github.com:MoissanClub/lerobot.git \
   --checkout ../lerobot-review-fresh \
-  --output artifacts/branch-review-fresh \
+  --output outputs/branch-review-fresh \
   --assets ../.cache/g1-cartesian-assets \
   --python /home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python \
   --sdk-site-packages /home/dwei/.venvs/isaacteleop/lib/python3.12/site-packages \
-  --gpu
+  --gpu --integration-branch integration/g1-pr-review-20260917
 ```
 
-The revised branches are published on origin. The runner now requires
-`g1/bugfixes` and the updated branch graph; it cannot verify old origin tips as
-though they were the new stack.
+Use new checkout and output paths for every run. Interpreter/SDK paths above are
+this workstation's setup; replace them on another host. Omit `--sdk-site-packages`
+if Isaac Teleop is installed in the selected Python environment. Source imports
+must resolve to the new checkout, not an older editable installation.
 
-The two interpreter/SDK paths above are this workstation's existing environments;
-replace them for another machine. Omit `--sdk-site-packages` when the SDK is
-installed in the selected Python environment. Prepare pinned assets with the
-fork's `examples/unitree_g1/prepare_cartesian_assets.py --output PATH --meshes`.
-The environment installation recipe itself has not been tested from a blank OS.
+The runner clones origin, records its tips, checks every branch independently,
+then creates a fresh cumulative branch from the pinned base and merges orders
+0-7 with `--no-ff`. It reruns cumulative suites after each merge and finishes
+with both embodiments' headless kinematic, gravity-on/off and XR/camera examples.
 
-The runner:
+It never pushes, opens PRs, resets/deletes existing checkouts or contacts hardware.
+Without `--gpu`, the result is `passed_without_gpu_gate`, not full acceptance.
+The recorded report pins tested commits; a new run tests the branch tips fetched
+at that time and records their actual SHAs.
 
-1. Clones the remote and records exact remote branch SHAs.
-2. Checks out each feature branch, checks Ruff lint/format on changed Python files,
-   and runs its dependency-specific suite.
-3. Creates `integration/g1-acceptance` from the recorded upstream base.
-4. Merges each branch with `--no-ff`, in milestone order, and reruns cumulative
-   regressions after every merge, including combined XR/MuJoCo and camera tests.
-5. Runs both simulation launchers with gravity compensation on/off, native
-   side-by-side kinematic playback, and both combined XR/camera replay examples.
-6. Writes `report.json`, JUnit XML, and command logs. It checks imported source
-   paths and rejects missing required tests/dependencies or unexpected skips.
+## Manual PR Trial
 
-It does not push, create GitHub PRs, delete/reset existing checkouts, or alter main.
-Leaving out `--gpu` produces `passed_without_gpu_gate`, not full acceptance.
-Actual GitHub PR creation and review remain separate from these local merge checks.
-
-## Manual Merge Workflow
-
-For your own PR-by-PR verification, create a new acceptance branch from the same
-base (do not overwrite an existing reviewed acceptance branch). Merge the seven
-branches in the order shown above using merge commits. The exact suites and their
-dependencies are in `SUITES` and `LOCAL` in the runner; recorded command logs also
-give the full commands for every tested commit. Keep all model/render/integration
-flags enabled when running the associated suites. Do not squash shared ancestry.
-
-For example, from a new clone with no local changes:
+For a GitHub PR-by-PR trial, use a fresh clone and a new acceptance target:
 
 ```bash
-git fetch origin
-git switch -c integration/g1-pr-review b6ec0060779550c0a157ae34feb89e0cf86012a8
-git push -u origin integration/g1-pr-review
+git clone git@github.com:MoissanClub/lerobot.git lerobot-pr-review
+cd lerobot-pr-review
+git switch -c integration/g1-pr-review-20260917 5aa74557f84c54d4b458f8b9643c5aa2982acfed
+git push -u origin integration/g1-pr-review-20260917
 ```
 
-Target your seven internal PRs at that new branch, not the already-merged
-`integration/g1-acceptance`. Merge one at a time and test before continuing.
-The runner automates local merge verification; it does not manage GitHub PRs.
+Open internal PRs against that target in orders 0-7, beginning with
+`g1/bugfixes`. Merge one at a time with merge commits, fetch/pull the target,
+and run the cumulative suites above before continuing. Do not squash shared
+dependency ancestry. Upstream-facing stacked PR bases instead follow the source
+parents in the branch plan.
 
-## Manual X and Headset Review
-
-On the merged fork, with the same environment and assets:
+For example, after the first merge, from the fork with its environment active:
 
 ```bash
-PYTHONPATH=src MUJOCO_GL=egl python examples/unitree_g1/verify_cartesian_control.py \
-  --assets /tmp/g1-cartesian-assets --camera-azimuth -135
-PYTHONPATH=src MUJOCO_GL=egl python examples/unitree_g1/run_simulation.py \
-  --assets /tmp/g1-cartesian-assets --embodiment g1_23
+export PYTHONPATH="$PWD/src"
+export MUJOCO_GL=egl
+export G1_KINEMATICS_ASSETS=/home/dwei/lerobot-sim/.cache/g1-cartesian-assets
+export G1_RENDER_TESTS=1
+export G1_BRAINCO_SDK_TESTS=1
+python -m pytest -q tests/robots/test_unitree_g1.py \
+  tests/robots/test_unitree_g1_utils.py \
+  tests/teleoperators/test_unitree_g1_teleoperator.py
 ```
 
-Repeat the simulator with `g1_29`. For headset input and video, start the external
-CloudXR runtime, then use `examples/unitree_g1/run_xr_simulation.py --assets PATH
---embodiment g1_23 --video --steps 0` with `PYTHONPATH=src MUJOCO_GL=egl`.
-Repeat for G1-29. These manual tests have not been performed on the merged fork.
-Use the environment prepared by your CloudXR installation, including its OpenXR
-runtime selection (`XR_RUNTIME_JSON` where required). Starting an external process
-alone does not export its environment into the terminal running these examples.
+For later merges expand B and append the cumulative suites; enable
+`G1_INTEGRATION_TESTS=1` from merge 4 onward. Video additionally needs the separate
+GPU gate described above. The recorded report contains exact successful commands
+for every stage, including lint, typing and SDK checks.
 
-## Scope and Remaining Gates
+The already-merged `integration/g1-acceptance-20260917` branch is for combined
+review, not a fresh PR trial. Preserve the older `integration/g1-acceptance`
+branch and the installer pin.
 
-- Native simulation fixes legs/waist/fingers and disables collisions. It uses
-  configured PD plus optional measured-pose gravity feedforward, not calibrated
-  full-body dynamics. The existing experimental DDS launchers are not ported.
-- XR device reading is embodiment-independent. `G1XRControl` selects the shared
-  model solver; malformed/stale samples disengage and re-engagement rebases.
-  An SDK-specific rollback drains the session's entry ExitStack after partial
-  startup failure; it has a regression test and needs review on SDK upgrades.
-- Camera transport is generic (`lerobot.cameras.frame_channel`), avoiding the
-  gRPC dependency in `lerobot.transport`. Input/video share one OpenXR session
-  in an isolated worker. Offscreen tests do not prove CloudXR/headset behavior.
-- Optional hands use a `G1WithHands` Robot wrapper rather than modifying the body
-  driver. BrainCo has explicit six-slot normalized actions; anatomical slot
-  labels remain unverified because vendor examples conflict. SDK 2.0.2 uses the
-  module-level `modbus_close(client)` API.
-- BrainCo identity/unit/rate/timeout tests use a fake SDK. The installed SDK check
-  only inspects its interface. Physical access defaults off. No hardware, tactile
-  calibration, torque-disable, or emergency-stop acceptance is claimed.
-- Broader experimental workspace, recovery, endurance, and native DDS cleanup
-  work remain in the non-physical backlog. Passing this port does not close them.
+## Manual X And Headset Review
+
+These checks are for the user and remain pending on the new cumulative commit.
+From its checkout, activate the simulation environment and prepare the assets:
+
+```bash
+export PYTHONPATH="$PWD/src"
+export MUJOCO_GL=egl
+export G1_KINEMATICS_ASSETS=/home/dwei/lerobot-sim/.cache/g1-cartesian-assets
+python examples/unitree_g1/verify_cartesian_control.py \
+  --assets "$G1_KINEMATICS_ASSETS" --camera-azimuth -135
+python examples/unitree_g1/run_simulation.py \
+  --assets "$G1_KINEMATICS_ASSETS" --embodiment g1_23
+```
+
+Use an `ssh -Y` terminal for Tk/X and repeat the simulator with `g1_29`.
+For live controllers/video, start the external CloudXR runtime and configure
+the example terminal's OpenXR environment (`XR_RUNTIME_JSON` where required):
+
+```bash
+python examples/unitree_g1/run_xr_simulation.py \
+  --assets "$G1_KINEMATICS_ASSETS" --embodiment g1_23 --video --steps 0
+```
+
+Repeat for `g1_29`. Do not add `--headless` to a live video run: that flag
+selects synthetic replay, not headset input. An external launcher does not export
+environment variables back into this terminal.
+
+Record the exact commit and review geometry, both arms, rotations, independent
+clutches, release/re-engagement, tracking loss and camera freshness/recovery.
+Prior headset reviews of the installed release do not transfer to the new revision.
+For supported combinations and physical gates, see the branch plan.

@@ -34,25 +34,21 @@ systematic controller lifecycle testing, and physical-robot validation remain pe
 **Resume contribution review:** [branch-stack handoff](docs/branch-stack-handoff.md).
 **Experimental history:** [Rung 4 handoff](docs/rung4-handoff.md).
 **Future experiments:** [non-physical acceptance and reliability work](docs/future-non-physical-work.md).
-The LeRobot contribution work now lives in the separate `../lerobot-upstream`
-checkout and seven feature branches on `MoissanClub/lerobot`. See
-[branch verification and reproduction](docs/branch-stack-verification.md) and the
-[branch plan](docs/lerobot_g1_branching_refactor_plan.md). This does not replace the
-experimental runtime or close the broader motion, recovery, endurance, and native
-cleanup backlog. Matched waist models remain a separate prerequisite for waist work.
+The LeRobot contribution stack lives in `../lerobot-upstream` and is published on
+`MoissanClub/lerobot`: one bug-fix branch followed by seven feature branches.
+Use the [branch plan](docs/lerobot_g1_branching_refactor_plan.md) for dependencies
+and the [verification guide](docs/branch-stack-verification.md) for results and commands.
 
-**2026-09-17 local revision:** a standalone bug-fix branch now precedes the seven
-feature branches, updated against current upstream. IK uses an action processor;
-optional hands compose under `UnitreeG1`. See the [revision and verification](docs/branch-stack-update-20260917.md).
-The coworker installer still pins the previously accepted release.
+| Use | Version | Acceptance |
+|---|---|---|
+| Coworker installer and root operator launcher | Pinned `d5e400bc`, from `integration/g1-acceptance` | Existing operator release; installation details in the coworker guide. |
+| Latest contribution review | `integration/g1-acceptance-20260917` at `9936da56` | All eight branch/merge stages passed; 287 final tests, one optional SONIC skip and one separate GPU test. New X/headset review remains pending. |
 
-**Historical 2026-09-11 contribution checkpoint:** all seven branches passed independently
-and after sequential merges in a fresh clone. `integration/g1-acceptance` at
-`d5e400bc` passed 275 regressions (one optional SONIC skip) plus one offscreen GPU
-test. Review checkout: `../lerobot-g1-review`. Fork `main` is unchanged; no GitHub
-PRs were created/merged. X/headset review of this new implementation remains yours.
-This repository's runtime, configurations, tests, and launchers were preserved;
-only documentation and the new branch-stack verification tool/evidence changed.
+The new stack uses action-processor IK and optional hands under `UnitreeG1`.
+Its automated acceptance does not change the installer pin. The experimental
+runtime and broader motion, recovery, endurance and native cleanup backlog remain
+separate; matched waist models are still required before waist work.
+Historical plans and checkpoints are linked from the [documentation archive](docs/archive/README.md).
 Do not apply the experimental patch below to the contribution/review checkouts.
 
 **Live acceptance:** `./run_verify_live_control.sh` runs headless joint and IK/DDS checks
