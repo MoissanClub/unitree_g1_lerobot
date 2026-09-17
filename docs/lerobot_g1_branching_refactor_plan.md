@@ -16,7 +16,45 @@ The current work has several major threads:
 
 The goal is to separate these into dependency-ordered branches that are easy to review, collaborate on, and eventually submit upstream to Hugging Face LeRobot.
 
-## Current Status: 2026-09-11
+## Current Revision: 2026-09-17
+
+The local stack has been updated onto upstream
+`5aa74557f84c54d4b458f8b9643c5aa2982acfed`, including merged PR #4645.
+This section supersedes the original dependency table below; the September 11
+results remain historical evidence, not evidence for the updated code.
+
+| Order | Branch | Required source parent | Verification goal and suites |
+|---|---|---|---|
+| 0 | `g1/bugfixes` | upstream main | Small `qd` -> SDK `dq` fix only; robot, utils, teleoperator regressions. |
+| 1 | `g1/embodiments` | bugfixes | G1-23 sparse mapping and G1-29 compatibility; common suite B. Preserve upstream typed Hub/end-effector configuration. |
+| 2 | `g1/cartesian-control` | embodiments | FK/IK/gravity suites plus `test_unitree_g1_action_processor.py`; registered Cartesian-to-joint processor. |
+| 3 | `g1/simulation` | Cartesian | Native MuJoCo/runtime suites for both embodiments. Keep Hub production configuration; diagnostic model explicitly supports only bare wrists. |
+| 4 | `g1/xr` | Cartesian | Controller/clutch tests; route G1 IK through the action processor. Add MuJoCo integration tests after merging step 3. |
+| 5 | `g1/xr-video` | XR | Video/recovery, SDK contract and offscreen pixel tests; robot-independent transport. |
+| 6 | `g1/hand-support` | simulation | Standard `UnitreeG1Config.hands` composition, body/hand lifecycle and native simulation regressions. Old wrapper retained for compatibility. |
+| 7 | `g1/brainco-hands` | hand support | BrainCo SDK tests and explicit `end_effector=brainco` consistency; reject unimplemented hand simulation. |
+
+The bug fix was extracted as an independent patch before the feature. Existing
+branch histories are preserved with ordinary merges, including the user's
+September 15 origin updates; no force rewrite is required. Thus the old embodiment
+commit still exists historically, but its PR diff against `g1/bugfixes` excludes
+the velocity-field fix. Original tips are saved under local
+`archive/20260917/*` and `archive/20260917/origin/*` branches.
+
+Hand support now depends on simulation because both modify the same robot lifecycle;
+the conflict is resolved in that feature branch, not left for each PR reviewer.
+XR and video retain simulation-independent source ancestry.
+
+All eight branch suites and all eight sequential merges passed in a fresh local
+clone. The final merge `9936da56` passed 287 targeted regressions, one optional
+SONIC skip and one separate offscreen GPU test. Both embodiments' headless
+examples passed. Updated branches are committed locally, not yet pushed.
+
+See [September 17 integration revision](branch-stack-update-20260917.md) for
+verification, scope limits, and publication status. The coworker installer remains
+pinned to the previously accepted version until the new revision has manual review.
+
+## Historical Checkpoint: 2026-09-11
 
 **Branch reconstruction and headless regression verification are complete.** All
 seven feature branches and `integration/g1-acceptance` are pushed to

@@ -25,8 +25,13 @@ BRANCHES = [
     "g1/hand-support",
     "g1/brainco-hands",
 ]
-BASE = "b6ec0060779550c0a157ae34feb89e0cf86012a8"
+BASE = "5aa74557f84c54d4b458f8b9643c5aa2982acfed"
 SUITES = {
+    0: [
+        "tests/robots/test_unitree_g1.py",
+        "tests/robots/test_unitree_g1_utils.py",
+        "tests/teleoperators/test_unitree_g1_teleoperator.py",
+    ],
     1: [
         "tests/robots/test_unitree_g1.py",
         "tests/robots/test_unitree_g1_utils.py",
@@ -37,6 +42,7 @@ SUITES = {
     2: [
         "tests/robots/test_unitree_g1_cartesian_control.py",
         "tests/robots/test_unitree_g1_kinematics.py",
+        "tests/robots/test_unitree_g1_action_processor.py",
     ],
     3: [
         "tests/robots/test_unitree_g1_simulation.py",
@@ -53,8 +59,8 @@ LOCAL = {
     3: [1, 2, 3],
     4: [1, 2, 4],
     5: [1, 2, 4, 5],
-    6: [1, 2, 6],
-    7: [1, 2, 6, 7],
+    6: [1, 2, 3, 6],
+    7: [1, 2, 3, 6, 7],
 }
 
 
@@ -297,7 +303,7 @@ class Verification:
         )
         self.report["branch_commits"] = {
             branch: self.run(["git", "rev-parse", f"origin/{branch}"])
-            for branch in BRANCHES
+            for branch in ["g1/bugfixes", *BRANCHES]
         }
         self.report["environment"] = self.run(
             [
@@ -307,10 +313,14 @@ class Verification:
                 "print(sys.version); print('pinocchio',pinocchio.__version__,'casadi',casadi.__version__,'mujoco',mujoco.__version__)",
             ]
         )
+        self.run(["git", "switch", "--detach", "origin/g1/bugfixes"])
+        self.verify("branch-0-bugfixes", [0])
         for step, branch in enumerate(BRANCHES, 1):
             self.run(["git", "switch", "--detach", f"origin/{branch}"])
             self.verify(f"branch-{step}", LOCAL[step])
         self.run(["git", "switch", "-c", self.args.integration_branch, self.args.base])
+        self.run(["git", "merge", "--no-ff", "--no-edit", "origin/g1/bugfixes"])
+        self.verify("merge-0-bugfixes", [0])
         for step, branch in enumerate(BRANCHES, 1):
             self.run(["git", "merge", "--no-ff", "--no-edit", f"origin/{branch}"])
             self.verify(f"merge-{step}", list(range(1, step + 1)), combined=True)

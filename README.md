@@ -41,7 +41,12 @@ checkout and seven feature branches on `MoissanClub/lerobot`. See
 experimental runtime or close the broader motion, recovery, endurance, and native
 cleanup backlog. Matched waist models remain a separate prerequisite for waist work.
 
-**2026-09-11 contribution checkpoint:** all seven branches passed independently
+**2026-09-17 local revision:** a standalone bug-fix branch now precedes the seven
+feature branches, updated against current upstream. IK uses an action processor;
+optional hands compose under `UnitreeG1`. See the [revision and verification](docs/branch-stack-update-20260917.md).
+The coworker installer still pins the previously accepted release.
+
+**Historical 2026-09-11 contribution checkpoint:** all seven branches passed independently
 and after sequential merges in a fresh clone. `integration/g1-acceptance` at
 `d5e400bc` passed 275 regressions (one optional SONIC skip) plus one offscreen GPU
 test. Review checkout: `../lerobot-g1-review`. Fork `main` is unchanged; no GitHub

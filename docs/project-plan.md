@@ -13,7 +13,12 @@ XR, XR-video, generic-hand, and BrainCo feature branches. See the
 fresh-checkout merge reproduction. This contribution effort does not replace the
 experimental three-script DDS workflow or its remaining acceptance work.
 
-As of 2026-09-11, all seven branches are implemented and pushed. Fresh-clone
+The [September 17 revision](branch-stack-update-20260917.md) updates the local
+stack against upstream, adds a bug-fix-first branch and revises processor/hand
+integration. It supersedes the old source dependency graph, not the installed
+coworker release pin.
+
+At the historical 2026-09-11 checkpoint, all seven branches were implemented and pushed. Fresh-clone
 sequential merges passed through `integration/g1-acceptance` at `d5e400bc`:
 275 targeted regressions, one optional SONIC skip, and one separate offscreen GPU
 test. Next for this workstream is branch/PR review and manual X/headset acceptance

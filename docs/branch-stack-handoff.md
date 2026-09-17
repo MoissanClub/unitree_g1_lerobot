@@ -1,5 +1,21 @@
 # LeRobot Branch Reorganization Handoff
 
+## Resume Point: 2026-09-17
+
+The stack is updated locally to September 17 upstream, with a new bug-fix-first
+branch, action-processor IK and standard G1 optional-hand composition. Start with
+the [current revision and verification](branch-stack-update-20260917.md) and the
+new dependency table in the [branch plan](lerobot_g1_branching_refactor_plan.md).
+The September 11 material below describes the preserved prior acceptance release.
+Do not overwrite the coworker installer pin merely because a newer local branch exists.
+
+The updated cumulative branch is `integration/g1-acceptance-20260917` at
+`9936da56`. All branch and fresh sequential-merge checks passed; final result is
+287 targeted tests, one optional SONIC skip and one separate GPU test, plus both
+embodiments' headless examples. The new stack is committed locally, not pushed.
+Next: review the current diff/dependency graph, publish with ordinary fast-forward
+pushes, then perform manual X/headset acceptance before changing the installer pin.
+
 ## Operator Packaging Follow-Up
 
 The new [coworker installation path](coworker-installation.md) adds
@@ -60,11 +76,11 @@ reproduces the merge sequence locally with ordinary merge commits.
 - The native simulator uses the explicit embodiment URDF, fixed non-arm joints,
   collision-free arm dynamics, configured PD, and optional measured-pose gravity
   feedforward. Example launchers enable gravity compensation by default.
-- XR input is generic; G1 retargeting/IK belongs to the robot adapter.
+- XR input is generic; G1 retargeting uses a registered Cartesian action processor.
 - Video uses a same-host bounded RGB channel and an isolated input/display worker
   sharing one OpenXR session. The combined example renders the simulator in its
   local loop and is not a performance-tuned DDS deployment.
-- `G1WithHands` wraps the body rather than adding SDK dependencies to `UnitreeG1`.
+- New hand composition uses `UnitreeG1Config.hands`; `G1WithHands` is compatibility-only.
   BrainCo targets the audited 2.0.2 wheel; it uses module-level serial close.
 - Isaac Teleop's partial-startup cleanup required a guarded private ExitStack
   workaround. Native failures inside SDK context entry remain vendor-owned.
