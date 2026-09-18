@@ -9,7 +9,7 @@ for exact results, tested tips and reproduction commands.
 
 - Upstream base and fork `main`: `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
 - Combined contribution branch: `integration/g1-acceptance-20260917` at
-  `9936da569a19707c13b4d3de4f8f178dd1012ad9`.
+  `da1c0fcd5f6936560536e93af7e1528dbaaf75be`.
 - Installed operator release: still pinned to `d5e400bcefeccc93ba956ce876530e5283512df1`.
   Do not change that pin before reviewing the new stack with X and the headset.
 - No GitHub PRs have been opened or merged for this revision. Local sequential
@@ -26,7 +26,7 @@ is retained as history, not as instructions to recreate completed branches.
 |---|---|
 | `MoissanClub/lerobot`, locally `../lerobot-upstream` | LeRobot-native contributions and the dependency-ordered branch stack. |
 | `MoissanClub/unitree_g1_lerobot`, this repository | Operator packaging, experimental runtime, diagnostics, integration evidence and this plan. |
-| `../lerobot-acceptance-20260917-v4` | Fresh-clone review checkout of the verified cumulative branch. |
+| `../lerobot-acceptance-20260917-v6` | Fresh-clone sequential-merge review checkout; tree matches the published cumulative branch. |
 | `../lerobot` | Original editable checkout; preserve its existing modifications. |
 
 Paths are relative to this repository. The workspace-root copy of this plan is
@@ -41,7 +41,7 @@ all suites introduced so far plus the relevant cross-branch integration tests.
 
 | Order | Branch | Required source parent | Concrete verification goal | Branch-local suites |
 |---|---|---|---|---|
-| 0 | `g1/bugfixes` | Fork `main` at the pinned base | Position commands clear the SDK `dq` field, including stale velocity. No embodiment feature changes. | F |
+| 0 | `g1/bugfixes` | Fork `main` at the pinned base | Serialized position commands clear the SDK `dq` field and preserve correct targets, gains, torque and neighboring slots. No embodiment feature changes. | F |
 | 1 | `g1/embodiments` | `g1/bugfixes` | Correct G1-23 sparse mapping, G1-29 defaults, schemas, capability rejection and typed Hub configuration. | B |
 | 2 | `g1/cartesian-control` | `g1/embodiments` | FK/IK/gravity correctness, bounded failures, joint ordering and the registered Cartesian action processor. | B + C |
 | 3 | `g1/simulation` | `g1/cartesian-control` | Both embodiments move and return feedback in native MuJoCo; gravity on/off and changing camera frames work. Unsupported diagnostic hand models fail explicitly. | B + C + S |

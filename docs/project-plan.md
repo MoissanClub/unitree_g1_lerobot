@@ -13,7 +13,7 @@ Cartesian, simulation, XR, XR-video, generic-hand, and BrainCo feature branches.
 fresh-checkout merge reproduction. This contribution effort does not replace the
 experimental three-script DDS workflow or its remaining acceptance work.
 
-The published review candidate is `integration/g1-acceptance-20260917` at `9936da56`.
+The published review candidate is `integration/g1-acceptance-20260917` at `da1c0fcd`.
 Next is branch/PR review and manual X/headset acceptance, not branch creation.
 The installer remains pinned to the earlier `d5e400bc` operator release.
 Use the [branch plan](lerobot_g1_branching_refactor_plan.md) for the current graph,

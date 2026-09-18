@@ -3,9 +3,11 @@
 ## Verified Checkpoint
 
 All eight branch-local suites and eight sequential merges passed without merge
-conflicts. The final cumulative commit is
-`9936da569a19707c13b4d3de4f8f178dd1012ad9` on the published
-`integration/g1-acceptance-20260917` branch.
+conflicts after propagating the serialization regression from `e272f385`.
+The published `integration/g1-acceptance-20260917` commit is
+`da1c0fcd5f6936560536e93af7e1528dbaaf75be`. Its Git tree matches the fresh
+sequential-merge result recorded below; the merge histories differ because the
+published branch preserves the previous acceptance history.
 
 Upstream base: `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
 The [branch plan](lerobot_g1_branching_refactor_plan.md) owns the dependency graph
@@ -13,27 +15,31 @@ and acceptance goals; this guide owns test definitions, evidence and commands.
 
 | Order | Branch | Tested tip | Branch-local passes | Cumulative passes |
 |---|---|---|---:|---:|
-| 0 | `g1/bugfixes` | `f2579395` | 95 | 95 |
-| 1 | `g1/embodiments` | `3e7a7167` | 131 | 131 |
-| 2 | `g1/cartesian-control` | `157611d1` | 187 | 187 |
-| 3 | `g1/simulation` | `097b6872` | 202 | 202 |
-| 4 | `g1/xr` | `a4621adf` | 212 | 229 |
-| 5 | `g1/xr-video` | `9739dd17` | 223 | 242 |
-| 6 | `g1/hand-support` | `571854d6` | 217 | 257 |
-| 7 | `g1/brainco-hands` | `2d9d762b` | 247 | 287 |
+| 0 | `g1/bugfixes` | `e272f385` | 96 | 96 |
+| 1 | `g1/embodiments` | `0fc02288` | 164 | 164 |
+| 2 | `g1/cartesian-control` | `da227d49` | 220 | 220 |
+| 3 | `g1/simulation` | `743b7eca` | 235 | 235 |
+| 4 | `g1/xr` | `8444fd80` | 245 | 262 |
+| 5 | `g1/xr-video` | `38b02229` | 256 | 275 |
+| 6 | `g1/hand-support` | `506bbad0` | 250 | 290 |
+| 7 | `g1/brainco-hands` | `303b8c7c` | 280 | 320 |
 
-Each non-bugfix stage had one optional SONIC module skip. The video branch and
+No tests were skipped. Compared with the previous report, the parametrized
+serialization test adds one case and the available ONNX dependencies enable
+32 previously skipped SONIC cases. The video branch and
 cumulative stages 5-7 each also passed one separate offscreen GPU pixel test.
 Ruff lint/format, camera-channel mypy, installed SDK contract checks and both
 embodiments' headless launchers passed. No X, headset or physical acceptance is
 claimed for this revision. These are targeted suites, not the full LeRobot test tree.
 
-[Machine-readable commands and results](verification/lerobot-branch-stack-20260917.json).
-Full logs/JUnit XML remain locally in `outputs/branch-stack-20260917-v4/`.
+[Machine-readable commands and results](verification/lerobot-branch-stack-20260917-bugfix-update.json).
+Full logs/JUnit XML remain locally in `outputs/branch-stack-20260917-v6/`.
 The fresh source clone came from the local contribution repository; its exact
 tested branch tips are now published on origin. The Python environment was reused,
 so this does not establish clean-OS installation. The [September 11 report](verification/lerobot-branch-stack-20260911.json)
 is historical evidence for the older installer pin, not the current stack.
+The [earlier September 17 report](verification/lerobot-branch-stack-20260917.json)
+is preserved as evidence before this test-only update.
 
 ## Test Suites
 
@@ -61,6 +67,13 @@ The runner enables `G1_KINEMATICS_ASSETS`, `G1_RENDER_TESTS=1` and
 It runs the ordinary video suite excluding `real_offscreen_delivery_and_recovery`,
 then runs that test separately with `G1_VIDEO_GPU_TESTS=1` when `--gpu` is selected.
 Missing required dependencies/assets or unexpected skips fail acceptance.
+
+The motor-command regression uses real Unitree SDK messages to serialize at the
+publisher boundary and decode the transmitted fields. Install `unitree_sdk2py`
+and its CycloneDDS dependency in the test environment: the two parametrized cases
+must pass, not skip. No DDS participant or physical robot is created. They cover
+configured and overridden gains/torque, zero velocity, DDS slot indexing and an
+unchanged neighboring motor command.
 
 ## Reproduce Headlessly
 
