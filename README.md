@@ -42,7 +42,7 @@ and the [verification guide](docs/branch-stack-verification.md) for results and 
 | Use | Version | Acceptance |
 |---|---|---|
 | Coworker installer and root operator launcher | Pinned `d5e400bc`, from `integration/g1-acceptance` | Existing operator release; installation details in the coworker guide. |
-| Latest contribution review | `integration/g1-acceptance-20260917` at `da1c0fcd` | All eight branch/merge stages passed; 320 final tests, no skips and one separate GPU test. New X/headset review remains pending. |
+| Latest contribution review | `integration/g1-acceptance-20260918` | Simulation now precedes Cartesian; all eight branch/merge stages passed, with 328 final tests, no skips and one separate GPU test. New X/headset review remains pending. |
 
 The new stack uses action-processor IK and optional hands under `UnitreeG1`.
 Its automated acceptance does not change the installer pin. The experimental

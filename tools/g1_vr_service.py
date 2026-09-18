@@ -112,6 +112,11 @@ def viewer(args):
     window.mainloop()
 
 
+def simulation_joints(sim):
+    # The pinned release exposes this metadata through IK; newer joint-only sims do not.
+    return getattr(sim, "ik", sim)
+
+
 def simulator(args):
     import numpy as np
     import zmq
@@ -134,15 +139,16 @@ def simulator(args):
     try:
         robot.connect()
         sim = robot._native
+        joints = simulation_joints(sim)
         writer = FrameWriter(args.run_dir / "camera.rgb", 320, 240)
         socket.bind(endpoint(args))
         if not args.headless:
             spectator = FrameWriter(args.run_dir / "spectator.rgb", 320, 240)
             viewer_process = start_viewer(args)
-        q = np.zeros(sim.ik.size)
-        q[[0, sim.ik.size // 2]] = -0.4
-        q[[3, sim.ik.size // 2 + 3]] = 0.7
-        robot.send_action(sim.ik.arm_action(q))
+        q = np.zeros(joints.size)
+        q[[0, joints.size // 2]] = -0.4
+        q[[3, joints.size // 2 + 3]] = 0.7
+        robot.send_action(joints.arm_action(q))
         for _ in range(500):
             robot.step_simulation()
         last_command = time.monotonic()
@@ -157,11 +163,11 @@ def simulator(args):
                         q = validate_command(
                             message,
                             args.embodiment,
-                            sim.ik.size,
-                            sim.ik.lower,
-                            sim.ik.upper,
+                            joints.size,
+                            joints.lower,
+                            joints.upper,
                         )
-                        robot.send_action(sim.ik.arm_action(q))
+                        robot.send_action(joints.arm_action(q))
                         advanced += 1
                         last_command, holding = time.monotonic(), False
                     socket.send_json(
@@ -172,7 +178,7 @@ def simulator(args):
                         }
                     )
                 except ExpiredCommand:
-                    robot.send_action(sim.ik.arm_action(sim.data.qpos[sim.qadr].copy()))
+                    robot.send_action(joints.arm_action(sim.data.qpos[sim.qadr].copy()))
                     advanced += 1
                     holding = True
                     socket.send_json(
@@ -186,7 +192,7 @@ def simulator(args):
                 except (ValueError, KeyError, TypeError) as exc:
                     socket.send_json({"error": str(exc)})
             if not holding and time.monotonic() - last_command > 0.5:
-                robot.send_action(sim.ik.arm_action(sim.data.qpos[sim.qadr].copy()))
+                robot.send_action(joints.arm_action(sim.data.qpos[sim.qadr].copy()))
                 advanced += 1
                 holding = True
                 print("Command timeout: holding measured arm positions", flush=True)

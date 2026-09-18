@@ -3,11 +3,10 @@
 ## Verified Checkpoint
 
 All eight branch-local suites and eight sequential merges passed without merge
-conflicts after propagating the serialization regression from `e272f385`.
-The published `integration/g1-acceptance-20260917` commit is
-`da1c0fcd5f6936560536e93af7e1528dbaaf75be`. Its Git tree matches the fresh
-sequential-merge result recorded below; the merge histories differ because the
-published branch preserves the previous acceptance history.
+conflicts after the September 18 simulation-before-Cartesian reorder.
+The combined branch is `integration/g1-acceptance-20260918`; its exact commit
+is `published_integration.commit` in the recorded report below. The fresh trial's
+`final_commit` has an identical source tree but independent merge history.
 
 Upstream base: `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
 The [branch plan](lerobot_g1_branching_refactor_plan.md) owns the dependency graph
@@ -17,29 +16,29 @@ and acceptance goals; this guide owns test definitions, evidence and commands.
 |---|---|---|---:|---:|
 | 0 | `g1/bugfixes` | `e272f385` | 96 | 96 |
 | 1 | `g1/embodiments` | `0fc02288` | 164 | 164 |
-| 2 | `g1/cartesian-control` | `da227d49` | 220 | 220 |
-| 3 | `g1/simulation` | `743b7eca` | 235 | 235 |
-| 4 | `g1/xr` | `8444fd80` | 245 | 262 |
-| 5 | `g1/xr-video` | `38b02229` | 256 | 275 |
-| 6 | `g1/hand-support` | `506bbad0` | 250 | 290 |
-| 7 | `g1/brainco-hands` | `303b8c7c` | 280 | 320 |
+| 2 | `g1/simulation` | `5de18be1` | 187 | 187 |
+| 3 | `g1/cartesian-control` | `db9cdda5` | 243 | 243 |
+| 4 | `g1/xr` | `49df1ffd` | 270 | 270 |
+| 5 | `g1/xr-video` | `a3dc34c7` | 283 | 283 |
+| 6 | `g1/hand-support` | `1ccea9e4` | 202 | 298 |
+| 7 | `g1/brainco-hands` | `a13c95fa` | 232 | 328 |
 
-No tests were skipped. Compared with the previous report, the parametrized
-serialization test adds one case and the available ONNX dependencies enable
-32 previously skipped SONIC cases. The video branch and
+No tests were skipped. Eight additional simulation checks exercise the standard
+CLI without IK dependencies, zero/unsupported remote input, and mocked native
+viewer lifecycle on both embodiments. The video branch and
 cumulative stages 5-7 each also passed one separate offscreen GPU pixel test.
 Ruff lint/format, camera-channel mypy, installed SDK contract checks and both
 embodiments' headless launchers passed. No X, headset or physical acceptance is
 claimed for this revision. These are targeted suites, not the full LeRobot test tree.
 
-[Machine-readable commands and results](verification/lerobot-branch-stack-20260917-bugfix-update.json).
-Full logs/JUnit XML remain locally in `outputs/branch-stack-20260917-v6/`.
+[Machine-readable commands and results](verification/lerobot-branch-stack-20260918.json).
+Full logs/JUnit XML remain locally in `outputs/branch-stack-20260918-final/`.
 The fresh source clone came from the local contribution repository; its exact
 tested branch tips are now published on origin. The Python environment was reused,
 so this does not establish clean-OS installation. The [September 11 report](verification/lerobot-branch-stack-20260911.json)
 is historical evidence for the older installer pin, not the current stack.
-The [earlier September 17 report](verification/lerobot-branch-stack-20260917.json)
-is preserved as evidence before this test-only update.
+The [September 17 report](verification/lerobot-branch-stack-20260917-bugfix-update.json)
+is preserved as evidence before the dependency reorder.
 
 ## Test Suites
 
@@ -59,8 +58,9 @@ the branch plan and the runner's `SUITES` / `LOCAL` definitions.
 
 After cumulative merge 4, add `tests/integration/test_unitree_g1_xr_mujoco.py`.
 After cumulative merge 5, also add `tests/integration/test_unitree_g1_xr_video_mujoco.py`.
-Cumulative stages retain all earlier suites; do not add these integration modules
-to simulation-independent XR branch-local runs.
+Cumulative stages retain all earlier suites. XR/video branch-local runs now also
+include their integration modules because simulation is in their source ancestry.
+Simulation and generic/BrainCo hands do not run or require Cartesian suites.
 
 The runner enables `G1_KINEMATICS_ASSETS`, `G1_RENDER_TESTS=1` and
 `G1_BRAINCO_SDK_TESTS=1`; combined XR runs also use `G1_INTEGRATION_TESTS=1`.
@@ -100,7 +100,7 @@ python tools/verify_lerobot_branch_stack.py \
   --assets ../.cache/g1-cartesian-assets \
   --python /home/dwei/lerobot-sim/.venvs/lerobot-upstream/bin/python \
   --sdk-site-packages /home/dwei/.venvs/isaacteleop/lib/python3.12/site-packages \
-  --gpu --integration-branch integration/g1-pr-review-20260917
+  --gpu --integration-branch integration/g1-pr-review-20260918
 ```
 
 Use new checkout and output paths for every run. Interpreter/SDK paths above are
@@ -125,8 +125,8 @@ For a GitHub PR-by-PR trial, use a fresh clone and a new acceptance target:
 ```bash
 git clone git@github.com:MoissanClub/lerobot.git lerobot-pr-review
 cd lerobot-pr-review
-git switch -c integration/g1-pr-review-20260917 5aa74557f84c54d4b458f8b9643c5aa2982acfed
-git push -u origin integration/g1-pr-review-20260917
+git switch -c integration/g1-pr-review-20260918 5aa74557f84c54d4b458f8b9643c5aa2982acfed
+git push -u origin integration/g1-pr-review-20260918
 ```
 
 Open internal PRs against that target in orders 0-7, beginning with
@@ -153,9 +153,9 @@ For later merges expand B and append the cumulative suites; enable
 GPU gate described above. The recorded report contains exact successful commands
 for every stage, including lint, typing and SDK checks.
 
-The already-merged `integration/g1-acceptance-20260917` branch is for combined
+The already-merged `integration/g1-acceptance-20260918` branch is for combined
 review, not a fresh PR trial. Preserve the older `integration/g1-acceptance`
-branch and the installer pin.
+branch and the installer pin. Preserve the September 17 integration branch too.
 
 ## Manual X And Headset Review
 
@@ -189,3 +189,25 @@ Record the exact commit and review geometry, both arms, rotations, independent
 clutches, release/re-engagement, tracking loss and camera freshness/recovery.
 Prior headset reviews of the installed release do not transfer to the new revision.
 For supported combinations and physical gates, see the branch plan.
+
+## Simulation-Only CLI Review
+
+On `g1/simulation`, no Cartesian code is present. Prepare assets with the existing
+downloader, then run the standard command below in an X-capable terminal:
+
+```bash
+MUJOCO_GL=glfw lerobot-teleoperate \
+  --robot.type=unitree_g1 --robot.embodiment=g1_23 --robot.is_simulation=true \
+  --robot.simulation_urdf="$G1_KINEMATICS_ASSETS/g1_23.urdf" \
+  --robot.simulation_mesh_dir="$G1_KINEMATICS_ASSETS/meshes" \
+  --robot.sim_publish_images=false --robot.sim_onscreen=true \
+  --robot.gravity_compensation=true --robot.cameras='{}' \
+  --teleop.type=unitree_g1 --teleop.id=simulation_review --display_data=true
+```
+
+Repeat with the `g1_29` embodiment and URDF. This is a fixed-base posture/viewer
+check, not a GR00T locomotion demo. Rerun shows joint telemetry, not simulated
+camera frames in this mode. The headless equivalent of this entry point is tested
+with `sim_onscreen=false`, `display_data=false`, and a bounded `teleop_time_s`.
+See the [migration note](branch-stack-update-20260918.md#existing-checkouts) before
+reusing local branches created before the reorder.

@@ -18,8 +18,8 @@ from pathlib import Path
 
 BRANCHES = [
     "g1/embodiments",
-    "g1/cartesian-control",
     "g1/simulation",
+    "g1/cartesian-control",
     "g1/xr",
     "g1/xr-video",
     "g1/hand-support",
@@ -39,12 +39,12 @@ SUITES = {
         "tests/teleoperators/test_unitree_g1_teleoperator.py",
         "tests/robots/test_sonic_whole_body.py",
     ],
-    2: [
+    3: [
         "tests/robots/test_unitree_g1_cartesian_control.py",
         "tests/robots/test_unitree_g1_kinematics.py",
         "tests/robots/test_unitree_g1_action_processor.py",
     ],
-    3: [
+    2: [
         "tests/robots/test_unitree_g1_simulation.py",
         "tests/integration/test_unitree_g1_mujoco_runtime.py",
     ],
@@ -57,10 +57,10 @@ LOCAL = {
     1: [1],
     2: [1, 2],
     3: [1, 2, 3],
-    4: [1, 2, 4],
-    5: [1, 2, 4, 5],
-    6: [1, 2, 3, 6],
-    7: [1, 2, 3, 6, 7],
+    4: [1, 2, 3, 4],
+    5: [1, 2, 3, 4, 5],
+    6: [1, 2, 6],
+    7: [1, 2, 6, 7],
 }
 
 
@@ -201,10 +201,10 @@ class Verification:
         )
         env = dict(self.env)
         paths = [path for milestone in milestones for path in SUITES[milestone]]
-        if combined and 4 in milestones:
+        if 4 in milestones and 2 in milestones:
             env["G1_INTEGRATION_TESTS"] = "1"
             paths.append("tests/integration/test_unitree_g1_xr_mujoco.py")
-        if combined and 5 in milestones:
+        if 5 in milestones and 2 in milestones:
             paths.append("tests/integration/test_unitree_g1_xr_video_mujoco.py")
         counts = self.junit(
             name,

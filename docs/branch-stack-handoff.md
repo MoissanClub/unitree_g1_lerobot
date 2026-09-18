@@ -3,11 +3,11 @@
 ## Resume Here
 
 The updated stack is committed and pushed to `MoissanClub/lerobot`.
-Use `integration/g1-acceptance-20260917` at
-`da1c0fcd5f6936560536e93af7e1528dbaaf75be`.
+Use `integration/g1-acceptance-20260918`. Its exact tested tip is recorded in
+the [verification report](verification/lerobot-branch-stack-20260918.json).
 
 - Contribution checkout: `../lerobot-upstream`.
-- Fresh verified review checkout: `../lerobot-acceptance-20260917-v6`.
+- Fresh verified review checkout: `../lerobot-acceptance-20260918-final`.
 - Upstream base: `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
 - Source dependencies and PR order: [branch plan](lerobot_g1_branching_refactor_plan.md).
 - Commands, tested tips and evidence: [verification guide](branch-stack-verification.md).
@@ -18,7 +18,7 @@ editable checkout and this repository's experimental DDS/XR runtime.
 ## Verified State
 
 All eight branch-local suites and eight sequential merges passed without merge
-conflicts. The final merge passed **320 targeted tests**, no skips,
+conflicts. The final merge passed **328 targeted tests**, no skips,
 and one separate offscreen GPU test. Both embodiments' headless examples passed.
 No X window, live headset or physical device was used for this revision.
 
@@ -26,10 +26,13 @@ The stack now has a bug-fix-first branch, action-processor IK, upstream-compatib
 Hub configuration and optional hands under the standard `UnitreeG1` identity.
 No GitHub contribution PRs have been opened or merged.
 
-The user's `e272f385` SDK serialization regression is merged through every
-descendant. Production code is unchanged from the prior checkpoint. Both new
-serialization cases ran with the real SDK; 32 SONIC cases also ran now that
-their optional ONNX dependencies are available.
+The user's `e272f385` SDK serialization regression remains in every descendant.
+Simulation now depends only on embodiments; Cartesian follows simulation, then
+XR and video. Hands branch from simulation independently. Runtime joint simulation
+does not construct IK and uses MuJoCo gravity compensation. The existing
+`lerobot-teleoperate` entry point supports native viewing with explicit model paths.
+Read the [September 18 migration note](branch-stack-update-20260918.md) before
+updating local branches: old tips are archived, not merged into the reordered stack.
 
 ## Release Versus Review
 

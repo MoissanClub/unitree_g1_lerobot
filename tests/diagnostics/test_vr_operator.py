@@ -21,6 +21,13 @@ service = module("g1_vr_service")
 operator = module("g1_vr_operator")
 
 
+@pytest.mark.parametrize("legacy", [False, True])
+def test_simulation_joint_metadata_compatibility(legacy):
+    joints = SimpleNamespace(size=10, lower=-np.ones(10), upper=np.ones(10))
+    sim = SimpleNamespace(ik=joints) if legacy else joints
+    assert service.simulation_joints(sim) is joints
+
+
 def test_installation_completion_guidance(capsys):
     installer = module("install_g1_vr_sim")
     installer.print_next_steps(Path("/tmp/checkout with spaces"))
