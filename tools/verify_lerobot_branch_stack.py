@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Clone the fork, test feature branches, then merge and retest each milestone.
+"""Clone the fork, test the frozen feature stack, then merge and retest each milestone.
 
 No physical discovery, X windows, headset sessions, force pushes, or checkout
 deletion. The destination must not exist. Reports survive a failed verification.
@@ -16,16 +16,19 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-BRANCHES = [
-    "g1/keyboard-arm-control",
-    "g1/embodiments",
-    "g1/simulation",
-    "g1/cartesian-control",
-    "g1/xr",
-    "g1/xr-video",
-    "g1/hand-support",
-    "g1/brainco-hands",
-]
+ARCHIVE_PREFIX = "archive/feature-stack-20260918"
+STACK_COMMITS = {
+    "g1/bugfixes": "e272f3854e280628901c47cdaadf65ac86a5ca5e",
+    "g1/keyboard-arm-control": "2343d572a18f05fd658d4cae19838c4c096d1194",
+    "g1/embodiments": "50e0b6913c722cc689f4b8d56b1b0a46557e4a6d",
+    "g1/simulation": "987ff6ec25b236590373c4da86aa63bd55d032fd",
+    "g1/cartesian-control": "c1c8435a410b3bb3af177288f417f063c4e0b1e9",
+    "g1/xr": "101a996472c0d696297837cbb7d0cf99c11dedc9",
+    "g1/xr-video": "44a34f2528a9ae4d907169d926c170743712bfd6",
+    "g1/hand-support": "abcc1d676651c25f21779fb41fbbd85daea4fbc1",
+    "g1/brainco-hands": "476a8452df0aecd509aa4d5b5c93377f48e317fd",
+}
+BUGFIX_BRANCH, *BRANCHES = [f"{ARCHIVE_PREFIX}/{name}" for name in STACK_COMMITS]
 BASE = "5aa74557f84c54d4b458f8b9643c5aa2982acfed"
 SUITES = {
     0: [
@@ -304,6 +307,18 @@ class Verification:
                 ]
             )
 
+    def resolve_branches(self):
+        commits = {}
+        for name, expected in STACK_COMMITS.items():
+            branch = f"{ARCHIVE_PREFIX}/{name}"
+            actual = self.run(["git", "rev-parse", f"origin/{branch}"])
+            if actual != expected:
+                raise RuntimeError(
+                    f"Archived branch {branch} changed: expected {expected}, got {actual}"
+                )
+            commits[branch] = actual
+        return commits
+
     def execute(self):
         if self.checkout.exists():
             raise ValueError(
@@ -313,10 +328,7 @@ class Verification:
         self.run(
             ["git", "clone", self.args.remote, self.checkout], cwd=self.checkout.parent
         )
-        self.report["branch_commits"] = {
-            branch: self.run(["git", "rev-parse", f"origin/{branch}"])
-            for branch in ["g1/bugfixes", *BRANCHES]
-        }
+        self.report["branch_commits"] = self.resolve_branches()
         self.report["environment"] = self.run(
             [
                 self.args.python,
@@ -325,13 +337,13 @@ class Verification:
                 "print(sys.version); print('pinocchio',pinocchio.__version__,'casadi',casadi.__version__,'mujoco',mujoco.__version__)",
             ]
         )
-        self.run(["git", "switch", "--detach", "origin/g1/bugfixes"])
+        self.run(["git", "switch", "--detach", f"origin/{BUGFIX_BRANCH}"])
         self.verify("branch-0-bugfixes", [0])
         for step, branch in enumerate(BRANCHES, 1):
             self.run(["git", "switch", "--detach", f"origin/{branch}"])
             self.verify(f"branch-{step}", LOCAL[step])
         self.run(["git", "switch", "-c", self.args.integration_branch, self.args.base])
-        self.run(["git", "merge", "--no-ff", "--no-edit", "origin/g1/bugfixes"])
+        self.run(["git", "merge", "--no-ff", "--no-edit", f"origin/{BUGFIX_BRANCH}"])
         self.verify("merge-0-bugfixes", [0])
         for step, branch in enumerate(BRANCHES, 1):
             self.run(["git", "merge", "--no-ff", "--no-edit", f"origin/{branch}"])

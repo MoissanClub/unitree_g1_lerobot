@@ -6,8 +6,8 @@
 `MoissanClub/lerobot`. Its starting commit is
 `d89a1d0b5f628045cc73293bcdfa2dc6c0808549`; later development must carry its own
 verification evidence. `main` remains the upstream mirror. Existing PR heads
-`g1/bugfixes` and `g1/embodiments` are preserved, as are frozen feature branches
-used by the old branch-stack regression runner.
+`g1/bugfixes` and `g1/embodiments` are preserved. Frozen feature branches
+used by the historical regression runner now live under the archive prefix below.
 
 The installer uses the fixed tag `release/g1-vr-sim-d5e400bc` and still enforces
 commit `d5e400bcefeccc93ba956ce876530e5283512df1`. Changing the Git reference is
@@ -33,6 +33,40 @@ Archive branches and the release tag were published before removal of the old
 remote branch names. Old remote heads are deleted with expected-SHA leases.
 Local branch aliases in the contribution checkout can then be removed; other
 checkouts and worktrees are not silently switched, reset, or deleted.
+
+## Feature Stack Cleanup
+
+All nine historical stage tips are preserved under
+`archive/feature-stack-20260918/g1/<name>`. This includes snapshots of the two
+active PR branches, so future PR edits cannot change historical verification.
+The verifier checks exact commit pins before running any stage.
+
+| Original branch | Frozen SHA | Disposition of original name |
+|---|---|---|
+| `g1/bugfixes` | `e272f3854e280628901c47cdaadf65ac86a5ca5e` | Retained for PR #4664 and its worktree |
+| `g1/keyboard-arm-control` | `2343d572a18f05fd658d4cae19838c4c096d1194` | Retired; live submission is `submit/keyboard-arm-control` |
+| `g1/embodiments` | `50e0b6913c722cc689f4b8d56b1b0a46557e4a6d` | Retained for PR #4651 |
+| `g1/simulation` | `987ff6ec25b236590373c4da86aa63bd55d032fd` | Retired |
+| `g1/cartesian-control` | `c1c8435a410b3bb3af177288f417f063c4e0b1e9` | Retired |
+| `g1/xr` | `101a996472c0d696297837cbb7d0cf99c11dedc9` | Retired |
+| `g1/xr-video` | `44a34f2528a9ae4d907169d926c170743712bfd6` | Retired |
+| `g1/hand-support` | `abcc1d676651c25f21779fb41fbbd85daea4fbc1` | Retired |
+| `g1/brainco-hands` | `476a8452df0aecd509aa4d5b5c93377f48e317fd` | Retired |
+
+The seven retired names had no open upstream PRs when checked. Their remote
+deletions use expected-SHA leases, after archive publication and tooling updates.
+No code is deleted: cherry-picks can use archive refs or the original commit IDs.
+The existing `~/lerobot-dev/lerobot` local `g1/simulation` checkout is deliberately
+not changed; its old remote tracking ref will disappear on fetch/prune. Use
+`lerobot-switch dev/g1-integration` for development or select the archived
+simulation ref explicitly for historical review.
+
+Feature-ref verification: all nine archive commits matched their pinned SHAs;
+a fresh local clone replayed all nine merges without conflicts and produced a
+source tree identical to `d89a1d0b5f628045cc73293bcdfa2dc6c0808549`.
+The focused reference/installer/helper suite passed 38 tests. This ref-only
+migration did not rerun the historical 407 physics/SDK tests or headset checks;
+the unchanged source trees preserve that evidence at its original commits.
 
 ## Existing Development Checkouts
 

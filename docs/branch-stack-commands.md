@@ -1,6 +1,10 @@
 # Branch Acceptance Commands
 
 These commands describe the keyboard-first stack, not the older installer pin.
+They select frozen `archive/feature-stack-20260918/g1/*` snapshots, including
+snapshots of the two active PR heads. Use `dev/g1-integration` for ongoing work
+and `submit/keyboard-arm-control` for that live submission. Historical test counts
+apply to the frozen commits, not future PR edits.
 Use a configured environment with source imports verified. For the local workspace:
 
 ```bash
@@ -59,15 +63,15 @@ Import-only SDK checks do not detect this problem.
 
 | Selected branch | Exact branch-local pytest command |
 |---|---|
-| `g1/bugfixes` | `python -m pytest -q "${F[@]}"` |
-| `g1/keyboard-arm-control` | `python -m pytest -q "${F[@]}" "${K[@]}"` |
-| `g1/embodiments` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}"` |
-| `g1/simulation` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}"` |
-| `g1/cartesian-control` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}" "${C[@]}"` |
-| `g1/xr` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}" "${C[@]}" "${X[@]}"` |
-| `g1/xr-video` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}" "${C[@]}" "${X[@]}" "${V[@]}" -k 'not real_offscreen_delivery_and_recovery'` |
-| `g1/hand-support` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}" "${H[@]}"` |
-| `g1/brainco-hands` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}" "${H[@]}" "${R[@]}"` |
+| `archive/feature-stack-20260918/g1/bugfixes` | `python -m pytest -q "${F[@]}"` |
+| `archive/feature-stack-20260918/g1/keyboard-arm-control` | `python -m pytest -q "${F[@]}" "${K[@]}"` |
+| `archive/feature-stack-20260918/g1/embodiments` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}"` |
+| `archive/feature-stack-20260918/g1/simulation` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}"` |
+| `archive/feature-stack-20260918/g1/cartesian-control` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}" "${C[@]}"` |
+| `archive/feature-stack-20260918/g1/xr` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}" "${C[@]}" "${X[@]}"` |
+| `archive/feature-stack-20260918/g1/xr-video` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}" "${C[@]}" "${X[@]}" "${V[@]}" -k 'not real_offscreen_delivery_and_recovery'` |
+| `archive/feature-stack-20260918/g1/hand-support` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}" "${H[@]}"` |
+| `archive/feature-stack-20260918/g1/brainco-hands` | `python -m pytest -q "${F[@]}" "${K[@]}" "${B[@]}" "${S[@]}" "${H[@]}" "${R[@]}"` |
 
 After sequential merge 7, run the video-stage command plus `"${H[@]}"`; after
 merge 8 add both `"${H[@]}" "${R[@]}"`. Run the separate GPU gate at stages 6-8:
@@ -80,7 +84,7 @@ G1_VIDEO_GPU_TESTS=1 python -m pytest -q tests/teleoperators/test_unitree_g1_xr_
 ## Stage 1: Upstream G1-29 Keyboard
 
 ```bash
-lerobot-switch g1/keyboard-arm-control
+lerobot-switch archive/feature-stack-20260918/g1/keyboard-arm-control
 MUJOCO_GL=glfw lerobot-teleoperate \
   --robot.type=unitree_g1 --robot.is_simulation=true \
   --robot.sim_publish_images=false --robot.sim_onscreen=true --robot.cameras='{}' \
@@ -109,7 +113,7 @@ test exercises this real CLI path, not a replacement launcher.
 ## Stage 2: Embodiments
 
 ```bash
-lerobot-switch g1/embodiments
+lerobot-switch archive/feature-stack-20260918/g1/embodiments
 MUJOCO_GL=glfw lerobot-teleoperate \
   --robot.type=unitree_g1 --robot.embodiment=g1_29 --robot.is_simulation=true \
   --robot.sim_publish_images=false --robot.sim_onscreen=true --robot.cameras='{}' \
@@ -124,7 +128,7 @@ configuration; there is no second `--teleop.embodiment` selection.
 ## Stage 3: Native Simulation
 
 ```bash
-lerobot-switch g1/simulation
+lerobot-switch archive/feature-stack-20260918/g1/simulation
 python examples/unitree_g1/prepare_cartesian_assets.py --output "$G1_KINEMATICS_ASSETS" --meshes
 MODEL=g1_29
 MUJOCO_GL=glfw lerobot-teleoperate \
@@ -145,7 +149,7 @@ and collision-free, and does not simulate locomotion or articulated hands.
 ## Stage 4: Cartesian
 
 ```bash
-lerobot-switch g1/cartesian-control
+lerobot-switch archive/feature-stack-20260918/g1/cartesian-control
 MUJOCO_GL=egl python examples/unitree_g1/verify_cartesian_control.py \
   --assets "$G1_KINEMATICS_ASSETS" --camera-azimuth -135
 ```
@@ -162,7 +166,7 @@ XR-only branch. This corrects the earlier proposed stage-5 launcher command.
 After starting CloudXR separately and configuring `XR_RUNTIME_JSON` as appropriate:
 
 ```bash
-lerobot-switch g1/xr-video
+lerobot-switch archive/feature-stack-20260918/g1/xr-video
 python examples/unitree_g1/run_xr_simulation.py \
   --assets "$G1_KINEMATICS_ASSETS" --embodiment g1_29 --steps 0
 python examples/unitree_g1/run_xr_simulation.py \

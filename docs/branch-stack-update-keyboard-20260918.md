@@ -72,7 +72,7 @@ For the new keyboard branch:
 
 ```bash
 git fetch origin
-lerobot-switch g1/keyboard-arm-control
+lerobot-switch submit/keyboard-arm-control
 ```
 
 For each old local feature name you already have, preserve it before switching

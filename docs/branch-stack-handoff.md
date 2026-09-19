@@ -12,7 +12,7 @@ the [verification report](verification/lerobot-branch-stack-keyboard-20260918.js
 - Upstream base: `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
 - Source dependencies and PR order: [branch plan](lerobot_g1_branching_refactor_plan.md).
 - Commands, tested tips and evidence: [verification guide](branch-stack-verification.md).
-- Copy-paste commands for each branch: [acceptance commands](branch-stack-commands.md).
+- Copy-paste commands for each archived stage: [acceptance commands](branch-stack-commands.md).
 
 Paths are relative to this repository. Preserve the original `../lerobot`
 editable checkout and this repository's experimental DDS/XR runtime.
@@ -61,8 +61,9 @@ installer pin simply because the newer branch passed automated tests.
    on the new cumulative commit for G1-29 and G1-23. Record the commit, setup and
    observations, including independent arms, release/re-engagement and camera recovery.
 3. After manual acceptance, explicitly decide whether to promote the operator pin.
-4. For a PR-by-PR trial, start from the current pinned base and merge all nine
-   branches in order, beginning with `g1/bugfixes`. Rerun the cumulative suites
+4. To reproduce the historical trial, start from its pinned base and merge all nine
+   `archive/feature-stack-20260918/g1/*` snapshots in order, beginning with
+   `archive/feature-stack-20260918/g1/bugfixes`. Rerun the cumulative suites
    after every merge; the already-combined branch is not that trial's target.
 5. Resolve packaging/API/provenance review before upstream submission. Plan physical
    validation separately; G1-23 hardware and BrainCo simulation remain gated.

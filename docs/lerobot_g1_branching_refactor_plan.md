@@ -23,6 +23,12 @@ by creation or local merging of these branches.
 
 ## Branches And Acceptance Goals
 
+The table preserves original stage names. Their frozen checkout refs are
+`archive/feature-stack-20260918/<original-name>`; the command guide and verifier
+use those refs and exact SHAs. Only `g1/bugfixes` and `g1/embodiments` remain
+active PR heads. Other original feature names have been retired; future work
+uses `dev/g1-integration`, short-lived `work/*`, and curated `submit/*` branches.
+
 | Order | Branch | Required source parent | Verification goal | Suites introduced |
 |---|---|---|---|---|
 | 0 | `g1/bugfixes` | Pinned upstream base | Correct serialized position-command velocity, gains, torque and neighboring slots. | F |

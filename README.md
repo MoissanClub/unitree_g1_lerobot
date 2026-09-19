@@ -35,8 +35,10 @@ systematic controller lifecycle testing, and physical-robot validation remain pe
 **Experimental history:** [Rung 4 handoff](docs/rung4-handoff.md).
 **Future experiments:** [non-physical acceptance and reliability work](docs/future-non-physical-work.md).
 The LeRobot working branch is `dev/g1-integration` in `MoissanClub/lerobot`,
-checked out locally in `../lerobot-upstream`. Older feature refs remain frozen
-for extraction and regression verification. Former integration checkpoints now
+checked out locally in `../lerobot-upstream`. Older feature snapshots live under
+`archive/feature-stack-20260918/g1/*` for extraction and regression verification.
+Only `g1/bugfixes` and `g1/embodiments` retain their names for active PRs.
+Former integration checkpoints now
 live under `archive/integration/*`; see the [reference migration](docs/branch-reference-migration-20260918.md).
 Use the [branch plan](docs/lerobot_g1_branching_refactor_plan.md) for dependencies
 and the [verification guide](docs/branch-stack-verification.md) for results and commands.

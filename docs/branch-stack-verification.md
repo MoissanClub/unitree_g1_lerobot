@@ -7,6 +7,10 @@ Ongoing development: `dev/g1-integration`. Historical machine-readable reports
 retain the branch names used at execution time; use the exact recorded SHAs and
 the [reference mapping](branch-reference-migration-20260918.md), not a moving
 development tip, to reproduce those results.
+The runner now resolves `archive/feature-stack-20260918/g1/*` and rejects any
+SHA differing from this checkpoint. The short `g1/*` labels in the table below
+identify original stages, not current checkout instructions; use the archived
+refs in the [command guide](branch-stack-commands.md).
 Upstream base: `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
 The [branch plan](lerobot_g1_branching_refactor_plan.md) owns dependencies;
 [acceptance commands](branch-stack-commands.md) owns the exact per-stage pytest
@@ -106,18 +110,18 @@ checkouts or contacts physical hardware. Without `--gpu`, its status is
 
 ## Manual PR And Visual Review
 
-For PR-by-PR verification, create a fresh target from the pinned upstream base:
+To reproduce historical PR-by-PR verification, create a fresh target from the pinned upstream base:
 
 ```bash
-git switch -c integration/g1-keyboard-pr-review 5aa74557f84c54d4b458f8b9643c5aa2982acfed
-git push -u origin integration/g1-keyboard-pr-review
+git switch -c verification/g1-keyboard-pr-review 5aa74557f84c54d4b458f8b9643c5aa2982acfed
+git push -u origin verification/g1-keyboard-pr-review
 ```
 
-Open internal PRs against that target in plan order 0-8. Merge with merge commits,
+Use the archived feature refs for internal PRs against that target in stage order 0-8. Merge with merge commits,
 fetch/pull after each merge, and run the cumulative suites in the
 [command guide](branch-stack-commands.md#exact-test-suites). Do not squash shared
 dependency ancestry. The existing combined acceptance branch is not a fresh trial.
-Upstream-facing PR bases follow the plan's source-parent column instead.
+This historical reproduction does not define the new upstream submission dependencies.
 
 Run manual keyboard commands on stage 1, repeat G1-29 on stage 2, and review both
 native models on stage 3. Then review Cartesian sweeps and live XR/video as described
