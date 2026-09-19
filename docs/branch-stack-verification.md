@@ -12,10 +12,10 @@ SHA differing from this checkpoint. The short `g1/*` labels in the table below
 identify original stages, not current checkout instructions; use the archived
 refs in the [command guide](branch-stack-commands.md).
 Upstream base: `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
-The [branch plan](lerobot_g1_branching_refactor_plan.md) owns dependencies;
-[acceptance commands](branch-stack-commands.md) owns the exact per-stage pytest
-and interactive commands. The [revision note](branch-stack-update-keyboard-20260918.md)
-explains migration from existing local branches.
+The [archived branch plan](archive/planning-checkpoint-20260918/lerobot_g1_branching_refactor_plan.md)
+records this historical topology; [acceptance commands](branch-stack-commands.md)
+provides its exact per-stage tests. Current submission dependencies belong to the
+[execution plan](project-plan.md), not this frozen series.
 
 The nine branch-local and nine sequential-merge stages are recorded in the
 [machine-readable report](verification/lerobot-branch-stack-keyboard-20260918.json).

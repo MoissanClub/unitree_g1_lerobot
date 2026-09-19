@@ -1,7 +1,7 @@
 # Native G1-23 Live Simulator
 
 This document covers the existing experimental DDS backend and stable launcher.
-The fork's `g1/simulation` branch instead provides an opt-in in-process native
+The fork's archived simulation stage instead provides an opt-in in-process native
 arm simulator for both embodiments, without DDS. Both implementations remain
 separate; see [fork verification](branch-stack-verification.md) for its commands.
 
@@ -118,28 +118,31 @@ publication-matched callback under the combined test suite. Callback lifetime or
 teardown order is suspected, but ownership among LeRobot, the Unitree SDK, and
 CycloneDDS bindings remains unresolved. DDS integration tests use fresh subprocesses,
 matching the launchers; this is containment, not a root-cause fix. See
-[Finding 10](vr-teleop-g1-23-ladder.md#finding-10-dds-session-teardown) for the debugger
+[Finding 10](archive/planning-checkpoint-20260918/vr-teleop-g1-23-ladder.md#finding-10-dds-session-teardown) for the debugger
 evidence, LeRobot's missing explicit channel cleanup, and the SDK-only reproducer plan.
 Restart the simulator/bridge process between sessions instead of relying on repeated
 connect/disconnect in a long-lived interpreter.
 
 Verified: viewer-first startup, interactive confirmation, both-arm movement from a
 separate DDS sender, joint feedback, identity mismatch rejection, command-loss holding,
-and embedded connect/disconnect. Systematic per-joint acceptance, scripted Cartesian
-IK/DDS sweeps, timing thresholds, and systematic controller lifecycle testing remain Rung 4 work.
+and embedded connect/disconnect. Initial small-signal acceptance is recorded in
+[live control acceptance](live-control-acceptance.md). Broader Cartesian IK/DDS
+sweeps, timing thresholds, and systematic controller lifecycle testing remain
+in the [non-physical backlog](future-non-physical-work.md).
 The XR launcher now accepts `--embodiment g1_23`. Both variants pass headless
 separate and simultaneous simulated-controller motion and real CloudXR/OpenXR startup checks.
 Right-arm headset control is user-confirmed on both. The bridge defaults to `--hand-side both`;
 the user has now completed the dual-arm headset visual review. Exhaustive tracking-loss
 and reconnect testing is not implied.
-See [headless session commands](../README.md#embodiment-selection-and-headless-verification).
+See [headless session commands](operator-guide.md#headless-sessions).
 
 ### G1-29 Regression Check
 
 Local robot-camera capture is now available independently of the spectator viewer:
 add `--camera` to either embodiment's standalone simulator and use `./view_g1_camera.sh`
 as a separate consumer. Capture also works with `--headless`. The three-launcher
-camera matrix passed on both variants; this does not yet deliver video to the headset.
+camera matrix passed on both variants. Add `--video` to the XR bridge for headset
+delivery; basic headset video has also been user-reviewed, with scope recorded below.
 See [camera checkpoint](camera-streaming.md) for optics, IPC, and verification commands.
 
 Also tested with the existing backend:

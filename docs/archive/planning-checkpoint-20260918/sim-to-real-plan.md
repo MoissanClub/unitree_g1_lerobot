@@ -1,21 +1,40 @@
-# Physical Deployment Gates
+# Simulation and Sim-to-Real Work Plan
 
-This guide owns staged hardware acceptance, not project branch strategy.
-See the [execution plan](project-plan.md) for priorities and
-[architecture](architecture.md#physical-control-and-sonic) for control boundaries.
-Physical G1-29 is the preferred baseline when available, followed by separate G1-23
-acceptance. Unavailable hardware must be recorded, not treated as a passed gate.
+> Historical snapshot, archived during the documentation consolidation. Not current
+> setup, branch, or execution instructions. See the [current documentation](../../README.md).
 
-No stage is authorized merely by the plan, passing simulation, or a read-only report.
-Start physical control-authority design early, in parallel with simulation and upstream
-work. Name the responsible operator, applicable manufacturer procedure, support and
-stop arrangement, controller ownership, watchdog location, and reviewed operating limits.
-The source-specific experimental preflight audit is not automatically valid for the
-current development fork; re-audit its startup/reset/disconnect paths before motion.
+## Planning checkpoint: 2026-09-11
+
+Continue development in two workstreams, with proposed branch names `simulation`
+and `sim-to-real` starting from a shared checkpoint. This document records the plan;
+it does not establish that those Git branches exist or that hardware acceptance has passed.
+The workstreams span the existing robot, XR, and simulation code ownership tracks.
+
+These proposed experimental branch names are distinct from the completed
+`MoissanClub/lerobot` feature stack, including `g1/simulation`. That stack passed
+headless branch-local and sequential-merge tests; see the
+[branch plan](lerobot_g1_branching_refactor_plan.md). Its native arm simulator and
+BrainCo fake-SDK checks do not establish physical G1/hand acceptance or supersede
+the Stage 0 gates below. Merged-fork X/headset review also remains pending.
+
+- **Simulation:** follow the [non-physical acceptance plan](future-non-physical-work.md)
+  and [handoff](rung4-handoff.md). Small-signal per-joint DDS, IK-to-physics, and independent
+  geometry checks already pass. Next is broader motion acceptance, followed by recovery,
+  performance/endurance, and cleanup investigations.
+  Camera streaming is implemented and basic headset video was user-verified.
+- **Sim-to-real:** validate physical G1-29 first, then G1-23. For each embodiment,
+  progress from simple slow joint motion to scripted IK motion to XR teleoperation,
+  with the connection and acceptance gates below.
+
+Share trajectory generation, embodiment definitions, metrics, and report formats across
+the workstreams. Keep hardware connection and actuation explicit, and preserve simulation
+regressions when changing shared control code. The broader simulation backlog can continue
+independently; each physical stage needs evidence for its own prerequisites. Simulation
+acceptance and physical acceptance remain separately recorded.
 
 ## Stage 0: Read-only preflight and control handover
 
-Implemented tooling: [physical preflight and lifecycle audit](physical-preflight.md).
+Implemented tooling: [physical preflight and lifecycle audit](../../physical-preflight.md).
 Run `run_g1_physical_preflight.sh` for passive DDS observation and
 `verify_g1_physical_preflight.sh` for offline verification. Hardware observations and
 the reviewed command/stop contract remain pending; feedback success does not enable motion.
@@ -55,7 +74,7 @@ preflight plus this bounded joint-motion diagnostic.
 ## Stage 2: Scripted physical IK verification
 
 Build `unitree_g1_lerobot/diagnostics/physical/verify_g1_ik_physical.py`, comparable in purpose to
-[the MuJoCo diagnostic](../unitree_g1_lerobot/diagnostics/simulation/verify_g1_ik_mujoco.py), and run
+[the MuJoCo diagnostic](../../../unitree_g1_lerobot/diagnostics/simulation/verify_g1_ik_mujoco.py), and run
 it on the physical machine after Stage 1 passes. Reuse shared IK and trajectory helpers
 where appropriate; keep hardware startup, command limits, and shutdown explicit.
 

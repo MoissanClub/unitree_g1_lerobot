@@ -1,5 +1,8 @@
 # Coworker VR Simulation Installation
 
+This guide installs the **pinned release**, not latest development. To test the
+moving integration branch, use [Coworker: latest development](coworker-latest.md).
+
 This operator path uses the LeRobot fork's native arm simulator, not the legacy
 DDS launchers. Clone `MoissanClub/unitree_g1_lerobot`, then run from its root:
 

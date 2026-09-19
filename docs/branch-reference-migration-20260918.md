@@ -120,5 +120,8 @@ Completed checks for this migration:
 
 The pre-existing, not-yet-published development-helper files were updated locally
 without bundling that separate implementation into the installer migration commit.
-The actively edited consolidated plan and its editor swap file were left untouched;
-this note supersedes its earlier statement that the old integration names must remain.
+During that ref migration, the actively edited consolidated plan and its editor swap
+file were left untouched. The subsequent documentation consolidation replaced the
+plan with a pointer to the [current guides](README.md), preserving its original text
+in the planning archive. This migration record describes that earlier operation,
+not the current task list.

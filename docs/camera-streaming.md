@@ -1,7 +1,7 @@
 # Robot Camera and Headset Video
 
 This guide describes the preserved experimental three-script DDS workflow.
-The new `g1/xr-video` contribution uses a generic same-host RGB channel and shared
+The archived fork video feature uses a generic same-host RGB channel and shared
 OpenXR input/display worker; its offscreen GPU and simulated-camera checks passed.
 Headset review of the merged fork is still pending and is not covered by the
 2026-09-10 confirmation below. Use the [fork verification guide](branch-stack-verification.md)

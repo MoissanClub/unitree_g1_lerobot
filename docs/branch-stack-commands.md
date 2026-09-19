@@ -12,8 +12,8 @@ source ~/lerobot-dev/lerobot-dev.sh
 cd ~/lerobot-dev/lerobot
 ```
 
-Migrate old local branch names first as described in the
-[revision note](branch-stack-update-keyboard-20260918.md). Run `lerobot-check`
+Use the [reference migration](branch-reference-migration-20260918.md) for retired
+branch names. Run `lerobot-check`
 after each switch. Do not run multiple Hub/DDS simulators on the same domain.
 Automated tests below are headless; visual commands are for an X-capable terminal
 (such as `ssh -Y`). X/GLX support depends on the client/server setup.

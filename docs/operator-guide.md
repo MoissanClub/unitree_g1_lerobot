@@ -5,16 +5,17 @@ For a coworker's new fork-based setup, use the
 LeRobot dependency and supervises three native service processes. The detailed
 DDS commands below remain a separate, preserved workflow.
 
-Supporting Unitree G1 integration in LeRobot for MuJoCo simulation and real robot workflows across G1-29 and G1-23 variants.
+These commands operate the experimental G1-29/G1-23 simulation stack. They do not
+implement or authorize physical teleoperation.
 
-This guide preserves detailed launch procedures. The [three-track project plan](project-plan.md)
-and [README](../README.md) define current ownership and status. Commands below run
+This guide preserves detailed launch procedures. The [execution plan](project-plan.md)
+and [architecture](architecture.md) define current ownership and status. Commands below run
 from the repository root, not from this docs directory.
 
 **Repository scope:** these are the preserved experimental DDS/CloudXR launchers.
-The separate contribution stack is complete and headless-verified; use the
+The frozen contribution checkpoint has separate headless evidence; use the
 [branch verification guide](branch-stack-verification.md) for commands in
-`../lerobot-g1-review`. Do not mix its environment/setup with the patch procedure
+the archived fork snapshots. Do not mix their environment/setup with the patch procedure
 below. X/headset acceptance of the new fork remains a separate manual review.
 
 ## Repository Layout
@@ -27,7 +28,7 @@ unitree_g1_lerobot/
   diagnostics/     # shared/, backends/, simulation/, xr/, physical/ verification tools
 assets/g1/         # Vendored robot assets
 configs/           # CloudXR runtime configuration
-docs/              # Validation ladder and installation notes
+docs/              # Current guides, operational references, evidence and archives
 tests/             # robots/, simulation/, xr/, diagnostics/, fixtures/
 run_*.sh           # Stable root launch commands
 ```
@@ -37,16 +38,16 @@ For direct Python commands, run `python -m unitree_g1_lerobot.<area>.<module>` f
 the repository root with the appropriate environment. Running nested Python files by
 filename is not supported. Existing launchers use the established environments.
 For the new configurable G1-23 class, first apply the LeRobot embodiment patch as
-described in [architecture](architecture.md#configurable-g1-runtime-structure).
+described in the [experimental runtime reference](archive/planning-checkpoint-20260918/architecture.md#configurable-g1-runtime-structure).
 
-See the [three-track project plan](project-plan.md) for remaining work,
+See the [execution plan](project-plan.md) for remaining work,
 and [architecture and upstream boundaries](architecture.md) for contribution scope.
 
-At the 2026-09-10 end-of-day checkpoint, migration `bbc08f4` and all seven comparison
-launchers are verified. The next task is broader motion acceptance using the existing
-live verification launcher, followed by recovery and performance work. Start from the
-[latest handoff](rung4-handoff.md) and [ordered backlog](future-non-physical-work.md);
-launch/setup procedures below remain reference instructions, not unfinished bring-up tasks.
+At the 2026-09-10 checkpoint, migration `bbc08f4` and the comparison launchers had
+verification evidence. Remaining experimental work is in the
+[non-physical backlog](future-non-physical-work.md); product priorities are in the
+execution plan. Launch/setup procedures below are reference instructions, not a
+second roadmap or unfinished bring-up checklist.
 
 ## Isaac Teleop CloudXR Scripts
 
@@ -110,9 +111,9 @@ python -m unitree_g1_lerobot.xr.xr_controller_cloudxr_smoke_test --external-clou
 Expected result: the script connects to the existing CloudXR runtime and prints live
 controller pose/squeeze values from the headset.
 
-## Rung 3: XR Controller To G1 MuJoCo
+## XR Controller To G1 MuJoCo
 
-Rung 3 joins the CloudXR controller path with the G1 IK/MuJoCo path. Use the
+The XR bridge joins the CloudXR controller path with the G1 IK/MuJoCo path. Use the
 `lerobot-g1` conda environment through the repo-local wrapper; it keeps conda-forge
 Pinocchio/CasADi first and appends the existing Isaac Teleop venv only for XR imports.
 
@@ -123,7 +124,7 @@ cd ~/lerobot-sim/unitree_g1_lerobot
 ./run_g1_mujoco_keyboard.sh
 ```
 
-Validate rung 3 without headset or CloudXR:
+Validate the bridge without headset or CloudXR:
 
 ```bash
 cd ~/lerobot-sim/unitree_g1_lerobot
@@ -200,16 +201,16 @@ Restart the simulator and bridge processes between sessions. Repeated DDS sessio
 inside one Python interpreter exposed a native callback teardown crash; the headless
 verification uses process isolation as containment. This has not been conclusively
 assigned to LeRobot, the Unitree SDK, or CycloneDDS bindings. See
-[Finding 10](vr-teleop-g1-23-ladder.md#finding-10-dds-session-teardown).
+[Finding 10](archive/planning-checkpoint-20260918/vr-teleop-g1-23-ladder.md#finding-10-dds-session-teardown).
 
 Then put on the headset. In the headset browser, open
 `https://nvidia.github.io/IsaacTeleop/client`, use the `Quest3` profile, enter the
 workstation IP printed by `run_isaac_teleop.sh`, enter XR, and connect.
 
-This rung uses the headset for controller input only. The MuJoCo robot view is the Tk/X
-window opened by `run_g1_mujoco_dds_sim.sh`; the headset client may stay on its CloudXR
-control/status screen because `run_xr_g1_mujoco.sh` creates a headless OpenXR session and
-does not submit MuJoCo camera frames to VR yet.
+The commands above use the headset for controller input only. For robot-camera video,
+add `--camera` to the simulator and `--video` to the bridge; follow the
+[camera streaming guide](camera-streaming.md). The Tk/X spectator view is independent
+of the image submitted to the headset.
 
 Default behavior is conservative: before XR attaches, both arms hold the raised ready pose.
 After XR attaches, `--hand-side both` is the default: left controller drives the left
@@ -229,11 +230,11 @@ separately, then both together, including wrist rotation. Release one clutch whi
 moving the other, then re-engage after repositioning the released controller. Repeat
 with one controller temporarily untracked. Inspect both `left` and `right` log lines.
 G1-23's five-joint arms cannot match arbitrary position and orientation simultaneously.
-Finger actuation and robot-camera video are not added by this change.
+Finger actuation is outside this arm-control workflow.
 
-### Rung 3 Runtime Model
+### Runtime Model
 
-`run_isaac_teleop.sh` starts CloudXR as a separate process. The rung 3 script attaches to
+`run_isaac_teleop.sh` starts CloudXR as a separate process. The XR bridge attaches to
 that existing CloudXR/OpenXR runtime with `--external-cloudxr`.
 
 MuJoCo has two modes. Without `--external-g1-sim`, `unitree_g1_lerobot/xr/xr_to_g1_mujoco.py` creates
@@ -251,7 +252,7 @@ B: cd ~/lerobot-sim/unitree_g1_lerobot && ./run_isaac_teleop.sh
 Headset: connect to CloudXR after A, C, and B are ready
 ```
 
-## Rung 4: G1-23 Embodiment Bring-Up
+## G1-23 Model and Control Diagnostics
 
 Motor-driven verification is now available separately from the existing geometry/IK
 viewers:
@@ -268,7 +269,7 @@ These run the same supported-arm physics suite and produce side-by-side playback
 and numerical reports. See [motor configuration comparison](motor-config-comparison.md)
 for the source methodology, test conditions, and interpretation of oscillation/tracking.
 
-There are two side-by-side verification scripts for this rung.
+There are two side-by-side geometry/IK verification scripts.
 
 First, inspect the two native models in a stationary neutral pose:
 
@@ -315,7 +316,8 @@ Azimuth 180 is front, -90 is the robot's left, and +135 is its right-front.
 Negative elevation looks down from above. Change defaults in `unitree_g1_lerobot/simulation/g1_compare_ik_viewer.py`'s
 `parse_args()`; restart the launcher to apply camera changes to the precomputed frames.
 
-Current limitation: the native G1-23 panel is a visual/kinematic MuJoCo model compiled directly from URDF. It is not yet wrapped as a LeRobot Gym/DDS simulator.
+The comparison panel is a visual/kinematic MuJoCo model compiled directly from URDF,
+not a live DDS session. The separate live simulator is available below.
 
 ### Planning and Acceptance
 
@@ -327,14 +329,42 @@ Native live G1-23 is now available with:
 
 See [G1-23 live simulator](g1-23-live-simulator.md) for the viewer-first diagnostic,
 Enter confirmation, supported-arm scope, and tests. Select the same `--embodiment`
-on the simulator, XR bridge, and CloudXR launcher. All three support `--headless`
-for noninteractive startup; see [headless verification](../README.md#embodiment-selection-and-headless-verification).
+on the simulator and XR bridge. CloudXR is robot-independent and has no embodiment
+parameter. All three support `--headless`; see [headless sessions](#headless-sessions).
 
 The user has reviewed the geometry, IK, and motor-comparison artifacts. The
-configuration-based G1 structure and native supported-arm DDS backend are tested;
-systematic per-joint/Cartesian control and headset acceptance remain pending.
+configuration-based G1 structure and native supported-arm DDS backend are tested.
+Initial small-signal live-control tests and dual-arm headset review are recorded;
+broader motion, timing, and recovery coverage remain in the
+[non-physical backlog](future-non-physical-work.md).
 
-See the [three-track project plan](project-plan.md) for current ownership and next work:
-Track 3 maintains the live simulator; Track 1 verifies robot/DDS control; Track 2 verifies
-XR integration. Robot-camera feedback and physical-robot validation are separate later
-acceptance gates. This guide documents operation, not a second independent roadmap.
+See the [execution plan](project-plan.md) for current priorities and evidence boundaries.
+Basic headset video has been reviewed; physical validation remains separately gated.
+This guide documents operation, not a second independent roadmap.
+
+## Headless Sessions
+
+For the experimental three-service workflow, run each command in its own terminal,
+in this order. Do not run the pinned single-command launcher concurrently.
+
+```bash
+./run_g1_mujoco_dds_sim.sh --embodiment g1_23 --headless --camera
+./run_xr_g1_mujoco.sh --embodiment g1_23 --headless --external-g1-sim --external-cloudxr --wait-for-cloudxr --video
+./run_isaac_teleop.sh --headless
+```
+
+Use `g1_29` on both robot-aware commands to test that embodiment. These commands
+omit viewer windows and confirmation prompts, but still use real XR services and
+perform startup diagnostics. Connect the headset after CloudXR is ready. Omit
+`--camera` and `--video` together for input-only operation. Headless does not mean
+mock input in this workflow; the pinned coworker launcher's mode defaults differ.
+
+For automated, bounded verification of both embodiments:
+
+```bash
+conda run --no-capture-output -n lerobot-g1 python -m unitree_g1_lerobot.diagnostics.xr.verify_xr_headless --video
+```
+
+Stop manual sessions first so their ports and DDS participants do not conflict.
+This checks simulated controller motion and real XR/video startup, not human
+headset acceptance. See [camera evidence](camera-streaming.md) for prerequisites.

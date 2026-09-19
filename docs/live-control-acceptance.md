@@ -106,5 +106,6 @@ timing comparisons, sustained runs, and native DDS/OpenXR cleanup investigations
 
 Independent simulator geometry is already implemented and passing for both embodiments.
 After migration `bbc08f4`, extend `diagnostics/shared/motion_cases.py` and
-`shared/acceptance_metrics.py`, keeping this baseline intact. The [end-of-day backlog](future-non-physical-work.md)
-defines the next task and acceptance boundaries; do not loosen budgets to conceal IK limits.
+`shared/acceptance_metrics.py`, keeping this baseline intact. The [technical backlog](future-non-physical-work.md)
+defines remaining coverage, while the [execution plan](project-plan.md) sets priorities.
+Do not loosen budgets to conceal IK limits.

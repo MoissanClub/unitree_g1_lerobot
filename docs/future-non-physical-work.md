@@ -1,103 +1,64 @@
-# Future Non-Physical Work
+# Non-Physical Acceptance Backlog
 
-## Contribution Update: 2026-09-18
+This is the technical simulation/reliability backlog, not an alternative branch plan.
+[Execution milestones](project-plan.md) determine product priorities and
+[development policy](development-model.md) determines submission order.
+No physical actuation is authorized by these diagnostics.
 
-The keyboard-first LeRobot stack adds standard-CLI arm jogging before embodiments
-and native simulation. The combined review branch is
-`archive/integration/g1-acceptance-keyboard-20260918`; ongoing work uses
-`dev/g1-integration`. Exact headless results and tested
-tips are in the [verification guide](branch-stack-verification.md).
-See the [branch plan](lerobot_g1_branching_refactor_plan.md) and
-[current handoff](branch-stack-handoff.md). Manual X/keyboard/headset review of the merged
-fork and PR review are next for that workstream. Its unit/integration recovery
-tests do not close the experimental DDS/headset/endurance backlog below.
+## Preserve the Baseline
 
-## Preserved Experimental Checkpoint: 2026-09-10
+Both embodiments already have mapping/IK/motor settings, supported-arm simulation,
+DDS feedback, bilateral XR, and historical user-reviewed camera delivery.
+Small-signal live acceptance recorded G1-29 46/46 cases and G1-23 38/38 cases.
+The different case counts reflect supported degrees of freedom, not automatically
+inferior acceptance. See [live results](live-control-acceptance.md) and
+[independent geometry](independent-geometry.md).
 
-For experimental development, resume with item 1 below; do not restart camera bring-up,
-the organization migration, or the completed small-signal acceptance work.
+The diagnostic organization migration is complete; do not repeat camera bring-up,
+folder migration or the original small-signal suite as if unimplemented.
+That baseline does not establish Hub parity, exhaustive headset recovery, whole-body
+control or a new fork revision's acceptance.
 
-Completed baseline:
-- Configurable G1-29/G1-23 simulation, embodiment mapping/IK/motor settings, gravity
-  compensation, DDS feedback, and bilateral XR control.
-- User-reviewed dual-arm headset control and basic robot-camera video. The video review
-  did not identify an embodiment or establish exhaustive reconnect/latency acceptance.
-- Live small-signal joint and Cartesian/orientation acceptance: G1-29 46/46 cases;
-  G1-23 38/38 cases. Independent publish-time geometry checks pass for both embodiments.
-- Model-source audit: neutral-waist arm geometry agrees in pelvis coordinates; legacy
-  and rev_1_0 waist layouts differ under roll/pitch. Do not shift the shoulders.
-- Diagnostic/test organization migrated in `bbc08f4`; source audit/geometry work in
-  `e0b95bd`. The migration passed the 72-test regression run, separate environment-gated
-  checks, both real headless XR/video matrices, and all seven Tk/EGL comparison launchers.
+## Work Items
 
-See [migration evidence](verification-organization.md#migration-verification-2026-09-10),
-[live acceptance](live-control-acceptance.md), and [model audit](g1-model-source-audit.md).
-Keep physical robot actuation out of this backlog.
+| Work | Required outcome |
+|---|---|
+| Broader motion | Larger Cartesian sweeps, conservative limit approaches, holds/reversals, unilateral and bilateral motion; separate reachable targets from workspace characterization |
+| Failure/recovery | Independent clutch release, invalid/lost tracking, stale input, session/camera/simulator restart and reconnect; verify no stale replay or unexpected re-engagement |
+| Performance/endurance | Matched trajectories with video off/on; physics real-time factor, loop jitter, tracking, frame age/drops and resource growth with declared duration/budgets |
+| Native lifecycle | SDK-only DDS teardown reproducer and explicit-cleanup comparison; investigate OpenXR shutdown independently |
+| Matched models | Before waist control, match G1-29 URDF/MJCF families and reverify full-chain FK, gravity/inertia, limits and meshes |
+| Hub parity | P2 in the execution plan: reuse public robot APIs and verify both embodiments without relabeling native-backend results |
 
-## Remaining Work, In Order
+Report target, commanded and measured poses; distinguish IK residual, actuator error,
+inactive-arm drift and limit margins. Set per-case thresholds before running.
+G1-23 five-joint arms cannot generally achieve arbitrary six-dimensional hand poses.
+Preserve independent pelvis-frame checks and LeRobot-default G1-29 versus derived
+G1-23 runtime gains. Derived G1-29 gains remain a separate benchmark, not an unnoticed
+runtime change. Live command-pose feedforward and exact-model measured-pose benchmark
+compensation are not interchangeable evidence.
 
-1. **Broader motion acceptance, both embodiments.** Preserve the existing baseline and
-   add larger Cartesian sweeps, conservative joint-limit approaches, holds, reversals,
-   single-arm/bilateral motion, and orientation changes. Separate known-reachable target
-   acceptance from workspace characterization. Report target, commanded, and measured
-   poses; distinguish IK residual, actuator error, inactive-arm drift, and limit margins.
-   Retain independent pelvis-frame geometry checks. Establish case-specific budgets
-   before acceptance runs; do not relax thresholds merely to make G1-23 pass. Its five-DoF
-   arms cannot generally satisfy arbitrary six-DoF hand poses. Simulation workspace
-   tests do not establish collision safety, maximum speed, payload rating, or hardware limits.
-2. **Failure and recovery.** Test independent clutch engagement/release, invalid/lost
-   tracking, stale commands, headset disconnect/reconnect, and simulator/camera/CloudXR
-   restarts. Define and verify hold/release behavior, recovery time, and absence of stale
-   replay or unexpected motion. Camera loss should show a placeholder without blocking
-   control. Preserve one command publisher and simulation-only safeguards. Automate
-   fault injection first; actual headset reconnect/presentation still needs observation.
-3. **Performance and endurance.** Compare identical trajectories with video off/on.
-   Measure physics real-time factor, control-loop timing/jitter, tracking error, video
-   frame rate/drops/age, and CPU/GPU/memory usage. Set session durations and thresholds
-   explicitly, then test for resource growth, stalls, and degraded tracking. Local frame
-   age is not end-to-end headset latency; measure headset latency separately.
-4. **Native lifecycle cleanup.** Build a minimal Unitree-SDK-only reproducer for the DDS
-   callback teardown crash; compare explicit cleanup before assigning responsibility to
-   CycloneDDS, the SDK, or LeRobot. Fresh-process tests remain containment, not a fix.
-   Investigate `XR_ERROR_SESSION_NOT_STOPPING` separately. Clean process exit does not
-   prove correct OpenXR lifecycle handling. Bring this work forward if it blocks item 2.
-5. **Matched model families, conditional on waist control.** Before articulated-waist
-   experiments, select a matched G1-29 URDF/MJCF family and reverify full-chain FK,
-   gravity/inertias, limits, meshes, and control. This is not a prerequisite for continuing
-   the supported-arm baseline. Physical model selection must use actual hardware identity.
-6. **Upstream contribution review.** The seven feature branches and fresh-clone merge
-   verification are complete. Review dependencies, API boundaries, provenance/licensing,
-   and setup reproducibility; perform merged-fork X/headset checks and submit focused
-   PRs. Do not redo the extraction. This is separate from experimental acceptance.
+DDS callback teardown responsibility remains unresolved among lifecycle/SDK/bindings;
+fresh-process tests contain the issue, not fix it. Do not describe it as a confirmed
+CycloneDDS transport defect. Bring lifecycle work forward if it blocks fault testing.
 
-## First Task Implementation Scope
+Camera frame age is not end-to-end headset latency. Test actual headset presentation
+and reconnection manually where automated observation is insufficient. Keep one command
+publisher; camera loss and control loss must have explicitly separate behavior.
 
-Use the migrated structure, not a second simulation/physical copy of the suite:
-- `diagnostics/shared/motion_cases.py`: broader case definitions alongside the baseline.
-- `diagnostics/shared/acceptance_metrics.py`: explicit per-case metrics and budgets.
-- `diagnostics/shared/reporting.py`: case metadata and provenance as needed.
-- `diagnostics/verify_live_control.py`: execute selected cases and assemble evidence.
-- `diagnostics/backends/simulation.py`: session durations and orchestration as needed.
-- `tests/diagnostics/`: generation, bounds, inactive-arm, metric, and reporting checks.
+## Implementation and Evidence
 
-These diagnostic paths are under `unitree_g1_lerobot/`. Keep root launchers stable.
-Do not change runtime gains, IK objectives, model assets, or hardware gates just to improve
-scores. Preserve LeRobot-default G1-29 runtime gains and the derived G1-23 runtime gains,
-with gravity compensation on. Derived G1-29 gains remain a separate motor comparison.
+Reuse `unitree_g1_lerobot/diagnostics/shared/` cases, metrics and reports;
+`backends/simulation.py` owns session execution. Extend
+`diagnostics/verify_live_control.py` and `tests/diagnostics/` as needed.
+Do not create separate simulation/physical copies of trajectory or metric logic.
 
-Expected deliverable: a selectable broader suite through `run_verify_live_control.sh`,
-automated tests, and archived case-by-case results for both embodiments, with limitations
-clearly distinguished from failures. Keep the original suite reproducible.
+Deliver a selectable broader suite through `run_verify_live_control.sh`, preserve
+the original suite, and retain per-case evidence for both embodiments. Do not change
+models, gains, IK objectives or thresholds merely to improve the pass count.
+Workspace tests do not establish collision safety, maximum hardware speed or payload.
 
-## Acceptance Boundaries
-
-Rung 4's core simulation/control capability, visual review, and initial numerical checks
-work; broader motion and lifecycle acceptance remain open. Rung 4V has basic headset-video
-verification; reconnect/performance acceptance remains open. Neither is fully accepted
-solely from visual review or the passing baseline. No physical safety or full-body balance
-claim follows. No mandatory new keyboard-control stage is needed.
-
-Archive configuration, revisions, source hashes, numerical reports, and logs. Historical
-verification JSON is immutable; retain compact summaries under `docs/verification/` and
-reference larger local artifacts explicitly. Physical G1-29 baseline (5a), then G1-23 (5b),
-remains the separate [sim-to-real workstream](sim-to-real-plan.md).
+Record revisions, configuration, source hashes, commands and numerical reports.
+Keep historical JSON unchanged; compact reports live in `docs/verification/`, with
+larger machine-local logs linked explicitly. Physical work is separately gated by
+[sim-to-real acceptance](sim-to-real-plan.md).

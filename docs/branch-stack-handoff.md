@@ -1,80 +1,20 @@
-# G1 Contribution Handoff
+# Development Handoff
 
-## Resume Here
+This is a navigation entry, not a separate roadmap.
 
-The updated stack is committed and pushed to `MoissanClub/lerobot`.
-Use `dev/g1-integration` for ongoing work. Its starting checkpoint is preserved as
-`archive/integration/g1-acceptance-keyboard-20260918`; the exact tested tip is recorded in
-the [verification report](verification/lerobot-branch-stack-keyboard-20260918.json).
+- **Develop:** `MoissanClub/lerobot`, branch `dev/g1-integration`.
+- **Plan next work:** [execution plan](project-plan.md#next-actions).
+- **Review rules and branch roles:** [development model](development-model.md).
+- **Design constraints:** [architecture](architecture.md).
+- **Install the stable operator release:** [coworker guide](coworker-installation.md).
+- **Reproduce the old tested series:** [verification](branch-stack-verification.md)
+  and [archive-based commands](branch-stack-commands.md).
+- **Understand renamed/deleted refs:** [migration record](branch-reference-migration-20260918.md).
 
-- Contribution checkout: `../lerobot-upstream`.
-- Fresh verified review checkout: `../lerobot-acceptance-keyboard-20260918-final`.
-- Upstream base: `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
-- Source dependencies and PR order: [branch plan](lerobot_g1_branching_refactor_plan.md).
-- Commands, tested tips and evidence: [verification guide](branch-stack-verification.md).
-- Copy-paste commands for each archived stage: [acceptance commands](branch-stack-commands.md).
+The next administrative task is the delivery ledger; the next contribution work is
+the bugfix/keyboard submissions and embodiment diff cleanup. G1-23 simulator placement
+and physical authority design proceed in parallel. Do not recreate the old nine-branch
+stack or infer physical readiness from its tests.
 
-Paths are relative to this repository. Preserve the original `../lerobot`
-editable checkout and this repository's experimental DDS/XR runtime.
-
-## Verified State
-
-All nine branch-local suites and nine sequential merges passed without merge
-conflicts. The final merge passed **407 targeted tests**, no skips,
-and one separate offscreen GPU test. Both embodiments' headless examples passed.
-No X window, live headset or physical device was used for this revision.
-
-The stack now has bugfix-first and keyboard-first branches, action-processor IK, upstream-compatible
-Hub configuration and optional hands under the standard `UnitreeG1` identity.
-PR #4664 uses `g1/bugfixes` and #4651 uses `g1/embodiments` as of the branch cleanup.
-Keep those heads intact; see the [reference migration](branch-reference-migration-20260918.md)
-for current branch roles. The stack topology below describes the
-frozen tested series, not the future submission dependencies.
-
-The user's `e272f385` SDK serialization regression remains in every descendant.
-Keyboard jogging first uses the existing G1-29 Hub simulator through the standard
-CLI, with no local native backend or Cartesian dependency. Embodiments then select
-the keyboard layout automatically from the robot configuration. Simulation depends
-on embodiments; Cartesian follows simulation, then
-XR and video. Hands branch from simulation independently. Runtime joint simulation
-does not construct IK and uses MuJoCo gravity compensation. The existing
-`lerobot-teleoperate` entry point supports native viewing with explicit model paths.
-Read the [keyboard-first migration note](branch-stack-update-keyboard-20260918.md) before
-updating local branches: old tips are archived, not merged into the reordered stack.
-
-## Release Versus Review
-
-The coworker installer still pins `d5e400bcefeccc93ba956ce876530e5283512df1`,
-now fetched through `release/g1-vr-sim-d5e400bc`, the earlier operator release.
-Former integration refs are mapped in the [migration note](branch-reference-migration-20260918.md).
-Its installation and three-process launcher are
-documented in the [coworker guide](coworker-installation.md).
-
-The new contribution stack is a separate review candidate. Previous headset
-reviews do not establish acceptance of its changed code. Do not move the
-installer pin simply because the newer branch passed automated tests.
-
-## Next Actions
-
-1. Review the branch diffs against the source parents in the plan.
-2. Run the [manual keyboard/X/headset checks](branch-stack-commands.md)
-   on the new cumulative commit for G1-29 and G1-23. Record the commit, setup and
-   observations, including independent arms, release/re-engagement and camera recovery.
-3. After manual acceptance, explicitly decide whether to promote the operator pin.
-4. To reproduce the historical trial, start from its pinned base and merge all nine
-   `archive/feature-stack-20260918/g1/*` snapshots in order, beginning with
-   `archive/feature-stack-20260918/g1/bugfixes`. Rerun the cumulative suites
-   after every merge; the already-combined branch is not that trial's target.
-5. Resolve packaging/API/provenance review before upstream submission. Plan physical
-   validation separately; G1-23 hardware and BrainCo simulation remain gated.
-
-## Boundaries
-
-Native simulation is fixed-base, arm-only and collision-free. The Hub model path
-and the experimental multiprocess DDS path are distinct. Offscreen video tests
-do not prove live CloudXR delivery, and fake/installed SDK contract tests do not
-prove physical motion or stop behavior. Broader experimental work remains in the
-[non-physical backlog](future-non-physical-work.md).
-
-Earlier notes are in the [archive](archive/README.md); the
-[Rung 4 handoff](rung4-handoff.md) is experimental history, not this stack's resume point.
+The previous detailed handoff is retained as a
+[dated snapshot](archive/planning-checkpoint-20260918/branch-stack-handoff.md).

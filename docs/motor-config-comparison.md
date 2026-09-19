@@ -12,7 +12,7 @@ unique raw traces and 34 previews. Sixteen regression tests passed with real-vie
 checks enabled, including pause/resume, navigation, restart, test selection, and
 robot-pixel motion in every panel. The extended hold pose is collision-free on both
 models, and the 1 kg demonstration has no torque saturation. These checks do not
-establish hardware speed/payload ratings or complete Rung 4 DDS/XR acceptance.
+establish hardware speed/payload ratings or complete live DDS/XR acceptance.
 
 Reproduce the regression checks from the project root in the `lerobot-g1` environment:
 
@@ -218,5 +218,7 @@ The first G1-29 tests showed this tradeoff: the derived gains reduced tracking e
 but step overshoot around equilibrium was higher than with LeRobot's defaults. Inspect
 the reports for the actual run rather than assuming higher gains are universally better.
 
-This completes a supported-arm physics comparison artifact. Rung 4 still needs the live
-G1-23 LeRobot/DDS integration, per-joint transport checks, and XR acceptance.
+This is a supported-arm physics comparison artifact. Basic live G1-23 DDS and XR
+functionality now has separate evidence; broader motion, recovery and timing checks
+remain in the [non-physical backlog](future-non-physical-work.md). This comparison
+does not replace those tests or physical acceptance.
