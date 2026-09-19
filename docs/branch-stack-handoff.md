@@ -3,7 +3,8 @@
 ## Resume Here
 
 The updated stack is committed and pushed to `MoissanClub/lerobot`.
-Use `integration/g1-acceptance-keyboard-20260918`. Its exact tested tip is recorded in
+Use `dev/g1-integration` for ongoing work. Its starting checkpoint is preserved as
+`archive/integration/g1-acceptance-keyboard-20260918`; the exact tested tip is recorded in
 the [verification report](verification/lerobot-branch-stack-keyboard-20260918.json).
 
 - Contribution checkout: `../lerobot-upstream`.
@@ -25,7 +26,10 @@ No X window, live headset or physical device was used for this revision.
 
 The stack now has bugfix-first and keyboard-first branches, action-processor IK, upstream-compatible
 Hub configuration and optional hands under the standard `UnitreeG1` identity.
-No GitHub contribution PRs have been opened or merged.
+PR #4664 uses `g1/bugfixes` and #4651 uses `g1/embodiments` as of the branch cleanup.
+Keep those heads intact; see the [reference migration](branch-reference-migration-20260918.md)
+for current branch roles. The stack topology below describes the
+frozen tested series, not the future submission dependencies.
 
 The user's `e272f385` SDK serialization regression remains in every descendant.
 Keyboard jogging first uses the existing G1-29 Hub simulator through the standard
@@ -41,7 +45,9 @@ updating local branches: old tips are archived, not merged into the reordered st
 ## Release Versus Review
 
 The coworker installer still pins `d5e400bcefeccc93ba956ce876530e5283512df1`,
-the earlier operator release. Its installation and three-process launcher are
+now fetched through `release/g1-vr-sim-d5e400bc`, the earlier operator release.
+Former integration refs are mapped in the [migration note](branch-reference-migration-20260918.md).
+Its installation and three-process launcher are
 documented in the [coworker guide](coworker-installation.md).
 
 The new contribution stack is a separate review candidate. Previous headset

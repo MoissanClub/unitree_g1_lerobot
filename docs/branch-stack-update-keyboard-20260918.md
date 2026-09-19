@@ -1,5 +1,9 @@
 # Keyboard-First Stack Revision: 2026-09-18
 
+Historical branch names below describe the publication at this checkpoint.
+They now resolve under `archive/integration/*`; use `dev/g1-integration` for
+ongoing work. See the [reference migration](branch-reference-migration-20260918.md).
+
 ## Changes
 
 The first feature PR now adds `unitree_g1_keyboard` to the standard
@@ -88,7 +92,7 @@ For combined review without migrating each old local branch:
 
 ```bash
 git fetch origin
-lerobot-switch integration/g1-acceptance-keyboard-20260918
+lerobot-switch dev/g1-integration
 ```
 
 Publishing rewritten features uses explicit expected-tip leases, so another

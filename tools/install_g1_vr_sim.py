@@ -11,7 +11,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMIT = "d5e400bcefeccc93ba956ce876530e5283512df1"
-BRANCH = "integration/g1-acceptance"
+RELEASE_TAG = "release/g1-vr-sim-d5e400bc"
 REPOSITORY = "https://github.com/MoissanClub/lerobot.git"
 
 
@@ -84,7 +84,7 @@ def main():
     prefix.mkdir(parents=True, exist_ok=True)
     checkout, env, assets = prefix / "lerobot", prefix / "env", prefix / "assets"
     if not checkout.exists():
-        run("git", "clone", "--branch", BRANCH, REPOSITORY, checkout)
+        run("git", "clone", "--branch", RELEASE_TAG, REPOSITORY, checkout)
         run("git", "-C", checkout, "checkout", "--detach", COMMIT)
     head = subprocess.check_output(
         ["git", "-C", str(checkout), "rev-parse", "HEAD"], text=True

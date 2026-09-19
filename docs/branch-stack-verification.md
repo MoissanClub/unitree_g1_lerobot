@@ -2,7 +2,11 @@
 
 ## Keyboard-First Checkpoint
 
-Review candidate: `integration/g1-acceptance-keyboard-20260918`.
+Frozen checkpoint: `archive/integration/g1-acceptance-keyboard-20260918`.
+Ongoing development: `dev/g1-integration`. Historical machine-readable reports
+retain the branch names used at execution time; use the exact recorded SHAs and
+the [reference mapping](branch-reference-migration-20260918.md), not a moving
+development tip, to reproduce those results.
 Upstream base: `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
 The [branch plan](lerobot_g1_branching_refactor_plan.md) owns dependencies;
 [acceptance commands](branch-stack-commands.md) owns the exact per-stage pytest

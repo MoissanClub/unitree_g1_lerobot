@@ -21,7 +21,8 @@ Working method and status log. September 2026.
 
 Current contribution review (2026-09-18): the keyboard-first stack introduces
 standard-CLI G1-29 joint jogging before embodiments and native G1-23 simulation.
-Use `integration/g1-acceptance-keyboard-20260918`; see the
+Use `dev/g1-integration` for development. Its starting checkpoint is preserved as
+`archive/integration/g1-acceptance-keyboard-20260918`; see the
 [branch plan](lerobot_g1_branching_refactor_plan.md),
 [verification evidence](branch-stack-verification.md), and
 [current handoff](branch-stack-handoff.md). Its nine branch milestones 0-8 are

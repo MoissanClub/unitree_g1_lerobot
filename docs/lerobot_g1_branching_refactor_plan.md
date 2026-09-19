@@ -2,6 +2,11 @@
 
 ## Keyboard-First Review Strategy
 
+This document preserves the tested keyboard-first series. Ongoing development
+uses `dev/g1-integration`; this frozen stack is not a prescription to rebuild
+all published branches for future submissions. See the
+[reference migration](branch-reference-migration-20260918.md) for archived checkpoints.
+
 The September 18 keyboard-first revision demonstrates arm control on upstream's
 existing G1-29 simulator before introducing G1-23 or a new simulation backend.
 All interactive keyboard control uses `lerobot-teleoperate`, not a new launcher.
@@ -11,7 +16,7 @@ tested commits and automated results; the [handoff](branch-stack-handoff.md)
 identifies the current review candidate and remaining manual work.
 
 Upstream base remains `5aa74557f84c54d4b458f8b9643c5aa2982acfed`.
-The new combined candidate is `integration/g1-acceptance-keyboard-20260918`.
+The frozen combined candidate is `archive/integration/g1-acceptance-keyboard-20260918`.
 The installer stays pinned to `d5e400bcefeccc93ba956ce876530e5283512df1`;
 automated acceptance does not promote that release. No upstream PR is implied
 by creation or local merging of these branches.
@@ -70,7 +75,7 @@ G1 stack, not every unrelated LeRobot dataset/policy/robot test.
 
 The previous published feature tips are preserved under
 `archive/20260918-keyboard/g1/<name>`. Earlier integration branches, including
-`integration/g1-acceptance-20260918`, remain unchanged for reproducibility.
+`archive/integration/g1-acceptance-20260918`, retain their commits for reproducibility.
 Publishing the reordered features uses explicit expected-tip force-with-lease,
 not unconditional force pushes. `g1/bugfixes` remains unchanged.
 

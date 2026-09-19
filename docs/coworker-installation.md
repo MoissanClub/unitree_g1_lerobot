@@ -22,13 +22,14 @@ DDS launchers. Clone `MoissanClub/unitree_g1_lerobot`, then run from its root:
 - Headset network access to the host's CloudXR ports. Configure the firewall
   deliberately; this installer does not change firewall rules or request sudo.
 
-The installer clones `MoissanClub/lerobot`'s `integration/g1-acceptance` branch
+The installer clones `MoissanClub/lerobot`'s `release/g1-vr-sim-d5e400bc` tag
 and checks out verified commit `d5e400bcefeccc93ba956ce876530e5283512df1` detached.
-The correct spelling is **acceptance**, not `acceptanc`. An existing clean checkout
+This release tag is kept fixed, independently of development. An existing clean checkout
 at that exact commit is reused; a different or modified checkout is never reset.
 
-The newer `integration/g1-acceptance-20260917` contribution branch is a separate
-review candidate, not what this installer installs. See the
+Ongoing development uses `dev/g1-integration`, not what this installer installs.
+Former integration branches are frozen under `archive/integration/*`; see the
+[branch reference migration](branch-reference-migration-20260918.md) and the
 [contribution handoff](branch-stack-handoff.md) for its acceptance status.
 Updating this repository does not automatically promote the dependency pin.
 

@@ -4,7 +4,8 @@
 
 The keyboard-first LeRobot stack adds standard-CLI arm jogging before embodiments
 and native simulation. The combined review branch is
-`integration/g1-acceptance-keyboard-20260918`; exact headless results and tested
+`archive/integration/g1-acceptance-keyboard-20260918`; ongoing work uses
+`dev/g1-integration`. Exact headless results and tested
 tips are in the [verification guide](branch-stack-verification.md).
 See the [branch plan](lerobot_g1_branching_refactor_plan.md) and
 [current handoff](branch-stack-handoff.md). Manual X/keyboard/headset review of the merged

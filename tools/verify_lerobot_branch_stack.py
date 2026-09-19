@@ -357,7 +357,7 @@ def main():
     )
     parser.add_argument("--remote", default="git@github.com:MoissanClub/lerobot.git")
     parser.add_argument("--base", default=BASE)
-    parser.add_argument("--integration-branch", default="integration/g1-acceptance")
+    parser.add_argument("--integration-branch", default="verification/g1-branch-stack")
     args = parser.parse_args()
     args.assets = args.assets.resolve()
     verification = Verification(args)

@@ -13,7 +13,9 @@ simulation, Cartesian, XR, XR-video, generic-hand, and BrainCo feature branches.
 fresh-checkout merge reproduction. This contribution effort does not replace the
 experimental three-script DDS workflow or its remaining acceptance work.
 
-The review candidate is `integration/g1-acceptance-keyboard-20260918`.
+Ongoing development uses `dev/g1-integration`; its starting checkpoint is
+`archive/integration/g1-acceptance-keyboard-20260918`. See the
+[reference migration](branch-reference-migration-20260918.md).
 Keyboard control first exercises upstream G1-29 simulation. Embodiments generalize
 its joint layout; native simulation, Cartesian and XR then build above it.
 Next is branch/PR review and manual X/headset acceptance, not branch creation.

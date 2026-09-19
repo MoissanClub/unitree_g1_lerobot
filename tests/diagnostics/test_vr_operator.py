@@ -1,6 +1,8 @@
 """Operator contracts independent of SDK, GPU, physical devices, and X."""
 
 import importlib.util
+import subprocess
+import sys
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -45,6 +47,71 @@ def test_installation_completion_guidance(capsys):
         "visual review",
     ):
         assert expected in output
+
+
+def test_installer_release_pin_is_unchanged():
+    installer = module("install_g1_vr_sim")
+    assert installer.RELEASE_TAG == "release/g1-vr-sim-d5e400bc"
+    assert installer.COMMIT == "d5e400bcefeccc93ba956ce876530e5283512df1"
+
+
+def test_installer_clones_release_tag_before_installing(tmp_path, monkeypatch):
+    installer = module("install_g1_vr_sim")
+    repo = tmp_path / "origin"
+    subprocess.run(["git", "init", "-b", "main", str(repo)], check=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.com",
+            "commit",
+            "--allow-empty",
+            "-m",
+            "release",
+        ],
+        check=True,
+    )
+    commit = subprocess.check_output(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
+    ).strip()
+    subprocess.run(["git", "-C", str(repo), "tag", installer.RELEASE_TAG], check=True)
+    monkeypatch.setattr(installer, "REPOSITORY", str(repo))
+    monkeypatch.setattr(installer, "COMMIT", commit)
+    monkeypatch.setattr(installer.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(installer.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(installer.shutil, "which", lambda name: name)
+    prefix = tmp_path / "installation"
+    monkeypatch.setattr(sys, "argv", ["installer", "--prefix", str(prefix)])
+    actual_run = installer.run
+
+    class DependenciesReached(Exception):
+        pass
+
+    def git_only(*args, **kwargs):
+        if args[0] != "git":
+            raise DependenciesReached
+        actual_run(*args, **kwargs)
+
+    monkeypatch.setattr(installer, "run", git_only)
+    with pytest.raises(DependenciesReached):
+        installer.main()
+    checkout = prefix / "lerobot"
+    assert (
+        subprocess.check_output(
+            ["git", "-C", str(checkout), "rev-parse", "HEAD"], text=True
+        ).strip()
+        == commit
+    )
+    assert (
+        subprocess.check_output(
+            ["git", "-C", str(checkout), "branch", "--show-current"], text=True
+        ).strip()
+        == ""
+    )
 
 
 @pytest.mark.parametrize("size,embodiment", [(10, "g1_23"), (14, "g1_29")])

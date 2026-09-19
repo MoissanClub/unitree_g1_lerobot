@@ -34,15 +34,18 @@ systematic controller lifecycle testing, and physical-robot validation remain pe
 **Resume contribution review:** [branch-stack handoff](docs/branch-stack-handoff.md).
 **Experimental history:** [Rung 4 handoff](docs/rung4-handoff.md).
 **Future experiments:** [non-physical acceptance and reliability work](docs/future-non-physical-work.md).
-The LeRobot contribution stack lives in `../lerobot-upstream` and is published on
-`MoissanClub/lerobot`: one bug-fix branch followed by seven feature branches.
+The LeRobot working branch is `dev/g1-integration` in `MoissanClub/lerobot`,
+checked out locally in `../lerobot-upstream`. Older feature refs remain frozen
+for extraction and regression verification. Former integration checkpoints now
+live under `archive/integration/*`; see the [reference migration](docs/branch-reference-migration-20260918.md).
 Use the [branch plan](docs/lerobot_g1_branching_refactor_plan.md) for dependencies
 and the [verification guide](docs/branch-stack-verification.md) for results and commands.
 
 | Use | Version | Acceptance |
 |---|---|---|
-| Coworker installer and root operator launcher | Pinned `d5e400bc`, from `integration/g1-acceptance` | Existing operator release; installation details in the coworker guide. |
-| Latest contribution review | `integration/g1-acceptance-keyboard-20260918` | Keyboard control first, then embodiments/simulation/Cartesian; nine branch/merge stages, 407 final tests, no skips and a separate GPU test. New X/keyboard/headset review remains pending. |
+| Coworker installer and root operator launcher | `release/g1-vr-sim-d5e400bc`, pinned `d5e400bc` | Existing operator release; installation details in the coworker guide. |
+| Ongoing development | `dev/g1-integration` | Starts from the tested keyboard-first checkpoint; verify subsequent changes independently. |
+| Frozen contribution checkpoint | `archive/integration/g1-acceptance-keyboard-20260918` | Nine branch/merge stages, 407 final tests, no skips and a separate GPU test at `d89a1d0b`. X/keyboard/headset review of this revision remains pending. |
 
 The new stack uses framework keyboard teleoperation, action-processor IK and optional hands under `UnitreeG1`.
 See [per-stage acceptance commands](docs/branch-stack-commands.md) for manual review.
