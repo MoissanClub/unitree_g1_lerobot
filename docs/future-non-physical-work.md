@@ -1,11 +1,13 @@
 # Future Non-Physical Work
 
-## Contribution Update: 2026-09-11
+## Contribution Update: 2026-09-18
 
-The seven-branch LeRobot port is implemented, pushed, and headless-verified in a
-fresh clone (275 cumulative regressions plus one GPU test; one optional SONIC skip).
+The keyboard-first LeRobot stack adds standard-CLI arm jogging before embodiments
+and native simulation. The combined review branch is
+`integration/g1-acceptance-keyboard-20260918`; exact headless results and tested
+tips are in the [verification guide](branch-stack-verification.md).
 See the [branch plan](lerobot_g1_branching_refactor_plan.md) and
-[current handoff](branch-stack-handoff.md). Manual X/headset review of the merged
+[current handoff](branch-stack-handoff.md). Manual X/keyboard/headset review of the merged
 fork and PR review are next for that workstream. Its unit/integration recovery
 tests do not close the experimental DDS/headset/endurance backlog below.
 

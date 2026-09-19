@@ -7,19 +7,20 @@ sequence and historical record, not the source-code ownership structure.
 
 ## Development Workstreams
 
-The upstream-oriented fork has a standalone bug-fix branch followed by embodiment,
+The upstream-oriented fork has standalone bug-fix and keyboard-arm-control branches followed by embodiment,
 simulation, Cartesian, XR, XR-video, generic-hand, and BrainCo feature branches. See the
 [branch stack verification](branch-stack-verification.md) for exact suites and
 fresh-checkout merge reproduction. This contribution effort does not replace the
 experimental three-script DDS workflow or its remaining acceptance work.
 
-The published review candidate is `integration/g1-acceptance-20260918`.
-Joint simulation depends only on embodiments; Cartesian and XR build above it.
+The review candidate is `integration/g1-acceptance-keyboard-20260918`.
+Keyboard control first exercises upstream G1-29 simulation. Embodiments generalize
+its joint layout; native simulation, Cartesian and XR then build above it.
 Next is branch/PR review and manual X/headset acceptance, not branch creation.
 The installer remains pinned to the earlier `d5e400bc` operator release.
 Use the [branch plan](lerobot_g1_branching_refactor_plan.md) for the current graph,
 the [contribution handoff](branch-stack-handoff.md) to resume, and the
-[dated revision note](branch-stack-update-20260918.md) for what changed.
+[dated revision note](branch-stack-update-keyboard-20260918.md) for what changed.
 The status table and numerical history below describe the preserved experimental
 runtime, not the contribution stack.
 

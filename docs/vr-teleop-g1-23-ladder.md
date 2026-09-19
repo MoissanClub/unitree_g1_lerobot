@@ -19,13 +19,15 @@ not separate source-code tracks.
 
 Working method and status log. September 2026.
 
-Current contribution checkpoint (2026-09-11): all seven feature branches and their
-fresh-clone sequential merges pass headless verification. The final fork checkpoint
-is `integration/g1-acceptance` @ `d5e400bc` (275 regressions plus one GPU test, one
-optional SONIC skip). See the [branch plan](lerobot_g1_branching_refactor_plan.md)
-and [current handoff](branch-stack-handoff.md). Branch milestones 1-7 are not these
-rung numbers. Fork X/headset review is still pending; the earlier headset evidence
-below applies to the preserved experimental runtime. Physical gates remain open.
+Current contribution review (2026-09-18): the keyboard-first stack introduces
+standard-CLI G1-29 joint jogging before embodiments and native G1-23 simulation.
+Use `integration/g1-acceptance-keyboard-20260918`; see the
+[branch plan](lerobot_g1_branching_refactor_plan.md),
+[verification evidence](branch-stack-verification.md), and
+[current handoff](branch-stack-handoff.md). Its nine branch milestones 0-8 are
+not these rung numbers. X/keyboard/headset review of the new fork remains pending;
+the earlier headset evidence below applies to the preserved experimental runtime.
+The installer still pins `d5e400bc`. Physical gates remain open.
 
 Preserved experimental checkpoint (2026-09-10): both embodiments pass small-signal joint/IK/DDS
 and independent geometry suites. Bilateral headset control and basic camera video have

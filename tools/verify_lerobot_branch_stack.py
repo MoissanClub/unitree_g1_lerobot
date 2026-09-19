@@ -17,6 +17,7 @@ from pathlib import Path
 
 
 BRANCHES = [
+    "g1/keyboard-arm-control",
     "g1/embodiments",
     "g1/simulation",
     "g1/cartesian-control",
@@ -33,34 +34,39 @@ SUITES = {
         "tests/teleoperators/test_unitree_g1_teleoperator.py",
     ],
     1: [
-        "tests/robots/test_unitree_g1.py",
-        "tests/robots/test_unitree_g1_utils.py",
+        "tests/utils/test_keyboard_input.py",
+        "tests/teleoperators/test_unitree_g1_keyboard.py",
+        "tests/integration/test_unitree_g1_keyboard_hub.py",
+        "tests/integration/test_unitree_g1_keyboard_cli.py",
+    ],
+    2: [
         "tests/robots/test_unitree_g1_embodiments.py",
-        "tests/teleoperators/test_unitree_g1_teleoperator.py",
         "tests/robots/test_sonic_whole_body.py",
     ],
-    3: [
+    4: [
         "tests/robots/test_unitree_g1_cartesian_control.py",
         "tests/robots/test_unitree_g1_kinematics.py",
         "tests/robots/test_unitree_g1_action_processor.py",
     ],
-    2: [
+    3: [
         "tests/robots/test_unitree_g1_simulation.py",
         "tests/integration/test_unitree_g1_mujoco_runtime.py",
+        "tests/integration/test_unitree_g1_keyboard_native.py",
     ],
-    4: ["tests/teleoperators/test_unitree_g1_xr.py"],
-    5: ["tests/teleoperators/test_unitree_g1_xr_video.py"],
-    6: ["tests/robots/test_unitree_g1_hands.py"],
-    7: ["tests/robots/test_unitree_g1_brainco_hands.py"],
+    5: ["tests/teleoperators/test_unitree_g1_xr.py"],
+    6: ["tests/teleoperators/test_unitree_g1_xr_video.py"],
+    7: ["tests/robots/test_unitree_g1_hands.py"],
+    8: ["tests/robots/test_unitree_g1_brainco_hands.py"],
 }
 LOCAL = {
-    1: [1],
-    2: [1, 2],
-    3: [1, 2, 3],
-    4: [1, 2, 3, 4],
-    5: [1, 2, 3, 4, 5],
-    6: [1, 2, 6],
-    7: [1, 2, 6, 7],
+    1: [0, 1],
+    2: [0, 1, 2],
+    3: [0, 1, 2, 3],
+    4: [0, 1, 2, 3, 4],
+    5: [0, 1, 2, 3, 4, 5],
+    6: [0, 1, 2, 3, 4, 5, 6],
+    7: [0, 1, 2, 3, 7],
+    8: [0, 1, 2, 3, 7, 8],
 }
 
 
@@ -80,6 +86,11 @@ class Verification:
             "stages": [],
             "gpu_requested": args.gpu,
             "manual_X_headset_hardware": "not_run",
+            "runtime_environment": {
+                key: os.environ.get(key)
+                for key in ("CYCLONEDDS_HOME", "HF_HOME", "HF_HUB_OFFLINE")
+            },
+            "hub_acceptance_revision": "68459ed68f6f68e1f661091dfcb6ebce44681aec",
         }
         self.env = dict(
             os.environ,
@@ -88,6 +99,7 @@ class Verification:
             G1_KINEMATICS_ASSETS=str(args.assets.resolve()),
             G1_RENDER_TESTS="1",
             G1_BRAINCO_SDK_TESTS="1",
+            G1_KEYBOARD_HUB_TESTS="1",
             HF_LEROBOT_HOME=str(self.output / "cache"),
         )
         self.env.pop("G1_VIDEO_GPU_TESTS", None)
@@ -181,7 +193,7 @@ class Verification:
         if changed:
             self.run([self.args.python, "-m", "ruff", "check", *changed])
             self.run([self.args.python, "-m", "ruff", "format", "--check", *changed])
-        if 5 in milestones:
+        if 6 in milestones:
             self.run(
                 [
                     self.args.python,
@@ -201,10 +213,10 @@ class Verification:
         )
         env = dict(self.env)
         paths = [path for milestone in milestones for path in SUITES[milestone]]
-        if 4 in milestones and 2 in milestones:
+        if 5 in milestones and 3 in milestones:
             env["G1_INTEGRATION_TESTS"] = "1"
             paths.append("tests/integration/test_unitree_g1_xr_mujoco.py")
-        if 5 in milestones and 2 in milestones:
+        if 6 in milestones and 3 in milestones:
             paths.append("tests/integration/test_unitree_g1_xr_video_mujoco.py")
         counts = self.junit(
             name,
@@ -212,7 +224,7 @@ class Verification:
             env=env,
             extra=["-k", "not real_offscreen_delivery_and_recovery"],
         )
-        if 4 in milestones:
+        if 5 in milestones:
             self.run(
                 [
                     self.args.python,
@@ -224,11 +236,11 @@ class Verification:
                 env=self.sdk_env,
             )
         gpu = None
-        if self.args.gpu and 5 in milestones:
+        if self.args.gpu and 6 in milestones:
             gpu_env = dict(self.sdk_env, G1_VIDEO_GPU_TESTS="1")
             gpu = self.junit(
                 f"{name}-gpu",
-                SUITES[5],
+                SUITES[6],
                 env=gpu_env,
                 extra=["-k", "real_offscreen_delivery_and_recovery"],
             )
@@ -323,7 +335,7 @@ class Verification:
         self.verify("merge-0-bugfixes", [0])
         for step, branch in enumerate(BRANCHES, 1):
             self.run(["git", "merge", "--no-ff", "--no-edit", f"origin/{branch}"])
-            self.verify(f"merge-{step}", list(range(1, step + 1)), combined=True)
+            self.verify(f"merge-{step}", list(range(0, step + 1)), combined=True)
         self.examples()
         dirty = self.run(["git", "status", "--porcelain"])
         if dirty:

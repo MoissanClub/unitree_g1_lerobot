@@ -1,5 +1,9 @@
 # G1 Stack Revision: 2026-09-18
 
+Historical simulation-before-Cartesian checkpoint. The later
+[keyboard-first revision](branch-stack-update-keyboard-20260918.md) supersedes
+its branch order; preserve this note and its verification report as history.
+
 ## Dependency Reorder
 
 The requested review sequence is now:
