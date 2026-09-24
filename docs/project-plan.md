@@ -19,7 +19,7 @@ identify every embodiment/revision combination.
 | Existing Hub path | Keyboard/DDS evidence; full Cartesian/XR parity open | Environment/model migration and full parity open |
 | Physical VR | Authority selection and acceptance pending | Backend validation and separate acceptance pending |
 | Optional BrainCo | SDK contracts exist; physical acceptance pending | SDK contracts do not establish embodiment-specific physical acceptance |
-| Articulated BrainCo simulation | Not implemented | Not implemented |
+| Articulated BrainCo simulation | Local Hub/core implementation through Step 3; see [BrainCo plan](brainco-simulation-plan.md) | Not implemented |
 
 The frozen fork checkpoint `d89a1d0b` passed 407 targeted tests plus a separate GPU
 test, not a new headset/hardware review. The operator release remains `d5e400bc`.
@@ -42,6 +42,11 @@ baseline before G1-23 when hardware is available; it is not inherited G1-23 acce
 Record unavailable hardware rather than pretending a stage passed.
 
 ## Next Actions
+
+Current focused work: [BrainCo simulation and handshake replay](brainco-simulation-plan.md).
+Steps 1-3 are implemented and headless tested, with an experimental Hub snapshot
+and bounded viewer check. Dataset mapping/replay, mount calibration, upstream
+submission and product-branch integration remain separate gates.
 
 1. Create the delivery ledger in the LeRobot integration branch: owners, commits,
    dependency/PR destination, exact evidence and remaining fork delta.
