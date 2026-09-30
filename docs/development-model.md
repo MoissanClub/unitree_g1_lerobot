@@ -14,6 +14,16 @@ Legacy experimental code stays only while serving a migration or diagnostic purp
 
 ## Branches
 
+2026-09-29 standard-CLI update: active G1 VR work is now
+`work/g1-vr-teleoperate`, preserving `work/g1-29-vr-teleop` at `2b9998b55`.
+The independent `work/teleoperate-processors` branch contains only local saved
+action-pipeline loading and connection cleanup on bugfix baseline `321180e74`.
+The full candidate uses `lerobot-teleoperate`: XR Teleoperator, G1 action processor
+with upstream IK, and a Robot owning simulation or gated physical transports.
+See `docs/source/g1_vr_standard_cli.mdx` in that LeRobot branch for commands.
+This is an integration candidate for extraction into small PRs, not one large
+upstream submission. Headset/hardware and Jetson acceptance remain pending.
+
 The non-archived branches at the cleanup checkpoint are:
 
 | Branch | Role |
