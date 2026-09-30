@@ -41,6 +41,14 @@ Do not run the preserved DDS launchers alongside this operator session.
 
 ## Develop
 
+Current G1-29 VR work (2026-09-29): **`work/g1-29-vr-teleop`** in the LeRobot fork,
+based on `g1/bugfixes`. Start its
+[manual test plan](https://github.com/MoissanClub/lerobot/blob/work/g1-29-vr-teleop/docs/source/g1_vr_manual_test_plan.mdx)
+for isolated MuJoCo/GR00T, camera/shadow and explicitly gated physical tests.
+It uses upstream IK and Unitree-style continuous arm following, not the pinned
+release's squeeze clutch. G1-23 and hand actuation are deferred in this focused
+candidate; the integration branch and pinned release below remain unchanged.
+
 Coworkers testing the latest code should start with the
 [latest development guide](docs/coworker-latest.md), not the pinned installer.
 

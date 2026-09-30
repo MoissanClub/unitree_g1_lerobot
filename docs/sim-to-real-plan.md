@@ -8,6 +8,21 @@ acceptance. Unavailable hardware must be recorded, not treated as a passed gate.
 
 ## Current Focus: G1-29 Arm-Only Software Plan
 
+**Direction update, 2026-09-29:** follow Unitree's motion-mode architecture with
+upstream G1-29 IK/static feedforward, GR00T in simulation and high-level stock
+locomotion on hardware. New base: `work/g1-29-vr-teleop` from `g1/bugfixes` at
+`321180e74`, checkout `/home/dwei/lerobot-sim/g1-vr-teleop`; see its
+`docs/source/g1_vr_execution_plan.mdx`. No full-body dynamic compensation is
+required before initial combined trials, but ownership and operating limits still
+need validation. The candidate and commands below are preserved at `39e02d7d2`
+on `work/g1-29-arm-hardware` as historical evidence. The new branch now contains
+selectively migrated camera/arm backends and a Unitree-mapped runtime using upstream
+IK. Its [manual test plan](https://github.com/MoissanClub/lerobot/blob/work/g1-29-vr-teleop/docs/source/g1_vr_manual_test_plan.mdx)
+is authoritative for new runs. The old counts and commands below apply only to
+the preserved checkpoint, not the new implementation.
+The physical acceptance order remains simulation -> feedback -> camera -> shadow
+-> hold -> bounded joints -> stationary VR arms -> locomotion/combined VR.
+
 Updated 2026-09-29. Deliver independent left/right VR arm control in simulation and
 on G1-29 hardware. No BrainCo actuation, walking commands, SONIC, or G1-23 work is
 required for this milestone. Any physically attached hand still affects payload,
@@ -30,6 +45,47 @@ Candidate checkout: `/home/dwei/lerobot-sim/g1-arm-hardware`, branch
 `work/g1-29-arm-hardware`. The pinned integration and simulation release were not
 modified. Detailed runnable commands and limitations live in the candidate's
 `docs/source/g1_arm_sdk_validation.mdx`.
+
+### Operator Test Order
+
+The following table documents the **previous candidate**. The new runtime implements
+all software stages, including physical VR arms and high-level velocity dispatch,
+but none of its physical stages or headset/X acceptance has been executed here.
+The new mapping uses terminal `r` + Enter to start, not squeeze-to-clutch. Its
+simulator uses locked Dex3 inertias matching upstream IK, without finger actuation;
+actual physical payloads must be reviewed. The supported arm diagnostic fixture
+does not emulate stock balancing or firmware handover. Free-base GR00T is tested
+separately. Do not run the old whole-body server with either physical backend.
+
+Use the candidate's `docs/source/g1_arm_test_plan.mdx` for exact commands and
+expected observations. The agreed order, retaining the discussion's step numbers,
+is **1 -> 2 -> 3 -> 6 -> 4 -> 5 -> 7**:
+
+| Phase | Tests | Current implementation |
+| --- | --- | --- |
+| Simulation | 1: VR controls MuJoCo | Existing XR simulation; manual headset baseline is separate from automated replay |
+| Read-only physical | 2: feedback; 3: camera-only headset display; 6: XR shadow targets | Arm SDK read-only diagnostic plus new `validate_xr_readonly.py` camera/display/shadow commands; no motor publication |
+| Bounded physical | 4: supervised hold; 5: single-joint excursion | Existing `validate_arm_sdk.py`, gated by reviewed contract and explicit motion opt-in; simulation-tested, not hardware-accepted |
+| Physical XR | 7: supervised headset control | Not implemented in the hardware candidate; gated on previous results |
+
+Camera capture uses the existing OpenCV camera API and same-host RGB channel;
+display reuses the existing headset monitor. Optional explicit CloudXR startup
+does not start a robot server. Shadow forces read-only feedback and logs IK/clutch
+results without an activation/send path. Neither camera delivery nor shadow
+requires `run_g1_server.py`. A fake-camera plumbing test and real MuJoCo shadow
+test are available; actual PC2 camera/headset review remains required. The local
+offscreen GPU attempt failed with CUDA out-of-memory while existing vLLM workers
+occupied both GPUs; those unrelated processes were left untouched.
+
+Hold and single-joint tests are **real torque-enabled hardware tests**, not
+read-only or inherently low-risk operations. No physical runs were performed.
+
+Read-only extension verification (2026-09-29): broad regression 268 passed,
+2 skipped; final focused camera/shadow suite 7 passed. The actual headless XR
+example completed 100 control frames and 50 camera frames with 0.2631 rad measured
+motion. Broad report: `/home/dwei/lerobot-sim/g1-arm-readonly-regression.xml`.
+The separate opt-in GPU run failed with CUDA out-of-memory and remains outstanding;
+it is not included among passing tests.
 
 | Software gate | Current evidence / boundary |
 | --- | --- |

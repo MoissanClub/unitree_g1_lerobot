@@ -45,13 +45,41 @@ Record unavailable hardware rather than pretending a stage passed.
 
 Current focused work (2026-09-29): [G1-29 arm-only software through first physical
 validation](sim-to-real-plan.md#current-focus-g1-29-arm-only-software-plan).
+Direction updated: prioritize G1-29 end-to-end VR, including GR00T simulation
+locomotion and stock high-level physical locomotion. Reuse upstream `G1_29_ArmIK`
+and Unitree's motion-mode/static-feedforward approach; full dynamic compensation
+is not a prerequisite. G1-23 extensions and BrainCo actuation are deferred.
+New work starts at `/home/dwei/lerobot-sim/g1-vr-teleop` on
+`work/g1-29-vr-teleop`, based on `g1/bugfixes` (`321180e74`). Its
+`docs/source/g1_vr_execution_plan.mdx` owns the reference mapping, source pins,
+implementation sequence and unchanged staged hardware acceptance order.
+The new branch now implements isolated MuJoCo/GR00T VR simulation, read-only
+camera/shadow, and explicitly gated physical arm/base modes. Start from its
+[manual test plan](https://github.com/MoissanClub/lerobot/blob/work/g1-29-vr-teleop/docs/source/g1_vr_manual_test_plan.mdx).
+Headset/X and physical acceptance remain manual; the pinned operator release is unchanged.
+
+Published candidate: `2b9998b55` on `work/g1-29-vr-teleop`. Targeted regression:
+**167 passed, 1 skipped** (opt-in GPU test); real headless MuJoCo, GR00T direction
+checks and supported-arm hold/left/right diagnostics included. A 15-second
+synthetic combined run completed without IK pauses. The simulation now retains
+locked Dex3 hand mass to match upstream IK; it does not command the fingers.
+The small-motion fixture and simulation scheduling budget are explicitly separate
+from physical balance/firmware/timing acceptance. No hardware commands were sent.
+A separate clean checkout of that commit passed **147 tests, 1 skipped**, plus a
+four-second headless synthetic run with source-provenance checks enabled.
 Preserve the working bilateral VR simulation, select physical arm authority, adapt
 the shared control pipeline, and implement read-only then bounded joint diagnostics.
 BrainCo actuation, SONIC and walking are not prerequisites. Hardware motion still
 requires the explicit physical gates and operator approval.
 
-The `work/g1-29-arm-hardware` candidate now provides an opt-in arm SDK backend and
+The preserved `work/g1-29-arm-hardware` candidate provided an opt-in arm SDK backend and
 read-only/hold/bounded-joint diagnostics, with offline and MuJoCo verification.
+Camera-only headset delivery and non-publishing XR shadow commands are also
+implemented. Follow the [operator test order](sim-to-real-plan.md#operator-test-order):
+simulation -> feedback -> camera -> shadow -> hold -> single joint -> stationary VR
+-> locomotion/combined VR. Use the new branch's commands, not the old clutch mapping.
+Actual camera/headset acceptance remains pending; local GPU video verification is
+currently blocked by memory occupied by unrelated workloads.
 See the [implementation checkpoint](sim-to-real-plan.md#implementation-checkpoint-2026-09-29).
 This is ready for supervised validation review, not a hardware-accepted release.
 

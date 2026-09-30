@@ -26,6 +26,15 @@ The non-archived branches at the cleanup checkpoint are:
 
 PR state is a dated observation. Recheck before changing a head.
 Create short-lived `work/<feature>` branches from integration as tasks start.
+Exception agreed 2026-09-29: G1-29-only VR delivery now starts on
+`work/g1-29-vr-teleop` from `g1/bugfixes` at `321180e74`, reusing upstream IK,
+Hub simulation and GR00T rather than inheriting the embodiment/native-simulator
+stack. Local checkout: `/home/dwei/lerobot-sim/g1-vr-teleop`. The existing
+`work/g1-29-arm-hardware` checkpoint `39e02d7d2` preserves camera/shadow and bounded
+diagnostics as historical evidence, not a parallel production implementation.
+Selective migration is now implemented; new manual validation starts from
+`work/g1-29-vr-teleop` and its `docs/source/g1_vr_manual_test_plan.mdx`.
+These work branches do not replace the pinned operator release or active PR heads.
 Create curated `submit/<feature>` branches when a contribution is ready for extraction;
 do not create empty placeholders or rename active PR heads merely for consistency.
 
