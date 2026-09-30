@@ -6,6 +6,186 @@ See the [execution plan](project-plan.md) for priorities and
 Physical G1-29 is the preferred baseline when available, followed by separate G1-23
 acceptance. Unavailable hardware must be recorded, not treated as a passed gate.
 
+## Current Focus: G1-29 Arm-Only Software Plan
+
+Updated 2026-09-29. Deliver independent left/right VR arm control in simulation and
+on G1-29 hardware. No BrainCo actuation, walking commands, SONIC, or G1-23 work is
+required for this milestone. Any physically attached hand still affects payload,
+tool transforms and clearance; disabling its driver does not remove its mass.
+
+The development integration reference checked for this plan is
+`MoissanClub/lerobot:dev/g1-integration` at
+`d89a1d0b5f628045cc73293bcdfa2dc6c0808549`. The BrainCo simulation branch is separate
+and is not a prerequisite. Do not change a checkout used by a running process.
+Use a short-lived work branch from the audited integration baseline, retain the
+pinned simulation release, and extract small upstream submissions separately.
+
+This section owns software implementation order. Stages 0-3 below own hardware
+acceptance. The implementation checkpoint below distinguishes delivered software
+from pending physical evidence. No document or software test authorizes motion.
+
+### Implementation Checkpoint: 2026-09-29
+
+Candidate checkout: `/home/dwei/lerobot-sim/g1-arm-hardware`, branch
+`work/g1-29-arm-hardware`. The pinned integration and simulation release were not
+modified. Detailed runnable commands and limitations live in the candidate's
+`docs/source/g1_arm_sdk_validation.mdx`.
+
+| Software gate | Current evidence / boundary |
+| --- | --- |
+| Baseline | 118 existing focused tests passed before edits |
+| Authority candidate | Official SDK arm7 example audited at `814556d15970dd2ecf1c9984e845ca02ab07e206`; `rt/arm_sdk`, slots 15-28 plus protocol weight 29, no MotionSwitcher or `rt/lowcmd`; actual firmware/waist behavior remains operator review |
+| Shared measured state | Existing XR simulation example now reads arm positions from Robot observations, not MuJoCo state arrays; physical XR launcher remains a later gate |
+| Read-only backend | Explicit `UnitreeG1Config.arm_sdk` path, subscriber-only connect, no automatic reset/activation, fresh state/mode/tick checks |
+| Bounded execution | Explicit activation, measured-pose blend-in, complete arm-only commands, joint/displacement/rate/estimated-torque bounds and optional measured-pose gravity; local robot-side thread watchdog with latched faults |
+| Diagnostic | `examples/unitree_g1/validate_arm_sdk.py`: offline template/dry-run, read-only, hold and single-joint tests; immutable report filenames and explicit hardware opt-in |
+| Physics evidence | Same backend and message builder exercised through fake transport and real MuJoCo, including both elbows; not firmware emulation |
+| Broad regression | Final run: 251 passed, one optional BrainCo installed-SDK audit skipped; includes existing model/IK/dual-arm XR regression and startup/shutdown fault tests. Local report: `/home/dwei/lerobot-sim/g1-arm-regression-final.xml` |
+| Hardware | No physical connection, ownership acquisition or movement performed; begin with supervised read-only validation |
+
+Normal exit/fault requests release using weight-zero packets; physical stop is not
+asserted. The thread cannot enforce a watchdog after process/host death or lost DDS.
+The operator must review firmware behavior and independent stop/support arrangements.
+The official example also commands waist; this arm-only candidate requires explicit
+confirmation that uncommanded waist fields preserve its stock controller. Do not
+merely turn contract flags on to bypass these decisions.
+
+The initial gravity-loading timing failure was caught by the simulation diagnostic
+and fixed by loading the model before feedback collection/activation. Publisher
+discovery now waits with weight zero before measured-pose activation. See the
+candidate guide for other limits, report semantics and exact reproduction commands.
+
+### 1. Freeze and Reproduce the Arm Baseline
+
+- Record source SHA, Python/dependency versions, model/mesh pins, IK frames and
+  current gains/feedforward settings. Re-audit current upstream before extracting PRs.
+- Reproduce G1-29 joint, Cartesian, bilateral clutch and tracking-loss tests on the
+  existing simulator. Preserve camera/headset operation as a separate regression.
+- Inventory existing physical read-only tools and their source-specific evidence;
+  do not carry their old audit hashes forward as current acceptance.
+
+Deliverable: a reproducible manifest and passing baseline report. No hardware
+connection is needed. Reuse existing tests rather than rebuilding the simulator.
+
+### 2. Select and Specify Physical Arm Authority
+
+- Audit the manufacturer's SDK/examples against the actual robot variant and
+  firmware. Investigate the supported arm SDK path while stock control owns the
+  lower body; verify its topic, message layout, ownership/blending fields and modes.
+- Explicitly assign arms, waist, legs and balance to one owner each. Confirm whether
+  arm-only operation is supported in the selected mode and physical arrangement.
+- Specify acquisition, measured-pose initialization, release, timeout and operator
+  stop behavior. Do not infer a safe handover from stopping publication.
+- The current `run_g1_server.py` releases an active mode and publishes `rt/lowcmd`.
+  Do not reuse that startup unchanged or label it an arm-only transport.
+
+Deliverable: reviewed protocol/ownership contract and simulator/fake-transport
+fixtures. This is a real decision gate: if the proposed arm-only mode is unavailable,
+stop and select a supported arrangement rather than silently taking whole-body control.
+
+### 3. Make Cartesian/XR Control Independent of the Simulator
+
+- Keep one `UnitreeG1` configuration/interface and reuse existing G1-29 IK and XR
+  processing. Separate simulator execution from physical transport internally.
+- Replace direct `robot._native`/MuJoCo-state reads in the control orchestration
+  with fresh measured arm observations in explicit joint order and units.
+- Keep physics stepping/rendering in the simulation backend. Neither hardware
+  execution nor the VR device reader should depend on a MuJoCo model instance.
+- Define target-pose frames, clutch anchors, joint limits and rate limits once;
+  preserve independent clutches and restart references from current measurements.
+- Prefer LeRobot processor/robot conventions; prove standard-loop observation and
+  action wiring before claiming a generic teleoperation CLI works end to end.
+
+Deliverable: the same scripted Cartesian and synthetic XR cases execute through
+the shared pipeline using simulation or fake hardware. No physical actuation.
+
+### 4. Implement a Read-Only Physical Backend First
+
+- Add explicit transport/interface/mode configuration; do not auto-select a robot.
+- Connect, validate joint/state schema and expose timestamped measured feedback.
+  Reject missing, stale or invalid state. Read-only mode creates no command writer,
+  changes no robot mode and cannot call reset or send actions.
+- Audit startup, exception cleanup and disconnect for implicit commands. Adapt
+  the existing passive tools to the selected revision and record new source hashes.
+
+Deliverable: offline lifecycle tests plus a bounded read-only hardware diagnostic.
+This is the first hardware test: it verifies feedback only, not permission to move.
+
+### 5. Add Bounded Arm Command Execution and Robot-Side Watchdog
+
+- Make motion a deliberate opt-in after fresh state and explicit ownership checks.
+  Initialize arm targets from measured positions, not zeros or a preset ready pose.
+- Build commands according to the selected arm protocol. Assert that no non-arm
+  joint targets or unauthorized mode changes can be emitted; retain any required
+  protocol ownership fields explicitly rather than treating them as ordinary joints.
+- Validate finite targets, model bounds, per-joint velocity/acceleration limits,
+  gains, torque/feedforward bounds, and measured tracking error on every update.
+- Place the watchdog at the robot-side command owner so it also covers laptop/XR
+  process death and network loss. Reject old/out-of-order commands and stale feedback.
+- Implement the reviewed hold/handover response. Do not assume zero torque, damping,
+  holding position or process exit is universally safe. Re-enable only deliberately.
+- Use measured-pose gravity compensation where validated for this authority mode;
+  avoid duplicating compensation already supplied by the robot controller.
+
+Deliverable: a command backend with deterministic fault-injection tests. It must
+not import the BrainCo SDK or require the SONIC/VLA stack.
+
+### 6. Build the First Small-Motion Diagnostic
+
+- Implement a bounded joint diagnostic in the physical diagnostics area, separate
+  from the headset launcher. Offer dry-run and read-only modes before motion mode.
+- Require a named arm/joint, measured-relative displacement, duration and an explicit
+  reviewed limits/configuration file. Motion mode requires explicit operator enablement.
+- Ramp one joint, monitor all commanded joints, then use the agreed return/hold/
+  handover sequence. Never automatically move the opposite arm or run a ready pose.
+- Write durable reports: source/model/config hashes, joint identity, measured start,
+  command/feedback traces, timing, violations and actual cleanup outcome. Failure,
+  cancellation and incomplete execution must never print an acceptance pass.
+
+Deliverable: a small-motion test ready for supervised hardware use, with its exact
+CLI and expected results documented after implementation. Do not publish placeholder
+commands as if this diagnostic already exists.
+
+### 7. Pass Offline and Simulation Release Gates
+
+- Unit tests: message mapping/serialization, units, limits, optional dependencies,
+  no non-arm commands, read-only protections, startup and disconnect behavior.
+- Integration tests: real IK and simulator feedback, fake physical transport,
+  stale/missing/out-of-order packets, invalid IK, lost tracking, clutch release,
+  restart/re-engagement and failure during initialization or shutdown.
+- Exercise the small-motion diagnostic in simulation using the same trajectory and
+  checks, while labeling any hardware authority behavior that is only mocked.
+- Re-run G1-29 bilateral VR simulation. Confirm the hardware opt-in cannot be
+  reached accidentally through the simulation launcher or a default configuration.
+
+Deliverable: pinned candidate revision, reproducible commands, reports and clear
+pass/fail criteria. Passing these tests makes the tool ready for hardware review,
+not physically validated.
+
+### 8. Run the First Supervised Hardware Checks
+
+After the operator approves the real setup, authority contract, support/stop
+arrangement and operating bounds:
+
+1. Run read-only feedback validation on the exact candidate revision.
+2. Acquire arm authority at the measured pose with no requested displacement;
+   acquisition itself can apply torque and is a motion-enabled test.
+3. Run one bounded joint movement on one arm; verify identity, direction, tracking,
+   other-joint behavior and the planned stop/handover. Stop on any discrepancy.
+4. Repeat on the other arm only after reviewing the first result.
+
+No universal angle, speed or torque values are preapproved here. Select those
+against the actual hardware, attached payload, operating mode and operator review.
+Hardware acceptance requires observation of the physical stop, not just exit code 0.
+
+### After the First Hardware Gate
+
+Continue with Stage 2 scripted small Cartesian movements, then Stage 3 one-arm and
+bilateral VR. Add real-camera-to-headset delivery after physical arm control passes;
+the first bounded joint tests do not require CloudXR or a camera. On headset video
+loss, apply the declared control contract rather than allowing blind continuation
+by accident. Finger control and mobile manipulation remain separate milestones.
+
 No stage is authorized merely by the plan, passing simulation, or a read-only report.
 Start physical control-authority design early, in parallel with simulation and upstream
 work. Name the responsible operator, applicable manufacturer procedure, support and

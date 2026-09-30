@@ -24,7 +24,7 @@ not redefine project scope, branch policy, architecture, or priorities.
 | [Experimental operator guide](operator-guide.md) | Preserved external DDS workflow and adjacent-checkout patch, not the default release |
 | [Camera streaming](camera-streaming.md) | Experimental capture/frame/session contract and headset commands |
 | [G1-23 live simulator](g1-23-live-simulator.md) | Experimental supported-arm DDS backend, not whole-body physics |
-| [Simulation-to-physical gates](sim-to-real-plan.md) | Staged physical acceptance; no implicit actuation authorization |
+| [G1-29 arm-only software and physical gates](sim-to-real-plan.md) | Current step-by-step software plan through first bounded hardware tests; no implicit actuation authorization |
 | [Read-only physical preflight](physical-preflight.md) | Implemented passive tooling and source-specific lifecycle audit |
 
 Never mix the release's isolated environment, the development checkout, and the

@@ -43,10 +43,21 @@ Record unavailable hardware rather than pretending a stage passed.
 
 ## Next Actions
 
-Current focused work: [BrainCo simulation and handshake replay](brainco-simulation-plan.md).
-Steps 1-3 are implemented and headless tested, with an experimental Hub snapshot
-and bounded viewer check. Dataset mapping/replay, mount calibration, upstream
-submission and product-branch integration remain separate gates.
+Current focused work (2026-09-29): [G1-29 arm-only software through first physical
+validation](sim-to-real-plan.md#current-focus-g1-29-arm-only-software-plan).
+Preserve the working bilateral VR simulation, select physical arm authority, adapt
+the shared control pipeline, and implement read-only then bounded joint diagnostics.
+BrainCo actuation, SONIC and walking are not prerequisites. Hardware motion still
+requires the explicit physical gates and operator approval.
+
+The `work/g1-29-arm-hardware` candidate now provides an opt-in arm SDK backend and
+read-only/hold/bounded-joint diagnostics, with offline and MuJoCo verification.
+See the [implementation checkpoint](sim-to-real-plan.md#implementation-checkpoint-2026-09-29).
+This is ready for supervised validation review, not a hardware-accepted release.
+
+[BrainCo simulation and handshake replay](brainco-simulation-plan.md) is preserved
+as a separate workstream. Steps 1-3 have an experimental HF snapshot and bounded
+viewer check; dataset replay, calibration and upstream submission remain separate.
 
 1. Create the delivery ledger in the LeRobot integration branch: owners, commits,
    dependency/PR destination, exact evidence and remaining fork delta.
