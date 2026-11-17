@@ -49,6 +49,12 @@ Collect the full suite in one headset run:
 The fixed, versioned suite first captures calibration anchors and only then
 captures motion-validation traces. It uses explicit spoken instructions:
 
+This is **human–VR calibration**, not robot or IK calibration. It estimates the
+operator/body frame, human workspace scale and offset, and controller-to-palm
+orientation. Retargeting consumes that result to construct embodiment-specific
+end-effector targets; the G1 URDF and IK policy remain downstream inputs. The
+anchor set records this boundary as `retargeting_before_robot_ik`.
+
 | Label | Requested pose or motion |
 | --- | --- |
 | `calibration-down-inward` | Arms naturally down; palms inward. |

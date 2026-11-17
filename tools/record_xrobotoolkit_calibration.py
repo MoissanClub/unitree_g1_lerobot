@@ -348,6 +348,8 @@ def _write_anchor_set(suite_dir: Path, manifest: dict[str, object]) -> Path:
             "schema_version": 1,
             "plan_version": CALIBRATION_PLAN_VERSION,
             "created_at_utc": _utc_now(),
+            "calibration_scope": "human_vr",
+            "consumer_boundary": "retargeting_before_robot_ik",
             "coordinate_frame": (
                 "XRoboToolkit normalized controller frame; metres; quaternion xyzw"
             ),
@@ -714,8 +716,8 @@ def main(argv: list[str] | None = None) -> int:
         if not calibration_passed:
             _voice(
                 args,
-                "Starting four calibration position units. Each position is checked "
-                "and retried independently.",
+                "Starting four human VR calibration position units. Each position "
+                "is checked and retried independently.",
             )
             calibration_passed = _run_calibration_units(
                 source, args, args.suite_dir, manifest
