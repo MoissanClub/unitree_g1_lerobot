@@ -21,7 +21,12 @@ from lerobot_teleoperator_g1_vr import (
     XRoboToolkitSourceConfig,
     build_xr_source,
 )
-from unitree_g1_lerobot.xr import G1VRSimulationSupervisor, telemetry_dict
+from unitree_g1_lerobot.xr import (
+    G1VRSimulationSupervisor,
+    QuestVideoSidecar,
+    QuestVideoSidecarConfig,
+    telemetry_dict,
+)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -33,6 +38,15 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--sdk-site-packages", type=Path)
     result.add_argument("--steps", type=int)
     result.add_argument("--telemetry", type=Path)
+    result.add_argument("--quest-video", action="store_true")
+    result.add_argument(
+        "--video-sender",
+        type=Path,
+        default=Path(__file__).with_name("quest_video_sender.py"),
+    )
+    result.add_argument("--video-evidence-root", type=Path, default=Path("outputs"))
+    result.add_argument("--video-listen", default="0.0.0.0:13579")
+    result.add_argument("--video-display", default=":1")
     return result
 
 
@@ -66,9 +80,30 @@ def main(argv: list[str] | None = None) -> int:
             gravity_compensation=True,
         )
     )
-    records = G1VRSimulationSupervisor(source, guard, retargeter, robot).run(
-        max_steps=args.steps
-    )
+    sidecar = None
+    if args.quest_video:
+        host, separator, port = args.video_listen.rpartition(":")
+        if not separator:
+            raise SystemExit("--video-listen must be HOST:PORT")
+        sidecar = QuestVideoSidecar(
+            QuestVideoSidecarConfig(
+                sender_script=args.video_sender,
+                evidence_root=args.video_evidence_root,
+                listen_host=host,
+                listen_port=int(port),
+                display=args.video_display,
+            )
+        )
+        status = sidecar.start()
+        print(f"Quest video: {status.state}: {status.detail}")
+    try:
+        records = G1VRSimulationSupervisor(source, guard, retargeter, robot).run(
+            max_steps=args.steps
+        )
+    finally:
+        if sidecar is not None:
+            status = sidecar.stop()
+            print(f"Quest video: {status.state}: {status.detail}")
     payload = [telemetry_dict(record) for record in records]
     text = json.dumps(payload, indent=2) + "\n"
     if args.telemetry:
