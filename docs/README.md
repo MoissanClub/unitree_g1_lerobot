@@ -18,6 +18,7 @@ not redefine project scope, branch policy, architecture, or priorities.
 
 | Guide | Scope |
 |---|---|
+| [Guided G1-29 XR simulation lab](../lab/g1_vr/README.md) | Headset-off precheck, voice-gated capture, trace validation, MuJoCo replay and live Quest video/control |
 | [Coworker installation](coworker-installation.md) | Default pinned native VR-simulation release; installation and one operator launcher |
 | [Coworker latest development](coworker-latest.md) | Latest integration checkout, environment refresh and verification; helper publication prerequisite |
 | [Development workspace](development-workspace.md) | Local branch-aware helper, dependency/provenance checks; helper publication remains separate |

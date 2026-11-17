@@ -80,6 +80,8 @@ See [exact verification evidence](docs/branch-stack-verification.md).
 
 ## Operator and Diagnostic References
 
+- [Guided G1-29 XR simulation-lab workflow](lab/g1_vr/README.md): precheck,
+  voice-gated trace capture, validation, MuJoCo replay and Quest live E2E test
 - [Pinned installer and three-process launcher](docs/coworker-installation.md)
 - [Preserved experimental DDS workflow](docs/operator-guide.md), [camera/video](docs/camera-streaming.md)
 - [Model and IK geometry](docs/independent-geometry.md), [motor comparisons](docs/motor-config-comparison.md)

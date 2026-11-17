@@ -5,7 +5,6 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-
 from lerobot_teleoperator_g1_vr import (
     DeterministicClock,
     G1RetargetDiagnostics,
@@ -18,8 +17,8 @@ from lerobot_teleoperator_g1_vr import (
     XRSourceStatus,
     XRTraceExhaustedError,
 )
-from unitree_g1_lerobot.xr import G1VRSimulationSupervisor
 
+from unitree_g1_lerobot.xr import G1VRSimulationSupervisor
 
 KEYS = tuple(f"joint_{index}.q" for index in range(14))
 
@@ -64,7 +63,9 @@ class FakeRetargeter:
             action[KEYS[7]] -= 0.2
         return G1RetargetResult(
             action,
-            G1RetargetDiagnostics("g1_29", sample.status.state, *engaged, not any(engaged)),
+            G1RetargetDiagnostics(
+                "g1_29", sample.status.state, *engaged, not any(engaged)
+            ),
         )
 
 
@@ -120,8 +121,12 @@ def test_trace_sequence_drives_both_sides_and_records_comparable_telemetry():
     ).run()
     assert len(records) == 3
     assert records[0].held
-    assert records[1].left_engaged and records[1].maximum_command_delta_rad == pytest.approx(0.1)
-    assert records[2].right_engaged and records[2].maximum_command_delta_rad == pytest.approx(0.2)
+    assert records[1].left_engaged and records[
+        1
+    ].maximum_command_delta_rad == pytest.approx(0.1)
+    assert records[2].right_engaged and records[
+        2
+    ].maximum_command_delta_rad == pytest.approx(0.2)
     assert target.disconnect_calls == 1
 
 
@@ -149,7 +154,7 @@ def test_source_connect_failure_still_disconnects_started_target():
 
 def test_missing_observation_fails_and_cleans_both_lifecycles():
     target = FakeTarget()
-    target.get_observation = lambda: {}
+    target.get_observation = dict
     source = FakeSource([sample(0)])
     with pytest.raises(RuntimeError, match="missing finite"):
         supervisor([], source=source, target=target).run()
@@ -160,4 +165,46 @@ def test_missing_observation_fails_and_cleans_both_lifecycles():
 def test_supervisor_rejects_non_g1_29_retargeter():
     retargeter = SimpleNamespace(embodiment="g1_23", action_features={})
     with pytest.raises(ValueError, match="g1_29"):
-        G1VRSimulationSupervisor(FakeSource([]), XRInteractionGuard(), retargeter, FakeTarget())
+        G1VRSimulationSupervisor(
+            FakeSource([]), XRInteractionGuard(), retargeter, FakeTarget()
+        )
+
+
+@pytest.mark.parametrize(
+    "kwargs, message",
+    [
+        ({"max_duration_s": 0}, "max_duration_s"),
+        ({"max_duration_s": float("inf")}, "max_duration_s"),
+        ({"rate_hz": 0}, "rate_hz"),
+        ({"rate_hz": float("nan")}, "rate_hz"),
+    ],
+)
+def test_supervisor_rejects_invalid_timing_options(kwargs, message):
+    with pytest.raises(ValueError, match=message):
+        supervisor([]).run(**kwargs)
+
+
+def test_ready_hook_runs_after_source_and_target_connect():
+    source = FakeSource([sample(0)])
+    target = FakeTarget()
+    calls = []
+
+    def ready_hook():
+        calls.append((source.is_connected, target.is_connected))
+
+    records = supervisor([], source=source, target=target).run(ready_hook=ready_hook)
+
+    assert len(records) == 1
+    assert calls == [(True, True)]
+    assert source.disconnect_calls == 1
+    assert target.disconnect_calls == 1
+
+
+def test_record_hook_receives_each_completed_telemetry_record():
+    captured = []
+
+    records = supervisor([sample(0), sample(1, right=1.0)]).run(
+        record_hook=captured.append
+    )
+
+    assert captured == list(records)

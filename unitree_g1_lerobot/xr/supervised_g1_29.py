@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+import time
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass
 from typing import Protocol
 
@@ -39,6 +40,8 @@ class G1VRTelemetry:
     held: bool
     maximum_command_delta_rad: float
     ik_status: str | None
+    seed_clipped: bool
+    maximum_seed_limit_violation_rad: float
 
 
 class G1VRSimulationSupervisor:
@@ -63,16 +66,40 @@ class G1VRSimulationSupervisor:
     def _measured_arm_q(self) -> tuple[float, ...]:
         observation = self.target.get_observation()
         try:
-            values = tuple(float(observation[key]) for key in self.retargeter.action_features)
+            values = tuple(
+                float(observation[key]) for key in self.retargeter.action_features
+            )
         except (KeyError, TypeError, ValueError) as exc:
-            raise RuntimeError("simulation observation is missing finite G1-29 arm positions") from exc
+            raise RuntimeError(
+                "simulation observation is missing finite G1-29 arm positions"
+            ) from exc
         if not all(math.isfinite(value) for value in values):
-            raise RuntimeError("simulation observation contains nonfinite G1-29 arm positions")
+            raise RuntimeError(
+                "simulation observation contains nonfinite G1-29 arm positions"
+            )
         return values
 
-    def run(self, *, max_steps: int | None = None) -> tuple[G1VRTelemetry, ...]:
+    def run(
+        self,
+        *,
+        max_steps: int | None = None,
+        max_duration_s: float | None = None,
+        rate_hz: float | None = None,
+        ready_hook: Callable[[], None] | None = None,
+        record_hook: Callable[[G1VRTelemetry], None] | None = None,
+    ) -> tuple[G1VRTelemetry, ...]:
         if max_steps is not None and (isinstance(max_steps, bool) or max_steps <= 0):
             raise ValueError("max_steps must be a positive integer or None")
+        if max_duration_s is not None and (
+            isinstance(max_duration_s, bool)
+            or not math.isfinite(max_duration_s)
+            or max_duration_s <= 0
+        ):
+            raise ValueError("max_duration_s must be a positive finite number or None")
+        if rate_hz is not None and (
+            isinstance(rate_hz, bool) or not math.isfinite(rate_hz) or rate_hz <= 0
+        ):
+            raise ValueError("rate_hz must be a positive finite number or None")
         records: list[G1VRTelemetry] = []
         target_started = source_started = False
         self.guard.reset()
@@ -82,7 +109,13 @@ class G1VRSimulationSupervisor:
             target_started = True
             self.source.connect()
             source_started = True
-            while max_steps is None or len(records) < max_steps:
+            if ready_hook is not None:
+                ready_hook()
+            started_at = time.monotonic()
+            while (max_steps is None or len(records) < max_steps) and (
+                max_duration_s is None or time.monotonic() - started_at < max_duration_s
+            ):
+                cycle_started_at = time.monotonic()
                 try:
                     sample = self.source.sample()
                 except XRTraceExhaustedError:
@@ -97,17 +130,26 @@ class G1VRSimulationSupervisor:
                 )
                 self.target.send_action(action)
                 diagnostics = result.diagnostics
-                records.append(
-                    G1VRTelemetry(
-                        sequence=sample.sequence,
-                        source_state=guarded.status.state.value,
-                        left_engaged=diagnostics.left_engaged,
-                        right_engaged=diagnostics.right_engaged,
-                        held=diagnostics.held,
-                        maximum_command_delta_rad=maximum_delta,
-                        ik_status=diagnostics.ik_status,
-                    )
+                record = G1VRTelemetry(
+                    sequence=sample.sequence,
+                    source_state=guarded.status.state.value,
+                    left_engaged=diagnostics.left_engaged,
+                    right_engaged=diagnostics.right_engaged,
+                    held=diagnostics.held,
+                    maximum_command_delta_rad=maximum_delta,
+                    ik_status=diagnostics.ik_status,
+                    seed_clipped=getattr(diagnostics, "seed_clipped", False),
+                    maximum_seed_limit_violation_rad=getattr(
+                        diagnostics, "maximum_seed_limit_violation_rad", 0.0
+                    ),
                 )
+                records.append(record)
+                if record_hook is not None:
+                    record_hook(record)
+                if rate_hz is not None:
+                    time.sleep(
+                        max(0.0, 1.0 / rate_hz - (time.monotonic() - cycle_started_at))
+                    )
         finally:
             if source_started:
                 self.source.disconnect()
