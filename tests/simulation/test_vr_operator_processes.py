@@ -1,19 +1,63 @@
 """Opt-in real native-simulation operator tests. No X, OpenXR, DDS, or hardware."""
 
-import os
+import hashlib
 import json
-from pathlib import Path
+import os
+import re
 import signal
 import subprocess
 import time
+from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+G1_29_CONTRACT = json.loads(
+    (ROOT / "configs/g1_29_vr_compatibility.json").read_text()
+)
 pytestmark = pytest.mark.skipif(
     not os.environ.get("G1_VR_OPERATOR_TESTS"),
     reason="Requires installed VR environment/GPU",
 )
+
+
+def test_g1_29_installed_release_contract():
+    config = json.loads((ROOT / ".vr-sim.json").read_text())
+    expected = G1_29_CONTRACT
+    assert config["commit"] == expected["lerobot"]["commit"]
+
+    source = Path(config["lerobot"])
+    actual_commit = subprocess.check_output(
+        ["git", "-C", str(source), "rev-parse", "HEAD"], text=True
+    ).strip()
+    assert actual_commit == expected["lerobot"]["commit"]
+
+    urdf = Path(config["assets"]) / expected["assets"]["g1_29_urdf"][
+        "relative_to_installed_assets"
+    ]
+    assert hashlib.sha256(urdf.read_bytes()).hexdigest() == expected["assets"][
+        "g1_29_urdf"
+    ]["sha256"]
+
+    probe = """
+import json
+import numpy as np
+from lerobot.robots.unitree_g1.g1_cartesian_control import G1ArmKinematics, G1CartesianConfig
+ik = G1ArmKinematics(G1CartesianConfig("g1_29", __import__("sys").argv[1]))
+print(json.dumps({"size": ik.size, "action_keys": sorted(ik.arm_action(np.zeros(ik.size)))}))
+"""
+    env = dict(os.environ, PYTHONPATH=str(source / "src"), MUJOCO_GL="egl")
+    result = subprocess.run(
+        [config["python"], "-c", probe, str(urdf)],
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    observed = json.loads(result.stdout.splitlines()[-1])
+    assert observed["size"] == expected["expected_contract"]["arm_dof"]
+    assert len(observed["action_keys"]) == expected["expected_contract"]["arm_dof"]
+    assert all(key.endswith(".q") for key in observed["action_keys"])
 
 
 @pytest.mark.parametrize("embodiment", ["g1_29", "g1_23"])
@@ -26,6 +70,39 @@ def test_replay_processes(embodiment):
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert f"PASS {embodiment}: 100 frames" in result.stdout
+    if embodiment == "g1_29":
+        expected = G1_29_CONTRACT["expected_contract"]
+        for fragment in expected["required_output"]:
+            assert fragment in result.stdout
+        match = re.search(
+            r"PASS g1_29: (\d+) frames, motion=([0-9.]+)rad, "
+            r"(\d+) distinct camera frames",
+            result.stdout,
+        )
+        assert match is not None, result.stdout
+        steps, motion, frames = (
+            int(match.group(1)),
+            float(match.group(2)),
+            int(match.group(3)),
+        )
+        assert steps == expected["replay_steps"]
+        assert (
+            expected["minimum_motion_rad"]
+            <= motion
+            <= expected["maximum_motion_rad"]
+        )
+        assert frames >= expected["minimum_distinct_camera_frames"]
+
+        logdir = Path(
+            next(
+                line.removeprefix("Logs: ")
+                for line in result.stdout.splitlines()
+                if line.startswith("Logs: ")
+            )
+        )
+        logs = "\n".join(path.read_text() for path in logdir.glob("*.log"))
+        for fragment in expected["forbidden_log_fragments"]:
+            assert fragment not in logs, logs
 
 
 def test_simulator_failure_stops_other_services():
