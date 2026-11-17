@@ -11,15 +11,18 @@ usage: 02_record_trace.sh [options]
 Options:
   --dry-run                 Speak the full process without a headset or data writes
   --dry-run-only LABEL      In dry-run mode, practice only one named segment
-  --max-attempts NUMBER     Attempts per failed segment in this run (default: 3)
+  --max-attempts NUMBER     Attempts per failed unit/trace in this run (default: 3)
   --new-suite               Start a new suite instead of resuming the current one
   --prepare-s SECONDS       Preparation time before each trace (default: 7)
+  --subphase-prepare-s SEC  Settling time within one arm position (default: 2)
   --gate-timeout-s SECONDS  Time allowed for the headset handoff (default: 600)
 
-One headset run collects four position anchors, six palm-orientation anchors,
-and forward, upward, and outward movements for each arm. Each trace is checked
-immediately. A failed trace is repeated up to --max-attempts times. Running this
-script again resumes the current suite and skips every segment already passed.
+One headset run collects ten calibration captures across four arm
+positions, followed by forward, upward, and outward movements for each arm.
+Each calibration position unit is checked after all its palm subphases. A
+failed position unit is repeated together up to --max-attempts times. Motion
+traces are checked individually. Running this script again resumes the current
+suite and skips every position unit or motion trace already passed.
 
 The script prepares one persistent XRoboToolkit connection while the headset is
 off, accepts the exact phrase "wearing the headset now", waits ten seconds, and
@@ -35,6 +38,7 @@ dry_run_only=""
 max_attempts=3
 new_suite=false
 prepare_s=7
+subphase_prepare_s=2
 gate_timeout_s=600
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -43,6 +47,7 @@ while [[ $# -gt 0 ]]; do
         --max-attempts) max_attempts="${2:?--max-attempts requires a value}"; shift ;;
         --new-suite) new_suite=true ;;
         --prepare-s) prepare_s="${2:?--prepare-s requires a value}"; shift ;;
+        --subphase-prepare-s) subphase_prepare_s="${2:?--subphase-prepare-s requires a value}"; shift ;;
         --gate-timeout-s) gate_timeout_s="${2:?--gate-timeout-s requires a value}"; shift ;;
         -h|--help) usage; exit 0 ;;
         *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
@@ -55,6 +60,8 @@ if [[ "${dry_run}" == true ]]; then
     dry_run_args=(
         "${PYTHON_BIN}" "${recorder}" "${OUTPUT_ROOT}/dry-run-not-written"
         --dry-run
+        --prepare-s "${prepare_s}"
+        --subphase-prepare-s "${subphase_prepare_s}"
         --tts-bin "${TTS_BIN}"
         --voice-rate "${VOICE_RATE}"
     )
@@ -115,6 +122,7 @@ record_event "calibration suite: preparing persistent XRoboToolkit recorder"
 "${PYTHON_BIN}" "${recorder}" "${suite_dir}" \
     --max-attempts "${max_attempts}" \
     --prepare-s "${prepare_s}" \
+    --subphase-prepare-s "${subphase_prepare_s}" \
     --rate-hz 60 \
     --sdk-site-packages "${XRBT_SDK_SITE_PACKAGES}" \
     --adapter-revision "${adapter_revision}" \

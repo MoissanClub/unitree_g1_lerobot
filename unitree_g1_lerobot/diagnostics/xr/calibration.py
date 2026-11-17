@@ -21,6 +21,8 @@ class CalibrationSegment:
     preparation: str
     instruction: str
     phase: str = "motion_validation"
+    position_group: str | None = None
+    position_anchor: bool = False
     active_side: str | None = None
     minimum_motion_m: float | None = None
     maximum_static_motion_m: float | None = None
@@ -30,165 +32,105 @@ class CalibrationSegment:
         return asdict(self)
 
 
-CALIBRATION_PLAN_VERSION = 2
+def _calibration_capture(
+    label: str,
+    position_group: str,
+    preparation: str,
+    instruction: str,
+    *,
+    position_anchor: bool = False,
+) -> CalibrationSegment:
+    return CalibrationSegment(
+        label=label,
+        expectation="idle",
+        duration_s=5.0,
+        preparation=preparation,
+        instruction=instruction,
+        phase="calibration",
+        position_group=position_group,
+        position_anchor=position_anchor,
+        maximum_static_motion_m=0.06,
+        maximum_static_rotation_rad=0.25,
+    )
+
+
+_FORWARD_PREPARATION = (
+    "Extend both arms straight forward at shoulder height as far as is comfortable. "
+    "Keep both elbows and wrists straight."
+)
+_HORIZONTAL_PREPARATION = (
+    "Open both arms straight out to the sides at shoulder height to make a horizontal "
+    "T shape. Keep both elbows and wrists straight."
+)
+
+
+CALIBRATION_PLAN_VERSION = 4
 CALIBRATION_PLAN = (
-    CalibrationSegment(
-        label="position-natural-down",
-        expectation="idle",
-        duration_s=6.0,
-        preparation=(
-            "Face straight ahead and keep your head level. Hold one controller in "
-            "each hand."
-        ),
-        instruction=(
-            "Completely relax both of your arms. Let both arms hang naturally at "
-            "your sides with palms facing inward, and hold still."
-        ),
-        phase="position_calibration",
-        maximum_static_motion_m=0.06,
-        maximum_static_rotation_rad=0.25,
+    _calibration_capture(
+        "calibration-down-inward",
+        "down",
+        "Face straight ahead and keep your head level. Completely relax both arms "
+        "and let them hang naturally at your sides.",
+        "Keep both palms facing inward, keep your wrists straight, and hold still.",
+        position_anchor=True,
     ),
-    CalibrationSegment(
-        label="position-full-up",
-        expectation="idle",
-        duration_s=6.0,
-        preparation=(
-            "Raise both arms straight upward over your head as high as is comfortable. "
-            "Keep both elbows straight and palms facing inward."
-        ),
-        instruction=(
-            "Hold both arms fully upward. Look straight ahead and hold still."
-        ),
-        phase="position_calibration",
-        maximum_static_motion_m=0.06,
-        maximum_static_rotation_rad=0.25,
+    _calibration_capture(
+        "calibration-forward-up",
+        "forward",
+        _FORWARD_PREPARATION,
+        "Turn both palms upward toward the ceiling, and hold still.",
     ),
-    CalibrationSegment(
-        label="position-full-forward",
-        expectation="idle",
-        duration_s=6.0,
-        preparation=(
-            "Extend both arms straight forward at shoulder height as far as is "
-            "comfortable. Keep elbows straight, thumbs upward, and palms facing inward."
-        ),
-        instruction=(
-            "Hold both arms fully forward at shoulder height. Look straight ahead, "
-            "then hold still."
-        ),
-        phase="position_calibration",
-        maximum_static_motion_m=0.06,
-        maximum_static_rotation_rad=0.25,
+    _calibration_capture(
+        "calibration-forward-inward",
+        "forward",
+        _FORWARD_PREPARATION,
+        "Turn both palms inward toward each other with thumbs upward, and hold still.",
+        position_anchor=True,
     ),
-    CalibrationSegment(
-        label="position-full-open",
-        expectation="idle",
-        duration_s=6.0,
-        preparation=(
-            "Open both arms straight out to the sides at shoulder height, making a "
-            "horizontal T shape. Keep elbows straight and palms facing down."
-        ),
-        instruction=(
-            "Hold the full horizontal open T pose. Look straight ahead and hold still."
-        ),
-        phase="position_calibration",
-        maximum_static_motion_m=0.06,
-        maximum_static_rotation_rad=0.25,
+    _calibration_capture(
+        "calibration-forward-down",
+        "forward",
+        _FORWARD_PREPARATION,
+        "Turn both palms downward toward the floor, and hold still.",
     ),
-    CalibrationSegment(
-        label="palms-up",
-        expectation="idle",
-        duration_s=5.0,
-        preparation=(
-            "Bring both hands in front of your chest about shoulder width apart. "
-            "Bend your elbows and keep both hands at the same height."
-        ),
-        instruction=(
-            "Turn both palms to face the ceiling. Keep the hand positions fixed, "
-            "then hold still."
-        ),
-        phase="orientation_calibration",
-        maximum_static_motion_m=0.06,
-        maximum_static_rotation_rad=0.25,
+    _calibration_capture(
+        "calibration-forward-outward",
+        "forward",
+        _FORWARD_PREPARATION,
+        "Turn both palms outward away from each other, and hold still.",
     ),
-    CalibrationSegment(
-        label="palms-down",
-        expectation="idle",
-        duration_s=5.0,
-        preparation=(
-            "Keep both hands in front of your chest about shoulder width apart and "
-            "at the same height."
-        ),
-        instruction=(
-            "Turn both palms to face the floor. Keep the hand positions fixed, "
-            "then hold still."
-        ),
-        phase="orientation_calibration",
-        maximum_static_motion_m=0.06,
-        maximum_static_rotation_rad=0.25,
+    _calibration_capture(
+        "calibration-horizontal-up",
+        "horizontal",
+        _HORIZONTAL_PREPARATION,
+        "Turn both palms upward toward the ceiling, and hold still.",
     ),
-    CalibrationSegment(
-        label="palms-inward",
-        expectation="idle",
-        duration_s=5.0,
-        preparation=(
-            "Keep both hands in front of your chest about shoulder width apart and "
-            "at the same height."
-        ),
-        instruction=(
-            "Turn both palms inward so they face each other. Keep the hand positions "
-            "fixed and hold still."
-        ),
-        phase="orientation_calibration",
-        maximum_static_motion_m=0.06,
-        maximum_static_rotation_rad=0.25,
+    _calibration_capture(
+        "calibration-horizontal-forward",
+        "horizontal",
+        _HORIZONTAL_PREPARATION,
+        "Rotate both palms forward with thumbs upward, and hold still.",
     ),
-    CalibrationSegment(
-        label="palms-outward",
-        expectation="idle",
-        duration_s=5.0,
-        preparation=(
-            "Keep both hands in front of your chest about shoulder width apart and "
-            "at the same height."
-        ),
-        instruction=(
-            "Turn both palms outward, away from each other. Keep the hand positions "
-            "fixed and hold still."
-        ),
-        phase="orientation_calibration",
-        maximum_static_motion_m=0.06,
-        maximum_static_rotation_rad=0.25,
+    _calibration_capture(
+        "calibration-horizontal-down",
+        "horizontal",
+        _HORIZONTAL_PREPARATION,
+        "Turn both palms down toward the floor with thumbs forward, and hold still.",
+        position_anchor=True,
     ),
-    CalibrationSegment(
-        label="palms-forward",
-        expectation="idle",
-        duration_s=5.0,
-        preparation=(
-            "Keep both hands in front of your chest about shoulder width apart and "
-            "at the same height."
-        ),
-        instruction=(
-            "Turn both palms forward, away from your chest. Keep the hand positions "
-            "fixed and hold still."
-        ),
-        phase="orientation_calibration",
-        maximum_static_motion_m=0.06,
-        maximum_static_rotation_rad=0.25,
+    _calibration_capture(
+        "calibration-horizontal-backward",
+        "horizontal",
+        _HORIZONTAL_PREPARATION,
+        "Rotate both palms backward with thumbs downward, and hold still.",
     ),
-    CalibrationSegment(
-        label="palms-backward",
-        expectation="idle",
-        duration_s=5.0,
-        preparation=(
-            "Keep both hands in front of your chest about shoulder width apart and "
-            "at the same height."
-        ),
-        instruction=(
-            "Turn both palms backward, toward your chest. Keep the hand positions "
-            "fixed and hold still."
-        ),
-        phase="orientation_calibration",
-        maximum_static_motion_m=0.06,
-        maximum_static_rotation_rad=0.25,
+    _calibration_capture(
+        "calibration-up-inward",
+        "up",
+        "Raise both arms straight upward over your head as high as is comfortable. "
+        "Keep both elbows and wrists straight.",
+        "Keep both palms facing inward toward each other, and hold still.",
+        position_anchor=True,
     ),
     CalibrationSegment(
         label="right-forward",
@@ -375,6 +317,178 @@ def assess_calibration_trace(
             "right": _representative_pose(sample.right for sample in samples),
         }
     return report
+
+
+def _pose_distance(
+    reports: dict[str, dict[str, object]],
+    first: str,
+    second: str,
+    side: str,
+) -> float:
+    first_position = reports[first]["representative_poses"][side]["position_m"]
+    second_position = reports[second]["representative_poses"][side]["position_m"]
+    return math.dist(first_position, second_position)
+
+
+def _orientation_distance(
+    reports: dict[str, dict[str, object]],
+    first: str,
+    second: str,
+    side: str,
+) -> float:
+    first_quaternion = reports[first]["representative_poses"][side]["quaternion_xyzw"]
+    second_quaternion = reports[second]["representative_poses"][side]["quaternion_xyzw"]
+    dot = abs(
+        sum(a * b for a, b in zip(first_quaternion, second_quaternion, strict=True))
+    )
+    return 2.0 * math.acos(min(1.0, dot))
+
+
+def assess_calibration_unit(
+    position_group: str,
+    reports: dict[str, dict[str, object]],
+) -> dict[str, object]:
+    """Validate one position unit, including any palm-orientation subphases."""
+
+    unit_segments = tuple(
+        segment
+        for segment in CALIBRATION_PLAN
+        if segment.position_group == position_group
+    )
+    if not unit_segments:
+        raise ValueError(f"unknown calibration position group: {position_group}")
+    issues = [
+        f"{segment.label}: {issue}"
+        for segment in unit_segments
+        for issue in reports[segment.label]["issues"]
+    ]
+    measurements: dict[str, object] = {}
+    if not issues and position_group == "forward":
+        values = {
+            side: _pose_distance(
+                reports,
+                "calibration-down-inward",
+                "calibration-forward-inward",
+                side,
+            )
+            for side in ("left", "right")
+        }
+        measurements["down_to_forward_m"] = values
+        for side, value in values.items():
+            if value < 0.25:
+                issues.append(f"{side} down to forward position change is below 0.25 m")
+        for label in (
+            "calibration-forward-up",
+            "calibration-forward-down",
+            "calibration-forward-outward",
+        ):
+            position_change = {
+                side: _pose_distance(reports, "calibration-forward-inward", label, side)
+                for side in ("left", "right")
+            }
+            measurements[f"{label}_position_change_m"] = position_change
+            for side, value in position_change.items():
+                if value > 0.15:
+                    issues.append(f"{side} hand moved more than 0.15 m during {label}")
+        for name, first, second in (
+            (
+                "up_to_down",
+                "calibration-forward-up",
+                "calibration-forward-down",
+            ),
+            (
+                "inward_to_outward",
+                "calibration-forward-inward",
+                "calibration-forward-outward",
+            ),
+        ):
+            orientation_change = {
+                side: _orientation_distance(reports, first, second, side)
+                for side in ("left", "right")
+            }
+            measurements[f"{name}_orientation_change_rad"] = orientation_change
+            for side, value in orientation_change.items():
+                if value < 1.50:
+                    issues.append(
+                        f"{side} {name.replace('_', ' ')} wrist change is below 1.50 rad"
+                    )
+    elif not issues and position_group == "horizontal":
+        values = {
+            side: _pose_distance(
+                reports,
+                "calibration-forward-inward",
+                "calibration-horizontal-down",
+                side,
+            )
+            for side in ("left", "right")
+        }
+        measurements["forward_to_horizontal_m"] = values
+        for side, value in values.items():
+            if value < 0.20:
+                issues.append(
+                    f"{side} forward to horizontal position change is below 0.20 m"
+                )
+
+        for label in (
+            "calibration-horizontal-up",
+            "calibration-horizontal-forward",
+            "calibration-horizontal-backward",
+        ):
+            position_change = {
+                side: _pose_distance(
+                    reports, "calibration-horizontal-down", label, side
+                )
+                for side in ("left", "right")
+            }
+            measurements[f"{label}_position_change_m"] = position_change
+            for side, value in position_change.items():
+                if value > 0.15:
+                    issues.append(f"{side} hand moved more than 0.15 m during {label}")
+        for name, first, second in (
+            (
+                "up_to_down",
+                "calibration-horizontal-up",
+                "calibration-horizontal-down",
+            ),
+            (
+                "forward_to_backward",
+                "calibration-horizontal-forward",
+                "calibration-horizontal-backward",
+            ),
+        ):
+            orientation_change = {
+                side: _orientation_distance(reports, first, second, side)
+                for side in ("left", "right")
+            }
+            measurements[f"{name}_orientation_change_rad"] = orientation_change
+            for side, value in orientation_change.items():
+                if value < 1.50:
+                    issues.append(
+                        f"{side} {name.replace('_', ' ')} wrist change is below 1.50 rad"
+                    )
+    elif not issues and position_group == "up":
+        values = {
+            side: _pose_distance(
+                reports,
+                "calibration-down-inward",
+                "calibration-up-inward",
+                side,
+            )
+            for side in ("left", "right")
+        }
+        measurements["down_to_up_m"] = values
+        for side, value in values.items():
+            if value < 0.40:
+                issues.append(f"{side} down to up position change is below 0.40 m")
+
+    return {
+        "schema_version": 1,
+        "plan_version": CALIBRATION_PLAN_VERSION,
+        "position_group": position_group,
+        "passed": not issues,
+        "issues": issues,
+        "measurements": measurements,
+    }
 
 
 def pending_segments(

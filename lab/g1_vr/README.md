@@ -37,7 +37,7 @@ for headset handoff, connects to XRoboToolkit, writes data, or changes suite
 resume state. To practice one instruction in isolation:
 
 ```bash
-./lab/g1_vr/02_record_trace.sh --dry-run-only position-full-forward --dry-run
+./lab/g1_vr/02_record_trace.sh --dry-run-only calibration-forward-inward --dry-run
 ```
 
 Collect the full suite in one headset run:
@@ -51,13 +51,16 @@ captures motion-validation traces. It uses explicit spoken instructions:
 
 | Label | Requested pose or motion |
 | --- | --- |
-| `position-natural-down` | Completely relax both arms at the sides; palms inward. |
-| `position-full-up` | Both arms straight overhead; palms inward. |
-| `position-full-forward` | Both arms straight forward at shoulder height. |
-| `position-full-open` | Both arms open in a horizontal T-pose. |
-| `palms-up`, `palms-down` | Hands fixed in front of chest; palms face ceiling or floor. |
-| `palms-inward`, `palms-outward` | Hands fixed; palms face toward or away from each other. |
-| `palms-forward`, `palms-backward` | Hands fixed; palms face away from or toward the chest. |
+| `calibration-down-inward` | Arms naturally down; palms inward. |
+| `calibration-forward-up` | Arms fully forward; palms up. |
+| `calibration-forward-inward` | Same forward position; palms inward. |
+| `calibration-forward-down` | Same forward position; palms down. |
+| `calibration-forward-outward` | Same forward position; palms outward. |
+| `calibration-horizontal-up` | Horizontal T-pose; palms up. |
+| `calibration-horizontal-forward` | Same T-pose; palms forward. |
+| `calibration-horizontal-down` | Same T-pose; palms down. |
+| `calibration-horizontal-backward` | Same T-pose; palms backward. |
+| `calibration-up-inward` | Arms fully upward; palms inward. |
 | `right-forward` | From the 90-degree pose, hold right grip; fully extend forward and return. |
 | `right-up` | From the 90-degree pose, hold right grip; move upward and return. |
 | `right-outward` | From the 90-degree pose, hold right grip; move directly right and return. |
@@ -74,11 +77,20 @@ wearing the headset now
 ```
 
 Press Enter and put on the headset. Ten seconds later, voice walks through every
-needed segment with a preparation prompt and a precise recording prompt. Each
-trace is validated immediately for source readiness, tracking, correct grip,
-stillness or sufficient translation, and rate/integrity. Voice says either that
-the trace passed and should not be repeated, or that a redo is required. A
-failed segment is attempted up to `--max-attempts` times (default 3).
+needed segment with a preparation prompt and a precise recording prompt.
+Calibration captures are checked for source readiness, tracking, stillness,
+position separation, wrist-orientation change, and rate/integrity. Motion traces
+add grip and translation checks.
+
+The ten calibration captures form four independently checked position units.
+Changing arm position gets the normal 7-second preparation window. Palm
+subphases in the forward and horizontal units keep the same arm position and
+get only a 2-second settling interval. Quality is decided only after an entire
+position unit: if one horizontal subphase fails, all four horizontal subphases
+are repeated together. The retry count applies separately to each position
+unit. The richer orientation sets are intentionally placed in the forward and
+horizontal poses, where Quest Pro controller camera recognition is expected to
+be strongest. Opposed palm directions provide robust sign and change checks.
 
 Passing static-anchor reports include representative median controller/head
 positions and sign-aligned mean quaternions. These summaries are inputs to the
@@ -88,16 +100,16 @@ authoritative evidence and allow the transform to be recomputed.
 Calibration and trace recording are distinct artifacts despite sharing one
 headset handoff and one persistent XR connection:
 
-- `calibration/anchors/`, `calibration/reports/`, and
+- `calibration/units/` and
   `calibration/anchor-set.json` contain static observations used to solve a
   transform. The anchor set explicitly records that the transform is not yet
   solved.
 - `traces/` and `trace-reports/` contain dynamic experiment trajectories. Each
   motion attempt records the SHA-256 identity of the immutable anchor set.
 
-Motion recording never starts if any calibration anchor remains failed. Rerun
-script 2 to retry only those anchors; once they pass, the same script writes the
-anchor set and proceeds into the separate trace-recording phase.
+Motion recording never starts if any calibration position unit remains failed.
+Rerun script 2 to retry only that unit; once all four pass, the same script
+writes the anchor set and proceeds into the separate trace-recording phase.
 
 After all needed segments, voice asks for both grips to be released, the
 controllers to be put down, and the headset to be removed. After returning to
@@ -106,9 +118,9 @@ the terminal, type `headset off` to close the run boundary.
 The suite and every attempt are immutable under
 `calibration-suites/<suite-id>/`. Its `manifest.json` identifies the selected
 passing trace for each segment. If some segments remain failed, run script 2
-again: it resumes the current suite, skips all passing segments, and collects
-only missing or failed segments with up to three new attempts each. Use
-`--new-suite` only to deliberately collect the entire plan again.
+again: it resumes the current suite, skips passing position units and motion
+traces, and collects only unresolved work with up to three new attempts each.
+Use `--new-suite` only to deliberately collect the entire plan again.
 
 ## 3. Validate recorded data
 

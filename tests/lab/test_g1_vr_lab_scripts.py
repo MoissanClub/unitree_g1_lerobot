@@ -134,11 +134,17 @@ def test_calibration_cli_lists_pending_without_connecting_to_headset(tmp_path):
 
     labels = result.stdout.splitlines()
     assert len(labels) == 16
-    assert labels[:4] == [
-        "position-natural-down",
-        "position-full-up",
-        "position-full-forward",
-        "position-full-open",
+    assert labels[:10] == [
+        "calibration-down-inward",
+        "calibration-forward-up",
+        "calibration-forward-inward",
+        "calibration-forward-down",
+        "calibration-forward-outward",
+        "calibration-horizontal-up",
+        "calibration-horizontal-forward",
+        "calibration-horizontal-down",
+        "calibration-horizontal-backward",
+        "calibration-up-inward",
     ]
     assert labels[-1] == "left-outward"
 
@@ -147,13 +153,16 @@ def test_calibration_and_motion_artifacts_are_stored_separately(tmp_path):
     by_label = {segment.label: segment for segment in CALIBRATION_PLAN}
 
     anchor, anchor_report = _artifact_paths(
-        tmp_path, by_label["position-natural-down"], 1
+        tmp_path, by_label["calibration-down-inward"], 1
     )
     trace, trace_report = _artifact_paths(tmp_path, by_label["right-forward"], 1)
 
-    assert anchor == tmp_path / "calibration/anchors/position-natural-down/attempt-01"
+    assert anchor == tmp_path / (
+        "calibration/units/down/attempt-01/anchors/calibration-down-inward"
+    )
     assert anchor_report == (
-        tmp_path / "calibration/reports/position-natural-down-attempt-01.json"
+        tmp_path
+        / "calibration/units/down/attempt-01/reports/calibration-down-inward.json"
     )
     assert trace == tmp_path / "traces/right-forward/attempt-01"
     assert trace_report == tmp_path / "trace-reports/right-forward-attempt-01.json"
@@ -173,7 +182,7 @@ def test_script_two_dry_run_needs_no_precheck_headset_or_data_write(tmp_path):
             str(LAB / "02_record_trace.sh"),
             "--dry-run",
             "--dry-run-only",
-            "position-natural-down",
+            "calibration-down-inward",
         ],
         check=False,
         capture_output=True,
@@ -183,6 +192,6 @@ def test_script_two_dry_run_needs_no_precheck_headset_or_data_write(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert "Practice mode" in result.stdout
-    assert "Completely relax both of your arms" in result.stdout
+    assert "Completely relax both arms" in result.stdout
     assert "Practice walkthrough complete" in result.stdout
     assert not output_root.exists()

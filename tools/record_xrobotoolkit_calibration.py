@@ -23,6 +23,7 @@ from unitree_g1_lerobot.diagnostics.xr.calibration import (
     CALIBRATION_PLAN,
     CALIBRATION_PLAN_VERSION,
     CalibrationSegment,
+    assess_calibration_unit,
     assess_calibration_trace,
     pending_segments,
 )
@@ -34,6 +35,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--max-attempts", type=int, default=3)
     result.add_argument("--rate-hz", type=float, default=60.0)
     result.add_argument("--prepare-s", type=float, default=7.0)
+    result.add_argument("--subphase-prepare-s", type=float, default=2.0)
     result.add_argument("--sdk-site-packages", type=Path)
     result.add_argument("--adapter-revision", default="working-tree")
     result.add_argument("--ready-file", type=Path)
@@ -99,7 +101,13 @@ def _new_manifest(suite_dir: Path) -> dict[str, object]:
 def _validate_args(args: argparse.Namespace) -> None:
     if args.max_attempts < 1:
         raise SystemExit("--max-attempts must be at least 1")
-    for name in ("rate_hz", "prepare_s", "gate_timeout_s", "device_timeout_s"):
+    for name in (
+        "rate_hz",
+        "prepare_s",
+        "subphase_prepare_s",
+        "gate_timeout_s",
+        "device_timeout_s",
+    ):
         value = getattr(args, name)
         if not math.isfinite(value) or value <= 0:
             raise SystemExit(f"--{name.replace('_', '-')} must be positive and finite")
@@ -136,16 +144,31 @@ def _run_dry_walkthrough(args: argparse.Namespace) -> int:
         "or quality decision will occur.",
     )
     current_phase = None
-    for segment in segments:
+    current_position_group = None
+    for index, segment in enumerate(segments):
         if segment.phase != current_phase:
             current_phase = segment.phase
             _voice(args, f"Starting the {segment.phase.replace('_', ' ')} phase.")
+        same_position = (
+            segment.position_group is not None
+            and segment.position_group == current_position_group
+        )
+        preparation_s = args.subphase_prepare_s if same_position else args.prepare_s
+        if same_position:
+            prompt = (
+                f"Next palm subphase: {segment.label.replace('-', ' ')}. "
+                f"{segment.instruction}"
+            )
+        else:
+            prompt = (
+                f"Next trace: {segment.label.replace('-', ' ')}. "
+                f"{segment.preparation} The recorded action will be: "
+                f"{segment.instruction}"
+            )
         _voice(
             args,
-            f"Next trace: {segment.label.replace('-', ' ')}. {segment.preparation} "
-            f"The recorded action will be: {segment.instruction} In the real run, "
-            f"you will have {args.prepare_s:.0f} seconds to prepare. Do not begin "
-            "until I say start now.",
+            f"{prompt} In the real run, you will have {preparation_s:.0f} seconds "
+            "to prepare. Do not begin until I say start now.",
         )
         time.sleep(args.dry_run_pause_s)
         _voice(args, "Get ready. Recording starts in 3, 2, 1.")
@@ -162,11 +185,25 @@ def _run_dry_walkthrough(args: argparse.Namespace) -> int:
             )
         else:
             _voice(args, "Recording stopped. Relax while I check the trace quality.")
-        _voice(
-            args,
-            "In the real run, I will now say either that this trace passed and does "
-            "not need repetition, or that a redo is required.",
+        next_segment = segments[index + 1] if index + 1 < len(segments) else None
+        unit_finished = segment.phase == "calibration" and (
+            next_segment is None
+            or next_segment.position_group != segment.position_group
         )
+        if unit_finished:
+            _voice(
+                args,
+                f"In the real run, I will now evaluate the complete "
+                f"{segment.position_group} position unit. If it fails, every "
+                "subphase in this position is repeated.",
+            )
+        elif segment.phase == "motion_validation":
+            _voice(
+                args,
+                "In the real run, I will now say either that this motion trace "
+                "passed or that this trace needs a redo.",
+            )
+        current_position_group = segment.position_group
     _voice(
         args,
         "Practice walkthrough complete. No data or calibration artifacts were created.",
@@ -251,11 +288,18 @@ def _artifact_paths(
     if segment.phase == "motion_validation":
         trace_root = suite_dir / "traces"
         report_root = suite_dir / "trace-reports"
+        trace_dir = trace_root / segment.label / f"attempt-{attempt_number:02d}"
+        report_path = report_root / f"{segment.label}-attempt-{attempt_number:02d}.json"
     else:
-        trace_root = suite_dir / "calibration" / "anchors"
-        report_root = suite_dir / "calibration" / "reports"
-    trace_dir = trace_root / segment.label / f"attempt-{attempt_number:02d}"
-    report_path = report_root / f"{segment.label}-attempt-{attempt_number:02d}.json"
+        unit_root = (
+            suite_dir
+            / "calibration"
+            / "units"
+            / str(segment.position_group)
+            / f"attempt-{attempt_number:02d}"
+        )
+        trace_dir = unit_root / "anchors" / segment.label
+        report_path = unit_root / "reports" / f"{segment.label}.json"
     return trace_dir, report_path
 
 
@@ -292,6 +336,8 @@ def _write_anchor_set(suite_dir: Path, manifest: dict[str, object]) -> Path:
         report = json.loads(Path(selected["report_path"]).read_text())
         anchors[segment.label] = {
             "phase": segment.phase,
+            "position_group": segment.position_group,
+            "position_anchor": segment.position_anchor,
             "selected_trace": selected["trace_path"],
             "report_path": selected["report_path"],
             "representative_poses": report["representative_poses"],
@@ -318,12 +364,209 @@ def _write_anchor_set(suite_dir: Path, manifest: dict[str, object]) -> Path:
     return anchor_set_path
 
 
+def _next_unit_attempt_number(suite_dir: Path, position_group: str) -> int:
+    root = suite_dir / "calibration" / "units" / position_group
+    numbers = []
+    for path in root.glob("attempt-*"):
+        try:
+            numbers.append(int(path.name.removeprefix("attempt-")))
+        except ValueError:
+            continue
+    return max(numbers, default=0) + 1
+
+
+def _selected_calibration_reports(
+    manifest: dict[str, object],
+) -> dict[str, dict[str, object]]:
+    reports = {}
+    for segment in CALIBRATION_PLAN:
+        if segment.phase != "calibration":
+            continue
+        entry = manifest["segments"].get(segment.label, {})
+        if entry.get("status") != "passed":
+            continue
+        selected = next(
+            attempt
+            for attempt in entry["attempts"]
+            if attempt["trace_path"] == entry["selected_trace"]
+        )
+        reports[segment.label] = json.loads(Path(selected["report_path"]).read_text())
+    return reports
+
+
+def _capture_calibration_unit(
+    source,
+    args: argparse.Namespace,
+    suite_dir: Path,
+    manifest: dict[str, object],
+    position_group: str,
+    unit_attempt: int,
+) -> dict[str, object]:
+    segments = tuple(
+        segment
+        for segment in CALIBRATION_PLAN
+        if segment.position_group == position_group
+    )
+    unit_dir = (
+        suite_dir
+        / "calibration"
+        / "units"
+        / position_group
+        / f"attempt-{unit_attempt:02d}"
+    )
+    reports = _selected_calibration_reports(manifest)
+
+    for index, segment in enumerate(segments):
+        same_position = index > 0
+        preparation_s = args.subphase_prepare_s if same_position else args.prepare_s
+        trace_dir = unit_dir / "anchors" / segment.label
+        report_path = unit_dir / "reports" / f"{segment.label}.json"
+        if same_position:
+            prompt = (
+                f"Next palm subphase. {segment.instruction} You have "
+                f"{preparation_s:.0f} seconds to settle."
+            )
+        else:
+            prompt = (
+                f"Next calibration position: {position_group}. {segment.preparation} "
+                f"{segment.instruction} You have {preparation_s:.0f} seconds to prepare."
+            )
+        _voice(args, f"{prompt} Do not begin until I say start now.")
+        time.sleep(preparation_s)
+        if not _wait_for_device(source, args):
+            report = {
+                "passed": False,
+                "issues": ["both controllers were not tracked before recording"],
+                "calibration_segment": segment.to_dict(),
+            }
+        else:
+            _voice(args, "Get ready. Recording starts in 3, 2, 1.")
+            _voice(args, "Start now.")
+            _timeline(
+                args,
+                f"calibration unit {position_group} attempt {unit_attempt} "
+                f"anchor {segment.label} started",
+            )
+            _record_attempt(source, args, segment, trace_dir)
+            _voice(args, "Capture complete. Relax until the next instruction.")
+            report = assess_calibration_trace(trace_dir, segment)
+        _write_json(report_path, report)
+        reports[segment.label] = report
+
+        entry = manifest["segments"].setdefault(
+            segment.label,
+            {"status": "pending", "selected_trace": None, "attempts": []},
+        )
+        entry["attempts"].append(
+            {
+                "attempt": len(entry["attempts"]) + 1,
+                "calibration_unit": position_group,
+                "unit_attempt": unit_attempt,
+                "captured_at_utc": _utc_now(),
+                "trace_path": str(trace_dir.resolve()) if trace_dir.exists() else None,
+                "report_path": str(report_path.resolve()),
+                "passed_individual_gate": bool(report["passed"]),
+                "issues": list(report["issues"]),
+            }
+        )
+
+    unit_report = assess_calibration_unit(position_group, reports)
+    unit_report["unit_attempt"] = unit_attempt
+    unit_report["unit_dir"] = str(unit_dir.resolve())
+    unit_report_path = unit_dir / "unit-report.json"
+    _write_json(unit_report_path, unit_report)
+
+    for segment in segments:
+        entry = manifest["segments"][segment.label]
+        current_attempt = entry["attempts"][-1]
+        current_attempt["passed"] = bool(unit_report["passed"])
+        if unit_report["passed"]:
+            entry["status"] = "passed"
+            entry["selected_trace"] = current_attempt["trace_path"]
+        else:
+            entry["status"] = "failed"
+            entry["selected_trace"] = None
+
+    manifest.setdefault("calibration_units", []).append(
+        {
+            "position_group": position_group,
+            "unit_attempt": unit_attempt,
+            "captured_at_utc": _utc_now(),
+            "passed": bool(unit_report["passed"]),
+            "report_path": str(unit_report_path.resolve()),
+            "issues": list(unit_report["issues"]),
+        }
+    )
+    manifest["updated_at_utc"] = _utc_now()
+    _write_json(suite_dir / "manifest.json", manifest)
+    return unit_report
+
+
+def _run_calibration_units(
+    source,
+    args: argparse.Namespace,
+    suite_dir: Path,
+    manifest: dict[str, object],
+) -> bool:
+    for position_group in ("down", "forward", "horizontal", "up"):
+        segments = tuple(
+            segment
+            for segment in CALIBRATION_PLAN
+            if segment.position_group == position_group
+        )
+        if all(
+            manifest["segments"].get(segment.label, {}).get("status") == "passed"
+            for segment in segments
+        ):
+            continue
+        for local_attempt in range(1, args.max_attempts + 1):
+            unit_attempt = _next_unit_attempt_number(suite_dir, position_group)
+            _voice(
+                args,
+                f"Starting {position_group} calibration attempt {local_attempt} of "
+                f"{args.max_attempts}.",
+            )
+            report = _capture_calibration_unit(
+                source,
+                args,
+                suite_dir,
+                manifest,
+                position_group,
+                unit_attempt,
+            )
+            if report["passed"]:
+                _voice(
+                    args,
+                    f"The {position_group} calibration unit passed. Continue to the "
+                    "next position.",
+                )
+                break
+            summary = " ".join(str(issue) for issue in report["issues"][:3])
+            if local_attempt < args.max_attempts:
+                _voice(
+                    args,
+                    f"The {position_group} calibration unit did not pass. {summary} "
+                    f"Redo the complete {position_group} position unit.",
+                )
+            else:
+                _voice(
+                    args,
+                    f"The {position_group} calibration unit did not pass after the "
+                    "allowed attempts. Motion traces will not be recorded. Run script "
+                    "2 again to retry this position unit.",
+                )
+                return False
+    return True
+
+
 def _attempt_segment(
     source,
     args: argparse.Namespace,
     suite_dir: Path,
     manifest: dict[str, object],
     segment: CalibrationSegment,
+    initial_prepare_s: float,
+    same_position: bool,
 ) -> bool:
     segments = manifest["segments"]
     entry = segments.setdefault(
@@ -333,18 +576,30 @@ def _attempt_segment(
     attempts = entry["attempts"]
 
     for local_attempt in range(1, args.max_attempts + 1):
+        preparation_s = (
+            initial_prepare_s if local_attempt == 1 else args.subphase_prepare_s
+        )
         first_trace_dir, _ = _artifact_paths(suite_dir, segment, 1)
         existing_attempts = tuple(first_trace_dir.parent.glob("attempt-*"))
         attempt_number = max(len(attempts), len(existing_attempts)) + 1
         trace_dir, report_path = _artifact_paths(suite_dir, segment, attempt_number)
+        if segment.position_group is not None and (same_position or local_attempt > 1):
+            prompt = (
+                f"Next palm subphase: {segment.label.replace('-', ' ')}. "
+                f"{segment.instruction}"
+            )
+        else:
+            prompt = (
+                f"Next trace: {segment.label.replace('-', ' ')}. "
+                f"{segment.preparation} The recorded action will be: "
+                f"{segment.instruction}"
+            )
         _voice(
             args,
-            f"Next trace: {segment.label.replace('-', ' ')}. {segment.preparation} "
-            f"The recorded action will be: {segment.instruction} "
-            f"You have {args.prepare_s:.0f} seconds to prepare. Do not begin until "
-            "I say start now.",
+            f"{prompt} You have {preparation_s:.0f} seconds to prepare. Do not "
+            "begin until I say start now.",
         )
-        time.sleep(args.prepare_s)
+        time.sleep(preparation_s)
         if not _wait_for_device(source, args):
             report = {
                 "passed": False,
@@ -455,31 +710,36 @@ def main(argv: list[str] | None = None) -> int:
             f"Calibration collection is starting. I need {len(pending)} traces. "
             "Keep both controllers visible and follow each instruction exactly.",
         )
-        current_phase = None
-        for segment in pending:
-            if segment.phase == "motion_validation" and not _calibration_is_complete(
-                manifest
-            ):
-                _voice(
+        calibration_passed = _calibration_is_complete(manifest)
+        if not calibration_passed:
+            _voice(
+                args,
+                "Starting four calibration position units. Each position is checked "
+                "and retried independently.",
+            )
+            calibration_passed = _run_calibration_units(
+                source, args, args.suite_dir, manifest
+            )
+        if calibration_passed:
+            anchor_set_path = _write_anchor_set(args.suite_dir, manifest)
+            _voice(
+                args,
+                "Calibration passed and its immutable anchor set is saved. Starting "
+                "the separate motion trace phase.",
+            )
+            _timeline(args, f"calibration anchor set: {anchor_set_path}")
+            for segment in pending_segments(manifest):
+                if segment.phase != "motion_validation":
+                    continue
+                _attempt_segment(
+                    source,
                     args,
-                    "Calibration anchors are still incomplete. I will not record "
-                    "motion traces against an incomplete calibration. Run script 2 "
-                    "again to retry only the failed calibration anchors.",
+                    args.suite_dir,
+                    manifest,
+                    segment,
+                    args.prepare_s,
+                    False,
                 )
-                break
-            if segment.phase != current_phase:
-                current_phase = segment.phase
-                phase_name = segment.phase.replace("_", " ")
-                _voice(args, f"Starting the {phase_name} phase.")
-                if segment.phase == "motion_validation":
-                    anchor_set_path = _write_anchor_set(args.suite_dir, manifest)
-                    _voice(
-                        args,
-                        "Calibration anchor collection passed. The immutable anchor "
-                        "set is saved. Starting separate motion trace recording.",
-                    )
-                    _timeline(args, f"calibration anchor set: {anchor_set_path}")
-            _attempt_segment(source, args, args.suite_dir, manifest, segment)
     finally:
         source.disconnect()
 

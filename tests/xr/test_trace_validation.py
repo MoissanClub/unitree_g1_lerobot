@@ -14,6 +14,7 @@ from unitree_g1_lerobot.diagnostics.xr.trace_validation import validate_trace
 from unitree_g1_lerobot.diagnostics.xr.calibration import (
     CALIBRATION_PLAN,
     CalibrationSegment,
+    assess_calibration_unit,
     assess_calibration_trace,
     pending_segments,
 )
@@ -82,19 +83,22 @@ def test_calibration_plan_has_explicit_static_and_axis_prompts():
     by_label = {segment.label: segment for segment in CALIBRATION_PLAN}
 
     assert len(by_label) == len(CALIBRATION_PLAN) == 16
-    assert (
-        "Completely relax both of your arms"
-        in by_label["position-natural-down"].instruction
-    )
-    assert "fully upward" in by_label["position-full-up"].instruction
-    assert "fully forward" in by_label["position-full-forward"].instruction
-    assert "horizontal open T pose" in by_label["position-full-open"].instruction
-    assert "face the ceiling" in by_label["palms-up"].instruction
-    assert "face the floor" in by_label["palms-down"].instruction
-    assert "face each other" in by_label["palms-inward"].instruction
-    assert "away from each other" in by_label["palms-outward"].instruction
-    assert "away from your chest" in by_label["palms-forward"].instruction
-    assert "toward your chest" in by_label["palms-backward"].instruction
+    assert "relax both arms" in by_label["calibration-down-inward"].preparation
+    assert "straight forward" in by_label["calibration-forward-up"].preparation
+    assert "horizontal T shape" in by_label["calibration-horizontal-down"].preparation
+    assert "palms forward" in by_label["calibration-horizontal-forward"].instruction
+    assert "straight upward" in by_label["calibration-up-inward"].preparation
+    calibration = [
+        segment for segment in CALIBRATION_PLAN if segment.phase == "calibration"
+    ]
+    assert len(calibration) == 10
+    assert {segment.position_group for segment in calibration} == {
+        "down",
+        "forward",
+        "horizontal",
+        "up",
+    }
+    assert sum(segment.position_anchor for segment in calibration) == 4
     assert "straight forward" in by_label["right-forward"].instruction
     assert "straight upward" in by_label["right-up"].instruction
     assert "directly out to your right side" in by_label["right-outward"].instruction
@@ -139,7 +143,7 @@ def test_calibration_static_pose_rejects_excess_motion(tmp_path):
         8.0,
         "prepare",
         "relax",
-        phase="position_calibration",
+        phase="calibration",
         maximum_static_motion_m=0.08,
     )
 
@@ -153,13 +157,73 @@ def test_calibration_static_pose_rejects_excess_motion(tmp_path):
 def test_resume_skips_only_segments_with_selected_passes():
     manifest = {
         "segments": {
-            "position-natural-down": {"status": "passed"},
-            "position-full-up": {"status": "failed"},
+            "calibration-down-inward": {"status": "passed"},
+            "calibration-up-inward": {"status": "failed"},
         }
     }
 
     labels = [segment.label for segment in pending_segments(manifest)]
 
-    assert "position-natural-down" not in labels
-    assert "position-full-up" in labels
+    assert "calibration-down-inward" not in labels
+    assert "calibration-up-inward" in labels
     assert "right-forward" in labels
+
+
+def test_horizontal_calibration_unit_checks_position_and_wrist_change():
+    def report(position, quaternion):
+        pose = {"position_m": position, "quaternion_xyzw": quaternion}
+        return {
+            "passed": True,
+            "issues": [],
+            "representative_poses": {"left": pose, "right": pose},
+        }
+
+    reports = {
+        "calibration-forward-inward": report([0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
+        "calibration-horizontal-up": report([0.4, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
+        "calibration-horizontal-down": report([0.4, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]),
+        "calibration-horizontal-forward": report(
+            [0.4, 0.0, 0.0], [0.70710678, 0.0, 0.0, 0.70710678]
+        ),
+        "calibration-horizontal-backward": report(
+            [0.4, 0.0, 0.0], [-0.70710678, 0.0, 0.0, 0.70710678]
+        ),
+    }
+
+    passed = assess_calibration_unit("horizontal", reports)
+    reports["calibration-horizontal-backward"] = report(
+        [0.4, 0.0, 0.0], [0.70710678, 0.0, 0.0, 0.70710678]
+    )
+    failed = assess_calibration_unit("horizontal", reports)
+
+    assert passed["passed"]
+    assert not failed["passed"]
+    assert any("wrist change" in issue for issue in failed["issues"])
+
+
+def test_forward_calibration_unit_checks_opposed_orientations():
+    def report(position, quaternion):
+        pose = {"position_m": position, "quaternion_xyzw": quaternion}
+        return {
+            "passed": True,
+            "issues": [],
+            "representative_poses": {"left": pose, "right": pose},
+        }
+
+    reports = {
+        "calibration-down-inward": report([0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
+        "calibration-forward-up": report([0.4, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
+        "calibration-forward-inward": report([0.4, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
+        "calibration-forward-down": report([0.4, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]),
+        "calibration-forward-outward": report([0.4, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]),
+    }
+
+    passed = assess_calibration_unit("forward", reports)
+    reports["calibration-forward-outward"] = report(
+        [0.4, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]
+    )
+    failed = assess_calibration_unit("forward", reports)
+
+    assert passed["passed"]
+    assert not failed["passed"]
+    assert any("inward to outward" in issue for issue in failed["issues"])
