@@ -154,11 +154,14 @@ def _run_dry_walkthrough(args: argparse.Namespace) -> int:
             args,
             f"Practice mode skips the {segment.duration_s:.0f} second recording wait.",
         )
-        _voice(
-            args,
-            "Recording stopped. Release both grip buttons and relax while I check "
-            "the trace quality.",
-        )
+        if segment.phase == "motion_validation":
+            _voice(
+                args,
+                "Recording stopped. Release the active grip and relax while I check "
+                "the trace quality.",
+            )
+        else:
+            _voice(args, "Recording stopped. Relax while I check the trace quality.")
         _voice(
             args,
             "In the real run, I will now say either that this trace passed and does "
@@ -356,11 +359,17 @@ def _attempt_segment(
                 f"calibration trace {segment.label} attempt {attempt_number} started",
             )
             _record_attempt(source, args, segment, trace_dir)
-            _voice(
-                args,
-                "Recording stopped. Release both grip buttons and relax while I "
-                "check the trace quality.",
-            )
+            if segment.phase == "motion_validation":
+                _voice(
+                    args,
+                    "Recording stopped. Release the active grip and relax while I "
+                    "check the trace quality.",
+                )
+            else:
+                _voice(
+                    args,
+                    "Recording stopped. Relax while I check the trace quality.",
+                )
             report = assess_calibration_trace(trace_dir, segment)
 
         _write_json(report_path, report)

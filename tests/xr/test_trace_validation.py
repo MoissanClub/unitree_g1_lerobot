@@ -98,6 +98,10 @@ def test_calibration_plan_has_explicit_static_and_axis_prompts():
     assert "straight forward" in by_label["right-forward"].instruction
     assert "straight upward" in by_label["right-up"].instruction
     assert "directly out to your right side" in by_label["right-outward"].instruction
+    for segment in CALIBRATION_PLAN:
+        if segment.phase != "motion_validation":
+            assert "grip" not in segment.preparation.lower()
+            assert "grip" not in segment.instruction.lower()
 
 
 def test_calibration_motion_requires_translation_and_sustained_grip(tmp_path):

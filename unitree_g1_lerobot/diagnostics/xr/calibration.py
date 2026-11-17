@@ -38,11 +38,11 @@ CALIBRATION_PLAN = (
         duration_s=6.0,
         preparation=(
             "Face straight ahead and keep your head level. Hold one controller in "
-            "each hand and release both grip buttons."
+            "each hand."
         ),
         instruction=(
             "Completely relax both of your arms. Let both arms hang naturally at "
-            "your sides with palms facing inward. Keep both grips released and hold still."
+            "your sides with palms facing inward, and hold still."
         ),
         phase="position_calibration",
         maximum_static_motion_m=0.06,
@@ -57,8 +57,7 @@ CALIBRATION_PLAN = (
             "Keep both elbows straight and palms facing inward."
         ),
         instruction=(
-            "Hold both arms fully upward. Look straight ahead, keep both grips "
-            "released, and hold still."
+            "Hold both arms fully upward. Look straight ahead and hold still."
         ),
         phase="position_calibration",
         maximum_static_motion_m=0.06,
@@ -74,7 +73,7 @@ CALIBRATION_PLAN = (
         ),
         instruction=(
             "Hold both arms fully forward at shoulder height. Look straight ahead, "
-            "keep both grips released, and hold still."
+            "then hold still."
         ),
         phase="position_calibration",
         maximum_static_motion_m=0.06,
@@ -89,8 +88,7 @@ CALIBRATION_PLAN = (
             "horizontal T shape. Keep elbows straight and palms facing down."
         ),
         instruction=(
-            "Hold the full horizontal open T pose. Look straight ahead, keep both "
-            "grips released, and hold still."
+            "Hold the full horizontal open T pose. Look straight ahead and hold still."
         ),
         phase="position_calibration",
         maximum_static_motion_m=0.06,
@@ -106,7 +104,7 @@ CALIBRATION_PLAN = (
         ),
         instruction=(
             "Turn both palms to face the ceiling. Keep the hand positions fixed, "
-            "release both grips, and hold still."
+            "then hold still."
         ),
         phase="orientation_calibration",
         maximum_static_motion_m=0.06,
@@ -122,7 +120,7 @@ CALIBRATION_PLAN = (
         ),
         instruction=(
             "Turn both palms to face the floor. Keep the hand positions fixed, "
-            "release both grips, and hold still."
+            "then hold still."
         ),
         phase="orientation_calibration",
         maximum_static_motion_m=0.06,
@@ -138,7 +136,7 @@ CALIBRATION_PLAN = (
         ),
         instruction=(
             "Turn both palms inward so they face each other. Keep the hand positions "
-            "fixed, release both grips, and hold still."
+            "fixed and hold still."
         ),
         phase="orientation_calibration",
         maximum_static_motion_m=0.06,
@@ -154,7 +152,7 @@ CALIBRATION_PLAN = (
         ),
         instruction=(
             "Turn both palms outward, away from each other. Keep the hand positions "
-            "fixed, release both grips, and hold still."
+            "fixed and hold still."
         ),
         phase="orientation_calibration",
         maximum_static_motion_m=0.06,
@@ -170,7 +168,7 @@ CALIBRATION_PLAN = (
         ),
         instruction=(
             "Turn both palms forward, away from your chest. Keep the hand positions "
-            "fixed, release both grips, and hold still."
+            "fixed and hold still."
         ),
         phase="orientation_calibration",
         maximum_static_motion_m=0.06,
@@ -186,7 +184,7 @@ CALIBRATION_PLAN = (
         ),
         instruction=(
             "Turn both palms backward, toward your chest. Keep the hand positions "
-            "fixed, release both grips, and hold still."
+            "fixed and hold still."
         ),
         phase="orientation_calibration",
         maximum_static_motion_m=0.06,
