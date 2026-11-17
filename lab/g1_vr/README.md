@@ -70,6 +70,20 @@ positions and sign-aligned mean quaternions. These summaries are inputs to the
 later calibration solve; the normalized and raw JSONL samples remain the
 authoritative evidence and allow the transform to be recomputed.
 
+Calibration and trace recording are distinct artifacts despite sharing one
+headset handoff and one persistent XR connection:
+
+- `calibration/anchors/`, `calibration/reports/`, and
+  `calibration/anchor-set.json` contain static observations used to solve a
+  transform. The anchor set explicitly records that the transform is not yet
+  solved.
+- `traces/` and `trace-reports/` contain dynamic experiment trajectories. Each
+  motion attempt records the SHA-256 identity of the immutable anchor set.
+
+Motion recording never starts if any calibration anchor remains failed. Rerun
+script 2 to retry only those anchors; once they pass, the same script writes the
+anchor set and proceeds into the separate trace-recording phase.
+
 After all needed segments, voice asks for both grips to be released, the
 controllers to be put down, and the headset to be removed. After returning to
 the terminal, type `headset off` to close the run boundary.

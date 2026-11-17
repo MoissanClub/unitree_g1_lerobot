@@ -6,6 +6,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tools.record_xrobotoolkit_calibration import _artifact_paths
+from unitree_g1_lerobot.diagnostics.xr.calibration import CALIBRATION_PLAN
+
 ROOT = Path(__file__).resolve().parents[2]
 LAB = ROOT / "lab" / "g1_vr"
 SCRIPTS = tuple(sorted(LAB.glob("0*.sh")))
@@ -138,3 +141,19 @@ def test_calibration_cli_lists_pending_without_connecting_to_headset(tmp_path):
         "position-full-open",
     ]
     assert labels[-1] == "left-outward"
+
+
+def test_calibration_and_motion_artifacts_are_stored_separately(tmp_path):
+    by_label = {segment.label: segment for segment in CALIBRATION_PLAN}
+
+    anchor, anchor_report = _artifact_paths(
+        tmp_path, by_label["position-natural-down"], 1
+    )
+    trace, trace_report = _artifact_paths(tmp_path, by_label["right-forward"], 1)
+
+    assert anchor == tmp_path / "calibration/anchors/position-natural-down/attempt-01"
+    assert anchor_report == (
+        tmp_path / "calibration/reports/position-natural-down-attempt-01.json"
+    )
+    assert trace == tmp_path / "traces/right-forward/attempt-01"
+    assert trace_report == tmp_path / "trace-reports/right-forward-attempt-01.json"

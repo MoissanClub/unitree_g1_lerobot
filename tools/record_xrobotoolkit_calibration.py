@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import subprocess
@@ -19,6 +20,7 @@ from lerobot_teleoperator_g1_vr import (
 )
 
 from unitree_g1_lerobot.diagnostics.xr.calibration import (
+    CALIBRATION_PLAN,
     CALIBRATION_PLAN_VERSION,
     CalibrationSegment,
     assess_calibration_trace,
@@ -178,6 +180,81 @@ def _quality_summary(report: dict[str, object]) -> str:
     return f"The quality check reported: {joined}."
 
 
+def _artifact_paths(
+    suite_dir: Path,
+    segment: CalibrationSegment,
+    attempt_number: int,
+) -> tuple[Path, Path]:
+    if segment.phase == "motion_validation":
+        trace_root = suite_dir / "traces"
+        report_root = suite_dir / "trace-reports"
+    else:
+        trace_root = suite_dir / "calibration" / "anchors"
+        report_root = suite_dir / "calibration" / "reports"
+    trace_dir = trace_root / segment.label / f"attempt-{attempt_number:02d}"
+    report_path = report_root / f"{segment.label}-attempt-{attempt_number:02d}.json"
+    return trace_dir, report_path
+
+
+def _calibration_is_complete(manifest: dict[str, object]) -> bool:
+    entries = manifest["segments"]
+    return all(
+        entries.get(segment.label, {}).get("status") == "passed"
+        for segment in CALIBRATION_PLAN
+        if segment.phase != "motion_validation"
+    )
+
+
+def _write_anchor_set(suite_dir: Path, manifest: dict[str, object]) -> Path:
+    anchor_set_path = suite_dir / "calibration" / "anchor-set.json"
+    if anchor_set_path.exists():
+        digest = hashlib.sha256(anchor_set_path.read_bytes()).hexdigest()
+        manifest["calibration_anchor_set"] = {
+            "path": str(anchor_set_path.resolve()),
+            "sha256": digest,
+        }
+        _write_json(suite_dir / "manifest.json", manifest)
+        return anchor_set_path
+
+    anchors = {}
+    for segment in CALIBRATION_PLAN:
+        if segment.phase == "motion_validation":
+            continue
+        entry = manifest["segments"][segment.label]
+        selected = next(
+            attempt
+            for attempt in entry["attempts"]
+            if attempt["passed"] and attempt["trace_path"] == entry["selected_trace"]
+        )
+        report = json.loads(Path(selected["report_path"]).read_text())
+        anchors[segment.label] = {
+            "phase": segment.phase,
+            "selected_trace": selected["trace_path"],
+            "report_path": selected["report_path"],
+            "representative_poses": report["representative_poses"],
+        }
+    _write_json(
+        anchor_set_path,
+        {
+            "schema_version": 1,
+            "plan_version": CALIBRATION_PLAN_VERSION,
+            "created_at_utc": _utc_now(),
+            "coordinate_frame": (
+                "XRoboToolkit normalized controller frame; metres; quaternion xyzw"
+            ),
+            "status": "complete_observation_set_transform_not_yet_solved",
+            "anchors": anchors,
+        },
+    )
+    digest = hashlib.sha256(anchor_set_path.read_bytes()).hexdigest()
+    manifest["calibration_anchor_set"] = {
+        "path": str(anchor_set_path.resolve()),
+        "sha256": digest,
+    }
+    _write_json(suite_dir / "manifest.json", manifest)
+    return anchor_set_path
+
+
 def _attempt_segment(
     source,
     args: argparse.Namespace,
@@ -193,16 +270,10 @@ def _attempt_segment(
     attempts = entry["attempts"]
 
     for local_attempt in range(1, args.max_attempts + 1):
-        existing_attempts = tuple(
-            (suite_dir / "traces" / segment.label).glob("attempt-*")
-        )
+        first_trace_dir, _ = _artifact_paths(suite_dir, segment, 1)
+        existing_attempts = tuple(first_trace_dir.parent.glob("attempt-*"))
         attempt_number = max(len(attempts), len(existing_attempts)) + 1
-        trace_dir = (
-            suite_dir / "traces" / segment.label / f"attempt-{attempt_number:02d}"
-        )
-        report_path = (
-            suite_dir / "reports" / f"{segment.label}-attempt-{attempt_number:02d}.json"
-        )
+        trace_dir, report_path = _artifact_paths(suite_dir, segment, attempt_number)
         _voice(
             args,
             f"Next trace: {segment.label.replace('-', ' ')}. {segment.preparation} "
@@ -241,6 +312,10 @@ def _attempt_segment(
             "passed": bool(report["passed"]),
             "issues": list(report["issues"]),
         }
+        if segment.phase == "motion_validation":
+            attempt["calibration_anchor_set_sha256"] = manifest[
+                "calibration_anchor_set"
+            ]["sha256"]
         attempts.append(attempt)
         manifest["updated_at_utc"] = _utc_now()
 
@@ -311,10 +386,28 @@ def main(argv: list[str] | None = None) -> int:
         )
         current_phase = None
         for segment in pending:
+            if segment.phase == "motion_validation" and not _calibration_is_complete(
+                manifest
+            ):
+                _voice(
+                    args,
+                    "Calibration anchors are still incomplete. I will not record "
+                    "motion traces against an incomplete calibration. Run script 2 "
+                    "again to retry only the failed calibration anchors.",
+                )
+                break
             if segment.phase != current_phase:
                 current_phase = segment.phase
                 phase_name = segment.phase.replace("_", " ")
                 _voice(args, f"Starting the {phase_name} phase.")
+                if segment.phase == "motion_validation":
+                    anchor_set_path = _write_anchor_set(args.suite_dir, manifest)
+                    _voice(
+                        args,
+                        "Calibration anchor collection passed. The immutable anchor "
+                        "set is saved. Starting separate motion trace recording.",
+                    )
+                    _timeline(args, f"calibration anchor set: {anchor_set_path}")
             _attempt_segment(source, args, args.suite_dir, manifest, segment)
     finally:
         source.disconnect()
