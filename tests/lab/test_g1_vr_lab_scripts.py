@@ -113,3 +113,28 @@ def test_synthetic_trace_cli_passes_bimanual_checker(tmp_path):
     assert payload["manifest"]["source_type"] == "synthetic"
     assert payload["measurements"]["left"]["squeeze_max"] == 1.0
     assert payload["measurements"]["right"]["squeeze_max"] == 1.0
+
+
+def test_calibration_cli_lists_pending_without_connecting_to_headset(tmp_path):
+    suite = tmp_path / "suite"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "tools" / "record_xrobotoolkit_calibration.py"),
+            str(suite),
+            "--list-pending",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    labels = result.stdout.splitlines()
+    assert len(labels) == 16
+    assert labels[:4] == [
+        "position-natural-down",
+        "position-full-up",
+        "position-full-forward",
+        "position-full-open",
+    ]
+    assert labels[-1] == "left-outward"

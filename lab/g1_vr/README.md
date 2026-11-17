@@ -23,46 +23,71 @@ run unless that session has a passing precheck.
 The headset/app network link is intentionally not required during precheck,
 because the headset is expected to be off.
 
-## 2. Record a trace
+## 2. Record the calibration suite
 
-Example right-only capture:
+Collect the full suite in one headset run:
 
 ```bash
-./lab/g1_vr/02_record_trace.sh \
-  --label right-motion \
-  --instruction "Hold only the right grip. Move and rotate the right controller."
+./lab/g1_vr/02_record_trace.sh --max-attempts 3
 ```
 
-Recommended labels/instructions are:
+The fixed, versioned suite first captures calibration anchors and only then
+captures motion-validation traces. It uses explicit spoken instructions:
 
-| Label | Instruction |
+| Label | Requested pose or motion |
 | --- | --- |
-| `idle-released` | Keep both grips released and controllers still. |
-| `right-motion` | Hold only the right grip; move and rotate the right controller. |
-| `left-motion` | Hold only the left grip; move and rotate the left controller. |
-| `bimanual-motion` | Hold both grips; move both controllers slowly. |
-| `buttons-head` | Move the head and press each requested trigger/button. |
-| `tracking-reconnect` | Follow the spoken tracking-loss/reconnect procedure. |
+| `position-natural-down` | Completely relax both arms at the sides; palms inward. |
+| `position-full-up` | Both arms straight overhead; palms inward. |
+| `position-full-forward` | Both arms straight forward at shoulder height. |
+| `position-full-open` | Both arms open in a horizontal T-pose. |
+| `palms-up`, `palms-down` | Hands fixed in front of chest; palms face ceiling or floor. |
+| `palms-inward`, `palms-outward` | Hands fixed; palms face toward or away from each other. |
+| `palms-forward`, `palms-backward` | Hands fixed; palms face away from or toward the chest. |
+| `right-forward` | From the 90-degree pose, hold right grip; fully extend forward and return. |
+| `right-up` | From the 90-degree pose, hold right grip; move upward and return. |
+| `right-outward` | From the 90-degree pose, hold right grip; move directly right and return. |
+| `left-forward` | Mirrored left-arm forward motion. |
+| `left-up` | Mirrored left-arm upward motion. |
+| `left-outward` | Mirrored left-arm outward motion. |
 
-The backend connects while the headset is off, then waits. At the one terminal
-prompt, type exactly:
+One backend connection remains alive for the entire suite. This avoids requiring
+XRoboToolkit to rediscover the Quest between traces. The backend connects while
+the headset is off, then waits. At the one terminal prompt, type exactly:
 
 ```text
 wearing the headset now
 ```
 
-Press Enter and put on the headset. Ten seconds later, voice announces the
-recording start and no terminal interaction is needed. The recording stops at
-the configured duration. Voice then asks for both grips to be released, the
+Press Enter and put on the headset. Ten seconds later, voice walks through every
+needed segment with a preparation prompt and a precise recording prompt. Each
+trace is validated immediately for source readiness, tracking, correct grip,
+stillness or sufficient translation, and rate/integrity. Voice says either that
+the trace passed and should not be repeated, or that a redo is required. A
+failed segment is attempted up to `--max-attempts` times (default 3).
+
+Passing static-anchor reports include representative median controller/head
+positions and sign-aligned mean quaternions. These summaries are inputs to the
+later calibration solve; the normalized and raw JSONL samples remain the
+authoritative evidence and allow the transform to be recomputed.
+
+After all needed segments, voice asks for both grips to be released, the
 controllers to be put down, and the headset to be removed. After returning to
 the terminal, type `headset off` to close the run boundary.
 
-The trace is never overwritten if the label already exists.
+The suite and every attempt are immutable under
+`calibration-suites/<suite-id>/`. Its `manifest.json` identifies the selected
+passing trace for each segment. If some segments remain failed, run script 2
+again: it resumes the current suite, skips all passing segments, and collects
+only missing or failed segments with up to three new attempts each. Use
+`--new-suite` only to deliberately collect the entire plan again.
 
 ## 3. Validate recorded data
 
 ```bash
-./lab/g1_vr/03_check_trace.sh --label right-motion --expect right
+suite="$(cat outputs/g1-vr-lab/current-session)/calibration-suites/current-suite"
+suite="$(cat "${suite}")"
+trace="$(jq -r '.segments["right-forward"].selected_trace' "${suite}/manifest.json")"
+./lab/g1_vr/03_check_trace.sh --trace "${trace}" --expect right
 ```
 
 Validation checks all recorded checksums, schema/order, duration/rate, ready
@@ -73,7 +98,7 @@ Behavior expectations are `any`, `idle`, `right`, `left`, `bimanual`,
 ## 4. Replay through native MuJoCo
 
 ```bash
-./lab/g1_vr/04_replay_trace.sh --label right-motion --expect right
+./lab/g1_vr/04_replay_trace.sh --trace "${trace}" --expect right
 ```
 
 The trace is validated first, then replayed at 60 Hz through the shared guard,

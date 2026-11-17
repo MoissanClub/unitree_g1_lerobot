@@ -1,33 +1,39 @@
 #!/usr/bin/env bash
-# Record one labeled XRoboToolkit trace with a gated headset handoff.
+# Collect, validate, and selectively retry the complete XR calibration suite.
 
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 usage() {
     cat <<'EOF'
-usage: 02_record_trace.sh --label LABEL [options]
+usage: 02_record_trace.sh [options]
 
 Options:
-  --duration-s SECONDS       Recording duration (default: 10)
-  --instruction TEXT        Spoken movement instruction
-  --gate-timeout-s SECONDS  Time allowed for the handoff (default: 600)
+  --max-attempts NUMBER     Attempts per failed segment in this run (default: 3)
+  --new-suite               Start a new suite instead of resuming the current one
+  --prepare-s SECONDS       Preparation time before each trace (default: 7)
+  --gate-timeout-s SECONDS  Time allowed for the headset handoff (default: 600)
 
-The script prepares the backend with the headset off, accepts the exact phrase
-"wearing the headset now", waits ten seconds, and then uses voice only until it
-asks the operator to remove the headset.
+One headset run collects four position anchors, six palm-orientation anchors,
+and forward, upward, and outward movements for each arm. Each trace is checked
+immediately. A failed trace is repeated up to --max-attempts times. Running this
+script again resumes the current suite and skips every segment already passed.
+
+The script prepares one persistent XRoboToolkit connection while the headset is
+off, accepts the exact phrase "wearing the headset now", waits ten seconds, and
+then uses voice only until it asks the operator to remove the headset.
 EOF
 }
 
-label=""
-duration_s=10
-instruction="Move as planned for this trace."
+max_attempts=3
+new_suite=false
+prepare_s=7
 gate_timeout_s=600
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --label) label="${2:?--label requires a value}"; shift ;;
-        --duration-s) duration_s="${2:?--duration-s requires a value}"; shift ;;
-        --instruction) instruction="${2:?--instruction requires text}"; shift ;;
+        --max-attempts) max_attempts="${2:?--max-attempts requires a value}"; shift ;;
+        --new-suite) new_suite=true ;;
+        --prepare-s) prepare_s="${2:?--prepare-s requires a value}"; shift ;;
         --gate-timeout-s) gate_timeout_s="${2:?--gate-timeout-s requires a value}"; shift ;;
         -h|--help) usage; exit 0 ;;
         *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
@@ -35,20 +41,38 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-[[ -n "${label}" ]] || { usage >&2; exit 2; }
-validate_label "${label}"
 require_precheck
 directory="$(session_dir)"
-trace_dir="${directory}/traces/${label}"
-run_dir="${directory}/recordings/${label}-$(date +%Y%m%d-%H%M%S)"
+suite_root="${directory}/calibration-suites"
+current_suite_file="${suite_root}/current-suite"
+mkdir -p "${suite_root}"
+
+if [[ "${new_suite}" == true || ! -f "${current_suite_file}" ]]; then
+    suite_dir="${suite_root}/calibration-$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "${suite_dir}"
+    printf '%s\n' "${suite_dir}" > "${current_suite_file}"
+else
+    suite_dir="$(sed -n '1p' "${current_suite_file}")"
+fi
+
+recorder="${REPO_ROOT}/tools/record_xrobotoolkit_calibration.py"
+pending="$(${PYTHON_BIN} "${recorder}" "${suite_dir}" --list-pending)"
+if [[ -z "${pending}" ]]; then
+    echo "Calibration suite is already complete: ${suite_dir}"
+    echo "Use --new-suite only if you deliberately want to collect it again."
+    exit 0
+fi
+
+echo "Calibration suite: ${suite_dir}"
+echo "Traces needed in this run:"
+printf '%s\n' "${pending}" | sed 's/^/  - /'
+echo "Maximum attempts for each needed trace: ${max_attempts}"
+
+run_dir="${suite_dir}/runs/$(date +%Y%m%d-%H%M%S)"
 ready_file="${run_dir}/backend.ready"
 start_gate="${run_dir}/operator.start"
 backend_log="${run_dir}/backend.log"
-mkdir -p "${run_dir}" "${directory}/traces"
-if [[ -e "${trace_dir}" ]]; then
-    echo "Trace already exists and will not be overwritten: ${trace_dir}" >&2
-    exit 2
-fi
+mkdir -p "${run_dir}"
 
 adapter_revision="$(git -C "${PLUGIN_ROOT}" rev-parse HEAD)"
 backend_pid=""
@@ -61,43 +85,53 @@ cleanup() {
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT TERM
 
-record_event "trace ${label}: preparing XRoboToolkit recorder"
-"${PYTHON_BIN}" "${REPO_ROOT}/tools/record_xrobotoolkit_trace.py" \
-    "${trace_dir}" \
-    --label "${label}" \
-    --duration-s "${duration_s}" \
+record_event "calibration suite: preparing persistent XRoboToolkit recorder"
+"${PYTHON_BIN}" "${recorder}" "${suite_dir}" \
+    --max-attempts "${max_attempts}" \
+    --prepare-s "${prepare_s}" \
     --rate-hz 60 \
     --sdk-site-packages "${XRBT_SDK_SITE_PACKAGES}" \
     --adapter-revision "${adapter_revision}" \
     --ready-file "${ready_file}" \
     --start-gate-file "${start_gate}" \
     --gate-timeout-s "${gate_timeout_s}" \
-    > "${backend_log}" 2>&1 &
+    --tts-bin "${TTS_BIN}" \
+    --voice-rate "${VOICE_RATE}" \
+    --timeline "${directory}/timeline.tsv" \
+    > >(tee -a "${backend_log}") 2>&1 &
 backend_pid=$!
 
 if ! wait_for_file "${ready_file}" "${backend_pid}" 90; then
     show_process_log_on_failure "${backend_log}"
     exit 1
 fi
-echo "Recorder backend is connected and waiting. No samples are being recorded yet."
+echo "Recorder backend is connected and will stay connected for the full suite."
 confirm_headset_handoff
-voice "Recording starts now. ${instruction} Continue until I say recording complete."
 printf '%s\n' "$(date --iso-8601=seconds)" > "${start_gate}"
-record_event "trace ${label}: recording gate released"
+record_event "calibration suite: headset gate released"
 
 set +e
 wait "${backend_pid}"
 backend_status=$?
 set -e
 backend_pid=""
-if (( backend_status != 0 )); then
-    show_process_log_on_failure "${backend_log}"
-    confirm_headset_removed || true
-    exit "${backend_status}"
+
+confirm_headset_removed || true
+trap - EXIT INT TERM
+
+echo "Calibration suite manifest: ${suite_dir}/manifest.json"
+remaining="$(${PYTHON_BIN} "${recorder}" "${suite_dir}" --list-pending)"
+if [[ -z "${remaining}" ]]; then
+    record_event "calibration suite: all traces passed immediate quality checks"
+    echo "PASS: all calibration traces passed. No redo is needed."
+    exit 0
 fi
 
-record_event "trace ${label}: capture completed"
-confirm_headset_removed
-trap - EXIT INT TERM
-echo "Trace recorded: ${trace_dir}"
-echo "Next: ${LAB_DIR}/03_check_trace.sh --label ${label}"
+record_event "calibration suite: incomplete; failed traces retained for selective retry"
+echo "INCOMPLETE: run script 2 again to retry only these traces:"
+printf '%s\n' "${remaining}" | sed 's/^/  - /'
+if (( backend_status != 0 && backend_status != 3 )); then
+    show_process_log_on_failure "${backend_log}"
+    exit "${backend_status}"
+fi
+exit 3
