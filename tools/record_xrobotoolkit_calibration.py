@@ -44,6 +44,17 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--voice-rate", default="-35")
     result.add_argument("--timeline", type=Path)
     result.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="speak an accelerated walkthrough without connecting or writing data",
+    )
+    result.add_argument(
+        "--dry-run-only",
+        choices=tuple(segment.label for segment in CALIBRATION_PLAN),
+        help="walk through only one named segment",
+    )
+    result.add_argument("--dry-run-pause-s", type=float, default=0.5)
+    result.add_argument(
         "--list-pending",
         action="store_true",
         help="print missing/failed labels without connecting to XRoboToolkit",
@@ -92,6 +103,8 @@ def _validate_args(args: argparse.Namespace) -> None:
         value = getattr(args, name)
         if not math.isfinite(value) or value <= 0:
             raise SystemExit(f"--{name.replace('_', '-')} must be positive and finite")
+    if not math.isfinite(args.dry_run_pause_s) or args.dry_run_pause_s < 0:
+        raise SystemExit("--dry-run-pause-s must be nonnegative and finite")
 
 
 def _timeline(args: argparse.Namespace, message: str) -> None:
@@ -109,6 +122,53 @@ def _voice(args: argparse.Namespace, message: str) -> None:
         [args.tts_bin, "-w", "-r", str(args.voice_rate), message],
         check=False,
     )
+
+
+def _run_dry_walkthrough(args: argparse.Namespace) -> int:
+    segments = tuple(
+        segment
+        for segment in CALIBRATION_PLAN
+        if args.dry_run_only is None or segment.label == args.dry_run_only
+    )
+    _voice(
+        args,
+        "Practice mode. No headset connection, tracking, recording, calibration, "
+        "or quality decision will occur.",
+    )
+    current_phase = None
+    for segment in segments:
+        if segment.phase != current_phase:
+            current_phase = segment.phase
+            _voice(args, f"Starting the {segment.phase.replace('_', ' ')} phase.")
+        _voice(
+            args,
+            f"Next trace: {segment.label.replace('-', ' ')}. {segment.preparation} "
+            f"The recorded action will be: {segment.instruction} In the real run, "
+            f"you will have {args.prepare_s:.0f} seconds to prepare. Do not begin "
+            "until I say start now.",
+        )
+        time.sleep(args.dry_run_pause_s)
+        _voice(args, "Get ready. Recording starts in 3, 2, 1.")
+        _voice(args, "Start now.")
+        _voice(
+            args,
+            f"Practice mode skips the {segment.duration_s:.0f} second recording wait.",
+        )
+        _voice(
+            args,
+            "Recording stopped. Release both grip buttons and relax while I check "
+            "the trace quality.",
+        )
+        _voice(
+            args,
+            "In the real run, I will now say either that this trace passed and does "
+            "not need repetition, or that a redo is required.",
+        )
+    _voice(
+        args,
+        "Practice walkthrough complete. No data or calibration artifacts were created.",
+    )
+    return 0
 
 
 def _announce_ready_and_wait(args: argparse.Namespace) -> None:
@@ -358,6 +418,8 @@ def _attempt_segment(
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     _validate_args(args)
+    if args.dry_run:
+        return _run_dry_walkthrough(args)
     manifest_path = args.suite_dir / "manifest.json"
     manifest = _load_manifest(manifest_path)
     pending = pending_segments(manifest)

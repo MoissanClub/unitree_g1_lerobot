@@ -25,6 +25,21 @@ because the headset is expected to be off.
 
 ## 2. Record the calibration suite
 
+Before wearing the headset, rehearse the exact phase order and voice prompts:
+
+```bash
+./lab/g1_vr/02_record_trace.sh --dry-run
+```
+
+The walkthrough is accelerated: it speaks every real instruction and countdown
+but skips each 5–10 second capture window. It never requires precheck, prompts
+for headset handoff, connects to XRoboToolkit, writes data, or changes suite
+resume state. To practice one instruction in isolation:
+
+```bash
+./lab/g1_vr/02_record_trace.sh --dry-run-only position-full-forward --dry-run
+```
+
 Collect the full suite in one headset run:
 
 ```bash

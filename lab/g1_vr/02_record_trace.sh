@@ -9,6 +9,8 @@ usage() {
 usage: 02_record_trace.sh [options]
 
 Options:
+  --dry-run                 Speak the full process without a headset or data writes
+  --dry-run-only LABEL      In dry-run mode, practice only one named segment
   --max-attempts NUMBER     Attempts per failed segment in this run (default: 3)
   --new-suite               Start a new suite instead of resuming the current one
   --prepare-s SECONDS       Preparation time before each trace (default: 7)
@@ -22,15 +24,22 @@ script again resumes the current suite and skips every segment already passed.
 The script prepares one persistent XRoboToolkit connection while the headset is
 off, accepts the exact phrase "wearing the headset now", waits ten seconds, and
 then uses voice only until it asks the operator to remove the headset.
+
+Dry-run mode does not require a passing precheck, prompt for headset handoff,
+connect to XRoboToolkit, create a suite, or make quality decisions.
 EOF
 }
 
+dry_run=false
+dry_run_only=""
 max_attempts=3
 new_suite=false
 prepare_s=7
 gate_timeout_s=600
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --dry-run) dry_run=true ;;
+        --dry-run-only) dry_run_only="${2:?--dry-run-only requires a label}"; shift ;;
         --max-attempts) max_attempts="${2:?--max-attempts requires a value}"; shift ;;
         --new-suite) new_suite=true ;;
         --prepare-s) prepare_s="${2:?--prepare-s requires a value}"; shift ;;
@@ -40,6 +49,24 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+recorder="${REPO_ROOT}/tools/record_xrobotoolkit_calibration.py"
+if [[ "${dry_run}" == true ]]; then
+    dry_run_args=(
+        "${PYTHON_BIN}" "${recorder}" "${OUTPUT_ROOT}/dry-run-not-written"
+        --dry-run
+        --tts-bin "${TTS_BIN}"
+        --voice-rate "${VOICE_RATE}"
+    )
+    if [[ -n "${dry_run_only}" ]]; then
+        dry_run_args+=(--dry-run-only "${dry_run_only}")
+    fi
+    exec "${dry_run_args[@]}"
+fi
+if [[ -n "${dry_run_only}" ]]; then
+    echo "--dry-run-only requires --dry-run" >&2
+    exit 2
+fi
 
 require_precheck
 directory="$(session_dir)"
@@ -55,7 +82,6 @@ else
     suite_dir="$(sed -n '1p' "${current_suite_file}")"
 fi
 
-recorder="${REPO_ROOT}/tools/record_xrobotoolkit_calibration.py"
 pending="$(${PYTHON_BIN} "${recorder}" "${suite_dir}" --list-pending)"
 if [[ -z "${pending}" ]]; then
     echo "Calibration suite is already complete: ${suite_dir}"

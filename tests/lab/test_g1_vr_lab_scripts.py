@@ -157,3 +157,32 @@ def test_calibration_and_motion_artifacts_are_stored_separately(tmp_path):
     )
     assert trace == tmp_path / "traces/right-forward/attempt-01"
     assert trace_report == tmp_path / "trace-reports/right-forward-attempt-01.json"
+
+
+def test_script_two_dry_run_needs_no_precheck_headset_or_data_write(tmp_path):
+    output_root = tmp_path / "outputs"
+    env = {
+        **os.environ,
+        "G1_VR_LAB_OUTPUT_ROOT": str(output_root),
+        "G1_VR_PYTHON": sys.executable,
+        "G1_VR_TTS_BIN": "/bin/true",
+    }
+
+    result = subprocess.run(
+        [
+            str(LAB / "02_record_trace.sh"),
+            "--dry-run",
+            "--dry-run-only",
+            "position-natural-down",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Practice mode" in result.stdout
+    assert "Completely relax both of your arms" in result.stdout
+    assert "Practice walkthrough complete" in result.stdout
+    assert not output_root.exists()
