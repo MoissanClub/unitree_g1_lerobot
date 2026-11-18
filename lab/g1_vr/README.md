@@ -26,10 +26,12 @@ because the headset is expected to be off.
 
 The service launcher is discovered below `XRBT_WORKSPACE` or at
 `/opt/apps/roboticsservice`. Set `G1_VR_XRBT_PC_SERVICE_DIR` to an exact service
-directory when using another installation. Precheck refuses to start a duplicate
-when a service process already exists but one of the required listeners is
-missing; inspect that failed process instead. `--skip-service-start` retains a
-check-only mode.
+directory when using another installation. Precheck starts the binary as the
+transient user unit `xrobotoolkit-pc-service.service`, allowing it to remain
+active across scripts while keeping its output in the evidence session. Precheck
+refuses to start a duplicate when a service process already exists but one of the
+required listeners is missing; inspect that failed process instead.
+`--skip-service-start` retains a check-only mode.
 
 ## 2. Record the calibration suite
 

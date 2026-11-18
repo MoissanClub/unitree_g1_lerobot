@@ -52,7 +52,7 @@ echo "Session: ${directory}"
 echo "Started: $(date --iso-8601=seconds)"
 echo "Scope: simulation only; no physical DDS or robot motion"
 
-for command in git ss pgrep spd-say nvidia-smi ffmpeg sha256sum; do
+for command in git ss pgrep systemd-run spd-say nvidia-smi ffmpeg sha256sum; do
     if command -v "${command}" >/dev/null 2>&1; then
         pass "command available: ${command}"
     else

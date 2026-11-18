@@ -159,6 +159,7 @@ xrobotoolkit_service_listeners_active() {
 ensure_xrobotoolkit_pc_service() {
     local log_path="$1"
     local attempt
+    local service_unit="xrobotoolkit-pc-service"
 
     if xrobotoolkit_service_listeners_active; then
         return 0
@@ -171,12 +172,24 @@ ensure_xrobotoolkit_pc_service() {
         echo "XRoboToolkit PC Service installation was not found; set G1_VR_XRBT_PC_SERVICE_DIR." >&2
         return 1
     fi
+    if ! command -v systemd-run >/dev/null 2>&1; then
+        echo "systemd-run is required to keep XRoboToolkit PC Service alive across lab scripts." >&2
+        return 1
+    fi
 
     echo "Starting XRoboToolkit PC Service from ${XRBT_PC_SERVICE_DIR}"
-    (
-        cd "${XRBT_PC_SERVICE_DIR}"
-        ./runService.sh
-    ) >"${log_path}" 2>&1
+    if ! systemd-run --user --quiet --collect \
+        --unit="${service_unit}" \
+        --working-directory="${XRBT_PC_SERVICE_DIR}" \
+        --setenv="LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}:${XRBT_PC_SERVICE_DIR}:${XRBT_PC_SERVICE_DIR}/lib:${XRBT_PC_SERVICE_DIR}/SDK/x64" \
+        --setenv="QT_PLUGIN_PATH=${XRBT_PC_SERVICE_DIR}/plugins/:${QT_PLUGIN_PATH:-}" \
+        --setenv="QT_QML_PATH=${XRBT_PC_SERVICE_DIR}/qml/:${QT_QML_PATH:-}" \
+        --property="StandardOutput=append:${log_path}" \
+        --property="StandardError=append:${log_path}" \
+        "${XRBT_PC_SERVICE_DIR}/RoboticsServiceProcess"; then
+        echo "XRoboToolkit PC Service transient unit could not be started." >&2
+        return 1
+    fi
     for attempt in {1..50}; do
         if xrobotoolkit_service_listeners_active; then
             return 0

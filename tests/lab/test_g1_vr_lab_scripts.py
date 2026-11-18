@@ -113,6 +113,7 @@ def test_precheck_helper_starts_missing_xrobotoolkit_service(tmp_path):
             fi
         }}
         pgrep() {{ return 1; }}
+        systemd-run() {{ touch {marker}; }}
         ensure_xrobotoolkit_pc_service {log}
     """
 
