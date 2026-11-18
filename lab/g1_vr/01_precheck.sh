@@ -5,16 +5,18 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 usage() {
-    echo "usage: $0 [--skip-audio] [--skip-nvenc-probe] [--session-dir PATH]"
+    echo "usage: $0 [--skip-audio] [--skip-nvenc-probe] [--skip-service-start] [--session-dir PATH]"
 }
 
 skip_audio=false
 skip_nvenc=false
+skip_service_start=false
 requested_session=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --skip-audio) skip_audio=true ;;
         --skip-nvenc-probe) skip_nvenc=true ;;
+        --skip-service-start) skip_service_start=true ;;
         --session-dir)
             requested_session="${2:?--session-dir requires a path}"
             shift
@@ -50,7 +52,7 @@ echo "Session: ${directory}"
 echo "Started: $(date --iso-8601=seconds)"
 echo "Scope: simulation only; no physical DDS or robot motion"
 
-for command in git ss spd-say nvidia-smi ffmpeg sha256sum; do
+for command in git ss pgrep spd-say nvidia-smi ffmpeg sha256sum; do
     if command -v "${command}" >/dev/null 2>&1; then
         pass "command available: ${command}"
     else
@@ -124,12 +126,18 @@ else
     fail "DISPLAY is unset; MuJoCo viewer and desktop video need a local display"
 fi
 
-listeners="$(ss -ltnp 2>/dev/null || ss -ltn 2>/dev/null || true)"
-if grep -q ':60061' <<<"${listeners}" && grep -q ':63901' <<<"${listeners}"; then
+service_log="${directory}/xrobotoolkit-pc-service.log"
+if xrobotoolkit_service_listeners_active; then
     pass "XRoboToolkit PC Service listeners 60061 and 63901 are active"
+elif [[ "${skip_service_start}" == true ]]; then
+    fail "XRoboToolkit PC Service is not listening on both 60061 and 63901; automatic startup skipped"
+elif ensure_xrobotoolkit_pc_service "${service_log}"; then
+    pass "XRoboToolkit PC Service started; listeners 60061 and 63901 are active"
 else
-    fail "XRoboToolkit PC Service is not listening on both 60061 and 63901"
+    fail "XRoboToolkit PC Service could not be started with both required listeners"
+    tail -n 80 "${service_log}" 2>/dev/null || true
 fi
+listeners="$(ss -ltnp 2>/dev/null || ss -ltn 2>/dev/null || true)"
 if grep -q ':13579' <<<"${listeners}"; then
     fail "Quest video port 13579 is already in use"
 else
@@ -164,6 +172,7 @@ G1_VR_LEROBOT_ROOT=${LEROBOT_ROOT}
 G1_VR_PYTHON=${PYTHON_BIN}
 G1_VR_ASSETS_ROOT=${ASSETS_ROOT}
 XRBT_SDK_SITE_PACKAGES=${XRBT_SDK_SITE_PACKAGES}
+G1_VR_XRBT_PC_SERVICE_DIR=${XRBT_PC_SERVICE_DIR}
 EOF
 
 record_event "precheck completed: failures=${failures}, warnings=${warnings}"

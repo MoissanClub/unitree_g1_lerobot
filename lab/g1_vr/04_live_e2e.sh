@@ -6,7 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 usage() {
     cat <<'EOF'
-usage: 05_live_e2e.sh [--duration-s WHOLE_SECONDS] [--unguided]
+usage: 04_live_e2e.sh [--duration-s WHOLE_SECONDS] [--unguided]
 
 The simulator, MuJoCo viewer, XR source, and Quest video listener become ready
 before the script accepts "wearing the headset now". Ten seconds later, spoken

@@ -14,6 +14,15 @@ LAB = ROOT / "lab" / "g1_vr"
 SCRIPTS = tuple(sorted(LAB.glob("0*.sh")))
 
 
+def test_operator_workflow_has_four_numbered_scripts():
+    assert [path.name for path in SCRIPTS] == [
+        "01_precheck.sh",
+        "02_record_trace.sh",
+        "03_replay_trace.sh",
+        "04_live_e2e.sh",
+    ]
+
+
 def test_all_operator_scripts_pass_bash_syntax_check():
     subprocess.run(
         ["bash", "-n", str(LAB / "lib.sh"), *(str(path) for path in SCRIPTS)],
@@ -83,6 +92,54 @@ def test_headset_removal_confirmation_can_run_without_real_audio(tmp_path):
     assert "Remove the headset" in result.stdout
 
 
+def test_precheck_helper_starts_missing_xrobotoolkit_service(tmp_path):
+    service = tmp_path / "service"
+    service.mkdir()
+    marker = tmp_path / "started"
+    launcher = service / "runService.sh"
+    launcher.write_text(f"#!/usr/bin/env bash\ntouch {marker}\n")
+    launcher.chmod(0o755)
+    process = service / "RoboticsServiceProcess"
+    process.write_text("fixture\n")
+    process.chmod(0o755)
+    log = tmp_path / "service.log"
+    command = f"""
+        export G1_VR_XRBT_PC_SERVICE_DIR={service}
+        source {LAB / 'lib.sh'}
+        ss() {{
+            if [[ -f {marker} ]]; then
+                printf 'LISTEN 0 1 127.0.0.1:60061 0.0.0.0:*\\n'
+                printf 'LISTEN 0 1 0.0.0.0:63901 0.0.0.0:*\\n'
+            fi
+        }}
+        pgrep() {{ return 1; }}
+        ensure_xrobotoolkit_pc_service {log}
+    """
+
+    result = subprocess.run(
+        ["bash", "-c", command], check=False, capture_output=True, text=True
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert marker.exists()
+
+
+def test_precheck_helper_refuses_duplicate_partial_service(tmp_path):
+    command = f"""
+        source {LAB / 'lib.sh'}
+        ss() {{ printf 'LISTEN 0 1 127.0.0.1:60061 0.0.0.0:*\\n'; }}
+        pgrep() {{ return 0; }}
+        ensure_xrobotoolkit_pc_service {tmp_path / 'service.log'}
+    """
+
+    result = subprocess.run(
+        ["bash", "-c", command], check=False, capture_output=True, text=True
+    )
+
+    assert result.returncode == 1
+    assert "refusing to launch a duplicate" in result.stderr
+
+
 def test_synthetic_trace_cli_passes_bimanual_checker(tmp_path):
     trace = tmp_path / "synthetic-bimanual"
     report = tmp_path / "report.json"
@@ -116,6 +173,51 @@ def test_synthetic_trace_cli_passes_bimanual_checker(tmp_path):
     assert payload["manifest"]["source_type"] == "synthetic"
     assert payload["measurements"]["left"]["squeeze_max"] == 1.0
     assert payload["measurements"]["right"]["squeeze_max"] == 1.0
+
+
+def test_script_three_validates_before_optional_replay(tmp_path):
+    trace = tmp_path / "synthetic-bimanual"
+    session = tmp_path / "session"
+    session.mkdir()
+    (session / "precheck.passed").write_text("fixture\n")
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "tools" / "synthesize_g1_vr_trace.py"),
+            str(trace),
+            "--scenario",
+            "bimanual",
+            "--duration-s",
+            "1",
+        ],
+        check=True,
+    )
+    env = {
+        **os.environ,
+        "G1_VR_LAB_SESSION_DIR": str(session),
+        "G1_VR_PYTHON": sys.executable,
+        "PYTHONPATH": str(ROOT),
+    }
+
+    result = subprocess.run(
+        [
+            str(LAB / "03_replay_trace.sh"),
+            "--trace",
+            str(trace),
+            "--expect",
+            "bimanual",
+            "--validate-only",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Validation-only run complete" in result.stdout
+    assert (session / "checks" / "synthetic-bimanual.json").exists()
+    assert not (session / "telemetry").exists()
 
 
 def test_calibration_cli_lists_pending_without_connecting_to_headset(tmp_path):

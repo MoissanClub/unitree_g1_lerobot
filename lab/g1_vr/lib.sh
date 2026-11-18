@@ -14,6 +14,7 @@ ASSETS_ROOT="${G1_VR_ASSETS_ROOT:-${REPO_ROOT}/.vr-sim/clean-install-verificatio
 G1_URDF="${G1_VR_URDF:-${ASSETS_ROOT}/g1_29.urdf}"
 G1_MESH_DIR="${G1_VR_MESH_DIR:-${ASSETS_ROOT}/meshes}"
 XRBT_WORKSPACE="${XRBT_WORKSPACE:-/home/dwei/meta_quest_xrobotoolkit}"
+XRBT_PC_SERVICE_DIR="${G1_VR_XRBT_PC_SERVICE_DIR:-}"
 VOICE_RATE="${G1_VR_VOICE_RATE:--35}"
 DONNING_SECONDS="${G1_VR_DONNING_SECONDS:-10}"
 TTS_BIN="${G1_VR_TTS_BIN:-spd-say}"
@@ -29,6 +30,21 @@ if [[ -z "${XRBT_SDK_SITE_PACKAGES:-}" ]]; then
     else
         XRBT_SDK_SITE_PACKAGES=""
     fi
+fi
+
+if [[ -z "${XRBT_PC_SERVICE_DIR}" ]]; then
+    shopt -s nullglob
+    service_candidates=(
+        "${XRBT_WORKSPACE}"/xrbt-quest-mujoco.*/pc-service-root/opt/apps/roboticsservice
+        /opt/apps/roboticsservice
+    )
+    shopt -u nullglob
+    for candidate in "${service_candidates[@]}"; do
+        if [[ -x "${candidate}/RoboticsServiceProcess" && -x "${candidate}/runService.sh" ]]; then
+            XRBT_PC_SERVICE_DIR="${candidate}"
+            break
+        fi
+    done
 fi
 
 export PYTHONPATH="${REPO_ROOT}:${PLUGIN_ROOT:+${PLUGIN_ROOT}/src:}${LEROBOT_ROOT}/src${PYTHONPATH:+:${PYTHONPATH}}"
@@ -132,4 +148,41 @@ show_process_log_on_failure() {
     local path="$1"
     echo "Backend failed or did not become ready. Last log lines:" >&2
     tail -n 80 "${path}" >&2 || true
+}
+
+xrobotoolkit_service_listeners_active() {
+    local listeners
+    listeners="$(ss -ltnp 2>/dev/null || ss -ltn 2>/dev/null || true)"
+    grep -q ':60061' <<<"${listeners}" && grep -q ':63901' <<<"${listeners}"
+}
+
+ensure_xrobotoolkit_pc_service() {
+    local log_path="$1"
+    local attempt
+
+    if xrobotoolkit_service_listeners_active; then
+        return 0
+    fi
+    if pgrep -f '[R]oboticsServiceProcess' >/dev/null 2>&1; then
+        echo "XRoboToolkit PC Service process exists without both required listeners; refusing to launch a duplicate." >&2
+        return 1
+    fi
+    if [[ -z "${XRBT_PC_SERVICE_DIR}" || ! -x "${XRBT_PC_SERVICE_DIR}/runService.sh" || ! -x "${XRBT_PC_SERVICE_DIR}/RoboticsServiceProcess" ]]; then
+        echo "XRoboToolkit PC Service installation was not found; set G1_VR_XRBT_PC_SERVICE_DIR." >&2
+        return 1
+    fi
+
+    echo "Starting XRoboToolkit PC Service from ${XRBT_PC_SERVICE_DIR}"
+    (
+        cd "${XRBT_PC_SERVICE_DIR}"
+        ./runService.sh
+    ) >"${log_path}" 2>&1
+    for attempt in {1..50}; do
+        if xrobotoolkit_service_listeners_active; then
+            return 0
+        fi
+        sleep 0.2
+    done
+    echo "XRoboToolkit PC Service did not open both ports within 10 seconds." >&2
+    return 1
 }

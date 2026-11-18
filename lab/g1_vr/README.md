@@ -15,13 +15,21 @@ script explicitly accepts the handoff phrase.
 ```
 
 The precheck creates `outputs/g1-vr-lab/<timestamp>/`, records revisions and
-the URDF hash, checks the pinned imports, PC Service listeners, GPU/NVENC,
+the URDF hash, checks the pinned imports, starts the XRoboToolkit PC Service when
+its two listeners are absent, checks the resulting listeners, GPU/NVENC,
 speaker, desktop display, disk space, and absence of a G1 DDS process. It writes
-the selected path to `outputs/g1-vr-lab/current-session`; scripts 2–5 refuse to
+the selected path to `outputs/g1-vr-lab/current-session`; scripts 2–4 refuse to
 run unless that session has a passing precheck.
 
 The headset/app network link is intentionally not required during precheck,
 because the headset is expected to be off.
+
+The service launcher is discovered below `XRBT_WORKSPACE` or at
+`/opt/apps/roboticsservice`. Set `G1_VR_XRBT_PC_SERVICE_DIR` to an exact service
+directory when using another installation. Precheck refuses to start a duplicate
+when a service process already exists but one of the required listeners is
+missing; inspect that failed process instead. `--skip-service-start` retains a
+check-only mode.
 
 ## 2. Record the calibration suite
 
@@ -128,47 +136,43 @@ again: it resumes the current suite, skips passing position units and motion
 traces, and collects only unresolved work with up to three new attempts each.
 Use `--new-suite` only to deliberately collect the entire plan again.
 
-## 3. Validate recorded data
+## 3. Validate and replay recorded data
+
+Script 2 already performs the quality checks needed to accept or retry each
+capture while the headset is on. Script 3 independently rechecks checksums,
+schema/order, duration/rate, source readiness, tracking, grip, and motion, saves
+a validation report, and only then replays the trace through native MuJoCo. A
+validation failure blocks replay.
 
 ```bash
 suite="$(cat outputs/g1-vr-lab/current-session)/calibration-suites/current-suite"
 suite="$(cat "${suite}")"
 trace="$(jq -r '.segments["right-forward"].selected_trace' "${suite}/manifest.json")"
-./lab/g1_vr/03_check_trace.sh --trace "${trace}" --expect right
+./lab/g1_vr/03_replay_trace.sh --trace "${trace}" --expect right
 ```
 
-Validation checks all recorded checksums, schema/order, duration/rate, ready
-source state, tracking ratios, grip/trigger/button ranges, and controller motion.
-Behavior expectations are `any`, `idle`, `right`, `left`, `bimanual`,
-`buttons-head`, and `reconnect`. A JSON report is saved under `checks/`.
-
-## 4. Replay through native MuJoCo
-
-```bash
-./lab/g1_vr/04_replay_trace.sh --trace "${trace}" --expect right
-```
-
-The trace is validated first, then replayed at 60 Hz through the shared guard,
+The trace is replayed at 60 Hz through the shared guard,
 G1-29 retargeter, upstream LeRobot native MuJoCo robot, and a viewer. Telemetry
-and logs are saved under `telemetry/`. Use `--headless` for automated regression.
+and logs are saved under `telemetry/`. Use `--headless` for automated regression,
+or `--validate-only` for forensic revalidation without starting MuJoCo. Behavior
+expectations are `any`, `idle`, `right`, `left`, `bimanual`, `buttons-head`, and
+`reconnect`.
 
 For a deterministic headset-free test of the same validation/replay path:
 
 ```bash
 python tools/synthesize_g1_vr_trace.py /tmp/g1-vr-synthetic \
   --scenario bimanual --duration-s 4
-./lab/g1_vr/03_check_trace.sh \
-  --trace /tmp/g1-vr-synthetic --expect bimanual
-./lab/g1_vr/04_replay_trace.sh \
+./lab/g1_vr/03_replay_trace.sh \
   --trace /tmp/g1-vr-synthetic --expect bimanual --headless
 ```
 
 Synthetic traces are development fixtures, not headset or operator evidence.
 
-## 5. Live end-to-end control and Quest video
+## 4. Live end-to-end control and Quest video
 
 ```bash
-./lab/g1_vr/05_live_e2e.sh --duration-s 60
+./lab/g1_vr/04_live_e2e.sh --duration-s 60
 ```
 
 Before prompting, the script starts the exact native MuJoCo simulation and
@@ -193,6 +197,7 @@ testing another audited checkout:
 - `G1_VR_PYTHON`
 - `G1_VR_ASSETS_ROOT`
 - `XRBT_SDK_SITE_PACKAGES`
+- `G1_VR_XRBT_PC_SERVICE_DIR`
 - `G1_VR_LAB_OUTPUT_ROOT`
 - `G1_VR_VOICE_RATE` (default `-35`)
 - `G1_VR_DONNING_SECONDS` (default `10`; shorten only in automated tests)
