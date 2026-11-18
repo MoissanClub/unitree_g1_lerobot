@@ -149,15 +149,22 @@ def _run_dry_walkthrough(args: argparse.Namespace) -> int:
         if segment.phase != current_phase:
             current_phase = segment.phase
             _voice(args, f"Starting the {segment.phase.replace('_', ' ')} phase.")
-        same_position = (
-            segment.position_group is not None
-            and segment.position_group == current_position_group
-        )
-        preparation_s = args.subphase_prepare_s if same_position else args.prepare_s
-        if same_position:
-            prompt = (
-                f"Next palm subphase: {segment.label.replace('-', ' ')}. "
-                f"{segment.instruction}"
+        same_position = segment.position_group == current_position_group
+        if segment.phase == "calibration":
+            if not same_position:
+                _voice(
+                    args,
+                    f"Next calibration position: {segment.position_group}. "
+                    f"{segment.preparation} Hold this arm position through all palm "
+                    f"directions. In the real run, you will have {args.prepare_s:.0f} "
+                    "seconds to prepare.",
+                )
+                time.sleep(args.dry_run_pause_s)
+            _voice(args, _palm_capture_prompt(segment))
+            _voice(
+                args,
+                f"Practice mode skips the {segment.duration_s:.0f} second recording "
+                "wait.",
             )
         else:
             prompt = (
@@ -165,26 +172,23 @@ def _run_dry_walkthrough(args: argparse.Namespace) -> int:
                 f"{segment.preparation} The recorded action will be: "
                 f"{segment.instruction}"
             )
-        _voice(
-            args,
-            f"{prompt} In the real run, you will have {preparation_s:.0f} seconds "
-            "to prepare. Do not begin until I say start now.",
-        )
-        time.sleep(args.dry_run_pause_s)
-        _voice(args, "Get ready. Recording starts in 3, 2, 1.")
-        _voice(args, "Start now.")
-        _voice(
-            args,
-            f"Practice mode skips the {segment.duration_s:.0f} second recording wait.",
-        )
-        if segment.phase == "motion_validation":
+            _voice(
+                args,
+                f"{prompt} In the real run, you will have {args.prepare_s:.0f} seconds "
+                "to prepare. Do not begin until I say start now.",
+            )
+            time.sleep(args.dry_run_pause_s)
+            _voice(args, "Get ready. Recording starts in 3, 2, 1.")
+            _voice(args, "Start now.")
+            _voice(
+                args,
+                f"Practice mode skips the {segment.duration_s:.0f} second recording wait.",
+            )
             _voice(
                 args,
                 "Recording stopped. Release the active grip and relax while I check "
                 "the trace quality.",
             )
-        else:
-            _voice(args, "Recording stopped. Relax while I check the trace quality.")
         next_segment = segments[index + 1] if index + 1 < len(segments) else None
         unit_finished = segment.phase == "calibration" and (
             next_segment is None
@@ -193,7 +197,8 @@ def _run_dry_walkthrough(args: argparse.Namespace) -> int:
         if unit_finished:
             _voice(
                 args,
-                f"In the real run, I will now evaluate the complete "
+                f"The {segment.position_group} position is captured. You may relax. "
+                "In the real run, I will now evaluate the complete "
                 f"{segment.position_group} position unit. If it fails, every "
                 "subphase in this position is repeated.",
             )
@@ -278,6 +283,24 @@ def _quality_summary(report: dict[str, object]) -> str:
         return ""
     joined = " ".join(str(issue) for issue in issues[:3])
     return f"The quality check reported: {joined}."
+
+
+_PALM_COMMANDS = {
+    "up": "Turn both palms upward",
+    "inward": "Turn both palms inward",
+    "down": "Turn both palms downward",
+    "outward": "Turn both palms outward",
+    "forward": "Turn both palms forward",
+    "backward": "Turn both palms backward",
+}
+
+
+def _palm_capture_prompt(segment: CalibrationSegment) -> str:
+    direction = segment.label.rsplit("-", maxsplit=1)[-1]
+    command = _PALM_COMMANDS.get(direction)
+    if command is None:
+        raise ValueError(f"no concise palm command for {segment.label}")
+    return f"{command}. 3, 2, 1. Start."
 
 
 def _artifact_paths(
@@ -419,22 +442,16 @@ def _capture_calibration_unit(
     reports = _selected_calibration_reports(manifest)
 
     for index, segment in enumerate(segments):
-        same_position = index > 0
-        preparation_s = args.subphase_prepare_s if same_position else args.prepare_s
         trace_dir = unit_dir / "anchors" / segment.label
         report_path = unit_dir / "reports" / f"{segment.label}.json"
-        if same_position:
-            prompt = (
-                f"Next palm subphase. {segment.instruction} You have "
-                f"{preparation_s:.0f} seconds to settle."
-            )
-        else:
-            prompt = (
+        if index == 0:
+            _voice(
+                args,
                 f"Next calibration position: {position_group}. {segment.preparation} "
-                f"{segment.instruction} You have {preparation_s:.0f} seconds to prepare."
+                f"Hold this arm position through all palm directions. You have "
+                f"{args.prepare_s:.0f} seconds to prepare.",
             )
-        _voice(args, f"{prompt} Do not begin until I say start now.")
-        time.sleep(preparation_s)
+            time.sleep(args.prepare_s)
         if not _wait_for_device(source, args):
             report = {
                 "passed": False,
@@ -442,15 +459,13 @@ def _capture_calibration_unit(
                 "calibration_segment": segment.to_dict(),
             }
         else:
-            _voice(args, "Get ready. Recording starts in 3, 2, 1.")
-            _voice(args, "Start now.")
+            _voice(args, _palm_capture_prompt(segment))
             _timeline(
                 args,
                 f"calibration unit {position_group} attempt {unit_attempt} "
                 f"anchor {segment.label} started",
             )
             _record_attempt(source, args, segment, trace_dir)
-            _voice(args, "Capture complete. Relax until the next instruction.")
             report = assess_calibration_trace(trace_dir, segment)
         _write_json(report_path, report)
         reports[segment.label] = report
@@ -471,6 +486,12 @@ def _capture_calibration_unit(
                 "issues": list(report["issues"]),
             }
         )
+        if index == len(segments) - 1:
+            _voice(
+                args,
+                f"The {position_group} position is captured. You may relax while I "
+                "check the complete unit.",
+            )
 
     unit_report = assess_calibration_unit(position_group, reports)
     unit_report["unit_attempt"] = unit_attempt

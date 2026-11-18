@@ -6,7 +6,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from tools.record_xrobotoolkit_calibration import _artifact_paths
+from tools.record_xrobotoolkit_calibration import (
+    _artifact_paths,
+    _palm_capture_prompt,
+)
 from unitree_g1_lerobot.diagnostics.xr.calibration import CALIBRATION_PLAN
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -271,6 +274,20 @@ def test_calibration_and_motion_artifacts_are_stored_separately(tmp_path):
     assert trace_report == tmp_path / "trace-reports/right-forward-attempt-01.json"
 
 
+def test_calibration_subphases_use_concise_continuous_prompts():
+    by_label = {segment.label: segment for segment in CALIBRATION_PLAN}
+
+    assert _palm_capture_prompt(by_label["calibration-forward-up"]) == (
+        "Turn both palms upward. 3, 2, 1. Start."
+    )
+    assert _palm_capture_prompt(by_label["calibration-forward-inward"]) == (
+        "Turn both palms inward. 3, 2, 1. Start."
+    )
+    assert _palm_capture_prompt(by_label["calibration-horizontal-backward"]) == (
+        "Turn both palms backward. 3, 2, 1. Start."
+    )
+
+
 def test_script_two_dry_run_needs_no_precheck_headset_or_data_write(tmp_path):
     output_root = tmp_path / "outputs"
     env = {
@@ -298,3 +315,31 @@ def test_script_two_dry_run_needs_no_precheck_headset_or_data_write(tmp_path):
     assert "Completely relax both arms" in result.stdout
     assert "Practice walkthrough complete" in result.stdout
     assert not output_root.exists()
+
+
+def test_script_two_dry_run_speaks_short_palm_subphase_command(tmp_path):
+    env = {
+        **os.environ,
+        "G1_VR_LAB_OUTPUT_ROOT": str(tmp_path / "outputs"),
+        "G1_VR_PYTHON": sys.executable,
+        "G1_VR_TTS_BIN": "/bin/true",
+    }
+
+    result = subprocess.run(
+        [
+            str(LAB / "02_record_trace.sh"),
+            "--dry-run",
+            "--dry-run-only",
+            "calibration-forward-inward",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Turn both palms inward. 3, 2, 1. Start." in result.stdout
+    assert "Next palm subphase" not in result.stdout
+    assert "Get ready" not in result.stdout
+    assert "2 seconds to settle" not in result.stdout

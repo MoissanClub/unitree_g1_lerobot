@@ -99,14 +99,16 @@ position separation, wrist-orientation change, and rate/integrity. Motion traces
 add grip and translation checks.
 
 The ten calibration captures form four independently checked position units.
-Changing arm position gets the normal 7-second preparation window. Palm
-subphases in the forward and horizontal units keep the same arm position and
-get only a 2-second settling interval. Quality is decided only after an entire
-position unit: if one horizontal subphase fails, all four horizontal subphases
-are repeated together. The retry count applies separately to each position
-unit. The richer orientation sets are intentionally placed in the forward and
-horizontal poses, where Quest Pro controller camera recognition is expected to
-be strongest. Opposed palm directions provide robust sign and change checks.
+Changing arm position gets the normal 7-second preparation window. The operator
+then holds that arm position continuously while each palm subphase uses only a
+short command such as “Turn both palms inward. 3, 2, 1. Start.” There is no
+relax prompt, repeated arm-position explanation, or separate settling delay
+between palm captures. Quality is decided only after an entire position unit:
+if one horizontal subphase fails, all four horizontal subphases are repeated
+together. The retry count applies separately to each position unit. The richer
+orientation sets are intentionally placed in the forward and horizontal poses,
+where Quest Pro controller camera recognition is expected to be strongest.
+Opposed palm directions provide robust sign and change checks.
 
 Passing static-anchor reports include representative median controller/head
 positions and sign-aligned mean quaternions. These summaries are inputs to the
