@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tools.run_supervised_g1_29_vr import ViewerSimulationTarget
 from tools.record_xrobotoolkit_calibration import (
     _artifact_paths,
     _palm_capture_prompt,
@@ -15,6 +16,36 @@ from unitree_g1_lerobot.diagnostics.xr.calibration import CALIBRATION_PLAN
 ROOT = Path(__file__).resolve().parents[2]
 LAB = ROOT / "lab" / "g1_vr"
 SCRIPTS = tuple(sorted(LAB.glob("0*.sh")))
+
+
+def test_viewer_target_waits_for_passive_thread_before_simulator_disconnect():
+    events = []
+
+    class Target:
+        def disconnect(self):
+            events.append("target-disconnect")
+
+    class Viewer:
+        polls = 0
+
+        def close(self):
+            events.append("viewer-close")
+
+        def _sim(self):
+            self.polls += 1
+            if self.polls < 3:
+                events.append("viewer-thread-alive")
+                return object()
+            events.append("viewer-thread-stopped")
+            return None
+
+    wrapper = ViewerSimulationTarget(Target())
+    wrapper.viewer = Viewer()
+
+    wrapper.disconnect()
+
+    assert events[-2:] == ["viewer-thread-stopped", "target-disconnect"]
+    assert wrapper.viewer is None
 
 
 def test_operator_workflow_has_four_numbered_scripts():

@@ -100,10 +100,24 @@ class ViewerSimulationTarget:
             self.viewer.sync()
         return result
 
+    @staticmethod
+    def _close_viewer_and_wait(viewer: Any, timeout_s: float = 5.0) -> None:
+        """Wait for MuJoCo's passive render thread before releasing model/data."""
+
+        viewer.close()
+        simulate_ref = getattr(viewer, "_sim", None)
+        if not callable(simulate_ref):
+            return
+        deadline = time.monotonic() + timeout_s
+        while simulate_ref() is not None:
+            if time.monotonic() >= deadline:
+                raise RuntimeError("MuJoCo passive viewer did not stop within 5 seconds")
+            time.sleep(0.01)
+
     def disconnect(self) -> None:
         try:
             if self.viewer is not None:
-                self.viewer.close()
+                self._close_viewer_and_wait(self.viewer)
                 self.viewer = None
         finally:
             self.target.disconnect()
