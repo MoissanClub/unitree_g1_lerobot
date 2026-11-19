@@ -8,6 +8,20 @@ physical G1 motion.
 Run all commands from the integration repository. Keep the headset off until a
 script explicitly accepts the handoff phrase.
 
+The normal workflow needs no options:
+
+```bash
+./lab/g1_vr/01_precheck.sh
+./lab/g1_vr/02_record_trace.sh
+./lab/g1_vr/03_replay_trace.sh
+./lab/g1_vr/04_live_e2e.sh
+```
+
+Defaults are the standard precheck, three capture attempts with suite resume,
+all accepted traces from the current suite with visible sequential MuJoCo
+replays, and a guided 60-second live control/video run. Options remain available
+for diagnostics.
+
 ## 1. Precheck
 
 ```bash
@@ -53,7 +67,7 @@ resume state. To practice one instruction in isolation:
 Collect the full suite in one headset run:
 
 ```bash
-./lab/g1_vr/02_record_trace.sh --max-attempts 3
+./lab/g1_vr/02_record_trace.sh
 ```
 
 The fixed, versioned suite first captures calibration anchors and only then
@@ -149,18 +163,19 @@ a validation report, and only then replays the trace through native MuJoCo. A
 validation failure blocks replay.
 
 ```bash
-suite="$(cat outputs/g1-vr-lab/current-session)/calibration-suites/current-suite"
-suite="$(cat "${suite}")"
-trace="$(jq -r '.segments["right-forward"].selected_trace' "${suite}/manifest.json")"
-./lab/g1_vr/03_replay_trace.sh --trace "${trace}" --expect right
+./lab/g1_vr/03_replay_trace.sh
 ```
 
-The trace is replayed at 60 Hz through the shared guard,
-G1-29 retargeter, upstream LeRobot native MuJoCo robot, and a viewer. Telemetry
-and logs are saved under `telemetry/`. Use `--headless` for automated regression,
-or `--validate-only` for forensic revalidation without starting MuJoCo. Behavior
-expectations are `any`, `idle`, `right`, `left`, `bimanual`, `buttons-head`, and
-`reconnect`.
+With no options, script 3 requires the current suite to be complete, selects
+every accepted trace from its manifest, infers each behavior check, and processes
+them in manifest order. Each trace is replayed at 60 Hz through the shared guard,
+G1-29 retargeter, upstream LeRobot native MuJoCo robot, and a visible viewer.
+Telemetry and logs are saved under `telemetry/`. The viewer is reopened for each
+sequential trace. Use `--headless` for automated regression, or `--validate-only`
+for forensic revalidation without starting MuJoCo. Behavior expectations are
+`any`, `idle`, `right`, `left`, `bimanual`, `buttons-head`, and `reconnect`. Use
+`--label` to select one accepted suite segment or `--trace` for an explicit trace
+path.
 
 For a deterministic headset-free test of the same validation/replay path:
 
@@ -176,7 +191,7 @@ Synthetic traces are development fixtures, not headset or operator evidence.
 ## 4. Live end-to-end control and Quest video
 
 ```bash
-./lab/g1_vr/04_live_e2e.sh --duration-s 60
+./lab/g1_vr/04_live_e2e.sh
 ```
 
 Before prompting, the script starts the exact native MuJoCo simulation and

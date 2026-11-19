@@ -179,22 +179,46 @@ def test_synthetic_trace_cli_passes_bimanual_checker(tmp_path):
     assert payload["measurements"]["right"]["squeeze_max"] == 1.0
 
 
-def test_script_three_validates_before_optional_replay(tmp_path):
-    trace = tmp_path / "synthetic-bimanual"
+def test_script_three_selects_all_current_suite_traces_by_default(tmp_path):
+    right_trace = tmp_path / "right-forward"
+    left_trace = tmp_path / "left-forward"
     session = tmp_path / "session"
     session.mkdir()
     (session / "precheck.passed").write_text("fixture\n")
-    subprocess.run(
-        [
-            sys.executable,
-            str(ROOT / "tools" / "synthesize_g1_vr_trace.py"),
-            str(trace),
-            "--scenario",
-            "bimanual",
-            "--duration-s",
-            "1",
-        ],
-        check=True,
+    suite = session / "calibration-suites" / "suite-01"
+    suite.mkdir(parents=True)
+    (session / "calibration-suites" / "current-suite").write_text(
+        f"{suite}\n"
+    )
+    for trace, scenario in ((right_trace, "right"), (left_trace, "left")):
+        subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "tools" / "synthesize_g1_vr_trace.py"),
+                str(trace),
+                "--scenario",
+                scenario,
+                "--duration-s",
+                "1",
+            ],
+            check=True,
+        )
+    (suite / "manifest.json").write_text(
+        json.dumps(
+            {
+                "status": "complete",
+                "segments": {
+                    "right-forward": {
+                        "status": "passed",
+                        "selected_trace": str(right_trace),
+                    },
+                    "left-forward": {
+                        "status": "passed",
+                        "selected_trace": str(left_trace),
+                    },
+                }
+            }
+        )
     )
     env = {
         **os.environ,
@@ -206,10 +230,6 @@ def test_script_three_validates_before_optional_replay(tmp_path):
     result = subprocess.run(
         [
             str(LAB / "03_replay_trace.sh"),
-            "--trace",
-            str(trace),
-            "--expect",
-            "bimanual",
             "--validate-only",
         ],
         check=False,
@@ -219,8 +239,10 @@ def test_script_three_validates_before_optional_replay(tmp_path):
     )
 
     assert result.returncode == 0, result.stderr
-    assert "Validation-only run complete" in result.stdout
-    assert (session / "checks" / "synthetic-bimanual.json").exists()
+    assert "Selected 2 accepted traces from the current suite" in result.stdout
+    assert "Validation-only run complete for 2 trace(s)" in result.stdout
+    assert (session / "checks" / "right-forward.json").exists()
+    assert (session / "checks" / "left-forward.json").exists()
     assert not (session / "telemetry").exists()
 
 
