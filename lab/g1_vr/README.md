@@ -13,14 +13,15 @@ The normal workflow needs no options:
 ```bash
 ./lab/g1_vr/01_precheck.sh
 ./lab/g1_vr/02_record_trace.sh
-./lab/g1_vr/03_replay_trace.sh
+./lab/g1_vr/03a_view_calibration.sh
+./lab/g1_vr/03b_replay_trajectories.sh
 ./lab/g1_vr/04_live_e2e.sh
 ```
 
 Defaults are the standard precheck, three capture attempts with suite resume,
-all accepted traces from the current suite with visible sequential MuJoCo
-replays, and a guided 60-second live control/video run. Options remain available
-for diagnostics.
+one calibration posture/orientation matrix, all accepted motion traces from the
+current suite with visible sequential MuJoCo replays, and a guided 60-second
+live control/video run. Options remain available for diagnostics.
 
 ## 1. Precheck
 
@@ -154,21 +155,42 @@ again: it resumes the current suite, skips passing position units and motion
 traces, and collects only unresolved work with up to three new attempts each.
 Use `--new-suite` only to deliberately collect the entire plan again.
 
-## 3. Validate and replay recorded data
+## 3a. View calibration postures and orientations
+
+```bash
+./lab/g1_vr/03a_view_calibration.sh
+```
+
+Script 3a opens one matrix with four arm-position rows (down, forward,
+horizontal, and upward) and six possible palm-orientation columns. Combinations
+that were not part of the calibration plan remain blank. Every populated cell
+shows the accepted representative left and right controller positions relative
+to the headset and RGB controller-local orientation axes. The same view is
+saved as SVG under the session `checks/` directory. Grip is intentionally not
+required because these are recorded XR observations, not teleoperation commands.
+
+This view checks that the requested posture/orientation observations were
+captured and are visibly distinct. It does not apply the still-unsolved
+human-to-robot transform, controller-to-palm offset, retargeting, or G1 IK.
+Use `--no-show` to generate and validate the SVG without opening the window.
+
+## 3b. Validate and replay recorded trajectories
 
 Script 2 already performs the quality checks needed to accept or retry each
-capture while the headset is on. Script 3 independently rechecks checksums,
+capture while the headset is on. Script 3b independently rechecks checksums,
 schema/order, duration/rate, source readiness, tracking, grip, and motion, saves
 a validation report, and only then replays the trace through native MuJoCo. A
 validation failure blocks replay.
 
 ```bash
-./lab/g1_vr/03_replay_trace.sh
+./lab/g1_vr/03b_replay_trajectories.sh
 ```
 
-With no options, script 3 requires the current suite to be complete, selects
-every accepted trace from its manifest, infers each behavior check, and processes
-them in manifest order. Each trace is replayed at 60 Hz through the shared guard,
+With no options, script 3b requires the current suite to be complete, selects
+the six accepted dynamic traces from its manifest, infers each behavior check,
+and processes them in manifest order. Static calibration anchors are handled by
+script 3a and are never replayed as gripped motion. Each trajectory is replayed
+at 60 Hz through the shared guard,
 G1-29 retargeter, upstream LeRobot native MuJoCo robot, and a visible viewer.
 Telemetry and logs are saved under `telemetry/`. The viewer is reopened for each
 sequential trace. Use `--headless` for automated regression, or `--validate-only`
@@ -182,7 +204,7 @@ For a deterministic headset-free test of the same validation/replay path:
 ```bash
 python tools/synthesize_g1_vr_trace.py /tmp/g1-vr-synthetic \
   --scenario bimanual --duration-s 4
-./lab/g1_vr/03_replay_trace.sh \
+./lab/g1_vr/03b_replay_trajectories.sh \
   --trace /tmp/g1-vr-synthetic --expect bimanual --headless
 ```
 

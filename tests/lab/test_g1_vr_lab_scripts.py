@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from tools.run_supervised_g1_29_vr import ViewerSimulationTarget
+from tools.view_xr_calibration_grid import COLUMNS, ROWS, load_anchor_grid
 from tools.record_xrobotoolkit_calibration import (
     _artifact_paths,
     _palm_capture_prompt,
@@ -48,11 +49,12 @@ def test_viewer_target_waits_for_passive_thread_before_simulator_disconnect():
     assert wrapper.viewer is None
 
 
-def test_operator_workflow_has_four_numbered_scripts():
+def test_operator_workflow_has_split_calibration_and_trajectory_scripts():
     assert [path.name for path in SCRIPTS] == [
         "01_precheck.sh",
         "02_record_trace.sh",
-        "03_replay_trace.sh",
+        "03a_view_calibration.sh",
+        "03b_replay_trajectories.sh",
         "04_live_e2e.sh",
     ]
 
@@ -210,7 +212,7 @@ def test_synthetic_trace_cli_passes_bimanual_checker(tmp_path):
     assert payload["measurements"]["right"]["squeeze_max"] == 1.0
 
 
-def test_script_three_selects_all_current_suite_traces_by_default(tmp_path):
+def test_script_three_b_selects_all_current_suite_motion_traces_by_default(tmp_path):
     right_trace = tmp_path / "right-forward"
     left_trace = tmp_path / "left-forward"
     session = tmp_path / "session"
@@ -260,7 +262,7 @@ def test_script_three_selects_all_current_suite_traces_by_default(tmp_path):
 
     result = subprocess.run(
         [
-            str(LAB / "03_replay_trace.sh"),
+            str(LAB / "03b_replay_trajectories.sh"),
             "--validate-only",
         ],
         check=False,
@@ -270,11 +272,50 @@ def test_script_three_selects_all_current_suite_traces_by_default(tmp_path):
     )
 
     assert result.returncode == 0, result.stderr
-    assert "Selected 2 accepted traces from the current suite" in result.stdout
-    assert "Validation-only run complete for 2 trace(s)" in result.stdout
+    assert "Selected 2 accepted motion traces from the current suite" in result.stdout
+    assert "Validation-only run complete for 2 trajectory trace(s)" in result.stdout
     assert (session / "checks" / "right-forward.json").exists()
     assert (session / "checks" / "left-forward.json").exists()
     assert not (session / "telemetry").exists()
+
+
+def test_calibration_grid_maps_available_anchors_and_leaves_other_cells_empty(tmp_path):
+    anchor_set = tmp_path / "anchor-set.json"
+    pose = {
+        "position_m": [0.0, 0.0, 0.0],
+        "quaternion_xyzw": [0.0, 0.0, 0.0, 1.0],
+        "tracked_samples": 299,
+    }
+    anchor_set.write_text(
+        json.dumps(
+            {
+                "anchors": {
+                    "calibration-down-inward": {
+                        "representative_poses": {
+                            "head": pose,
+                            "left": {**pose, "position_m": [-0.2, -0.6, -0.3]},
+                            "right": {**pose, "position_m": [0.2, -0.6, -0.3]},
+                        }
+                    },
+                    "calibration-forward-up": {
+                        "representative_poses": {
+                            "head": pose,
+                            "left": {**pose, "position_m": [-0.2, -0.5, 0.0]},
+                            "right": {**pose, "position_m": [0.2, -0.5, 0.0]},
+                        }
+                    },
+                }
+            }
+        )
+    )
+
+    grid = load_anchor_grid(anchor_set)
+
+    assert len(ROWS) == 4
+    assert len(COLUMNS) == 6
+    assert ("down", "inward") in grid
+    assert ("forward", "up") in grid
+    assert ("down", "up") not in grid
 
 
 def test_calibration_cli_lists_pending_without_connecting_to_headset(tmp_path):
