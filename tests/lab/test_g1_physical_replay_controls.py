@@ -71,7 +71,7 @@ def test_initial_positioning_requires_matching_reviewed_staging_envelope():
         staging_duration_s=10.0,
         approach_duration_s=7.0,
     )
-    cfg = SimpleNamespace(max_displacement=0.4)
+    cfg = SimpleNamespace(max_displacement=0.4, gravity_urdf=None)
     contract = {
         "physical_replay_staging": {
             "reviewed": True,
@@ -80,6 +80,8 @@ def test_initial_positioning_requires_matching_reviewed_staging_envelope():
             "max_start_delta_rad": 0.4,
             "minimum_duration_s": 10.0,
             "path_and_clearance_reviewed": True,
+            "lower_body_mode": "stock_balance",
+            "no_gravity_feedforward_reviewed": True,
         }
     }
 
@@ -87,6 +89,31 @@ def test_initial_positioning_requires_matching_reviewed_staging_envelope():
 
     cfg.max_displacement = 0.05
     with pytest.raises(ValueError, match="max_displacement"):
+        validate_staging_contract(contract, args, 0.3634, cfg)
+
+
+def test_stock_balance_staging_rejects_fixed_waist_gravity_model():
+    args = SimpleNamespace(
+        stage_from_current=True,
+        label="calibration-down-inward",
+        staging_duration_s=10.0,
+        approach_duration_s=7.0,
+    )
+    cfg = SimpleNamespace(max_displacement=0.4, gravity_urdf="g1_29.urdf")
+    contract = {
+        "physical_replay_staging": {
+            "reviewed": True,
+            "reviewer": "Lab reviewer",
+            "label": "calibration-down-inward",
+            "max_start_delta_rad": 0.4,
+            "minimum_duration_s": 10.0,
+            "path_and_clearance_reviewed": True,
+            "lower_body_mode": "stock_balance",
+            "no_gravity_feedforward_reviewed": True,
+        }
+    }
+
+    with pytest.raises(ValueError, match="gravity_urdf=null"):
         validate_staging_contract(contract, args, 0.3634, cfg)
 
 

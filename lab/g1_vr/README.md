@@ -318,11 +318,18 @@ to the selected posture:
   --output physical-05a.jsonl --stage-from-current --staging-duration-s 10
 ```
 
-This does not move the waist, legs or hands. The operator must first use the stock
-controller to make the torso upright and all waist joints neutral. The option is
-not a way to bypass `max_displacement`: the reviewed Arm SDK contract must cover
-the complete measured start-to-target travel, and the contract must add a staging
-review such as:
+This does not command the waist, legs or hands. On the current robot the stock
+controller must retain lower-body ownership and self-balancing, including any
+waist motion it needs. Do not force the waist neutral to satisfy the reduced arm
+gravity model. That model is not dynamically waist-aware, so the current staging
+implementation requires a separately reviewed no-gravity-feedforward arm profile
+(`arm_sdk.gravity_urdf: null`). Begin physical validation with a supported,
+no-displacement authority hold and review tracking/torque/release before any
+staging motion. A future full-body gravity model may replace this limitation.
+
+The option is not a way to bypass `max_displacement`: the reviewed Arm SDK
+contract must cover the complete measured start-to-target travel, and the
+contract must add a staging review such as:
 
 ```json
 "physical_replay_staging": {
@@ -331,15 +338,19 @@ review such as:
   "label": "calibration-down-inward",
   "max_start_delta_rad": 0.4,
   "minimum_duration_s": 10.0,
-  "path_and_clearance_reviewed": true
+  "path_and_clearance_reviewed": true,
+  "lower_body_mode": "stock_balance",
+  "no_gravity_feedforward_reviewed": true
 }
 ```
 
 These values are an example shape, not approval for a particular robot. The
 reviewer must deliberately set a bounded envelope from the live pose, inspect
 arm/hand clearance and support, and review the corresponding
-`arm_sdk.max_displacement`. At runtime, the executor rejects a start outside
-either bound. The staging path uses the same English warnings, `Q` pause, `R`
-resume, torque/tracking checks and release request as the normal approach. A
-10-second request is lengthened automatically if the reviewed velocity or
-acceleration ceiling requires more time.
+`arm_sdk.max_displacement`, PD gains, torque bounds and the decision to omit arm
+gravity feedforward while stock balance moves the waist. At runtime, the executor
+rejects a start outside either displacement bound, any other lower-body mode, or
+a non-null fixed-waist gravity model. The staging path uses the same English
+warnings, `Q` pause, `R` resume, torque/tracking checks and release request as the
+normal approach. A 10-second request is lengthened automatically if the reviewed
+velocity or acceleration ceiling requires more time.

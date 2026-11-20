@@ -140,13 +140,19 @@ def validate_staging_contract(contract, args, distance, cfg):
     staging = contract.get("physical_replay_staging")
     if not isinstance(staging, dict):
         raise TypeError("--stage-from-current requires a reviewed physical_replay_staging contract")
-    for key in ("reviewed", "path_and_clearance_reviewed"):
+    for key in ("reviewed", "path_and_clearance_reviewed", "no_gravity_feedforward_reviewed"):
         if staging.get(key) is not True:
             raise ValueError(f"Physical replay staging gate not approved: {key}")
     if not isinstance(staging.get("reviewer"), str) or not staging["reviewer"].strip():
         raise ValueError("Physical replay staging requires a named reviewer")
     if staging.get("label") != args.label:
         raise ValueError("Physical replay staging approval does not match the selected label")
+    if staging.get("lower_body_mode") != "stock_balance":
+        raise ValueError("Physical replay staging requires lower_body_mode=stock_balance")
+    if cfg.gravity_urdf is not None:
+        raise ValueError(
+            "Stock-balance staging requires gravity_urdf=null until dynamic waist-aware gravity is implemented"
+        )
     maximum = staging.get("max_start_delta_rad")
     minimum_duration = staging.get("minimum_duration_s")
     if not isinstance(maximum, (int, float)) or not math.isfinite(maximum) or maximum <= 0:
@@ -294,6 +300,9 @@ def execute(args):
                 f"{args.warning_seconds:g} second warning. Press Q to pause, or Control C to stop."
             )
             if args.stage_from_current:
+                voice.announce(
+                    "The stock lower body balance controller remains active. Arm gravity feedforward is disabled."
+                )
                 print(
                     f"Reviewed initial positioning phase: {distance:.6f} rad maximum joint travel "
                     f"over at least {args.staging_duration_s:.1f} seconds.",
