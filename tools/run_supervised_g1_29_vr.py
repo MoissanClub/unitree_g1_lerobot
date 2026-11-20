@@ -38,6 +38,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument(
         "--source", choices=[kind.value for kind in XRSourceKind], required=True
     )
+    result.add_argument("--anchor-set", type=Path)
     result.add_argument("--trace", type=Path)
     result.add_argument("--urdf", type=Path, required=True)
     result.add_argument("--mesh-dir", type=Path)
@@ -179,6 +180,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     source = build_xr_source(selection, clock=clock)
     retargeter = G129Retargeter(G1RetargeterConfig(args.urdf), clock=clock)
+    profile = None
+    if args.anchor_set:
+        from lerobot_teleoperator_g1_vr.calibration import load_profile
+        profile = load_profile(args.anchor_set, retargeter.kinematics)
+        if args.telemetry:
+            args.telemetry.parent.mkdir(parents=True, exist_ok=True)
+            args.telemetry.with_suffix(".profile.json").write_text(json.dumps(profile.metadata(), indent=2))
     guard = XRInteractionGuard(clock=clock)
     robot = UnitreeG1(
         UnitreeG1Config(
@@ -225,7 +233,8 @@ def main(argv: list[str] | None = None) -> int:
             if args.ready_file is not None and args.start_gate_file is not None
             else None
         )
-        records = G1VRSimulationSupervisor(source, guard, retargeter, target).run(
+        records = G1VRSimulationSupervisor(source, guard, retargeter, target, profile,
+                                           check_heading=profile is not None and kind is XRSourceKind.XROBOTOOLKIT).run(
             max_steps=args.steps,
             max_duration_s=args.duration_s,
             rate_hz=args.rate_hz,

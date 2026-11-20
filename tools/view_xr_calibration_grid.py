@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from tkinter import ttk
 
+from lerobot_teleoperator_g1_vr.calibration import load_anchor_grid, load_profile, solve_anchor
+
 
 ROWS = ("down", "forward", "horizontal", "up")
 COLUMNS = ("inward", "up", "down", "outward", "forward", "backward")
@@ -47,27 +49,6 @@ def quaternion_matrix(quaternion):
     )
 
 
-def load_anchor_grid(path: Path):
-    payload = json.loads(path.read_text())
-    anchors = payload.get("anchors", {})
-    grid = {}
-    for label, anchor in anchors.items():
-        if not label.startswith("calibration-"):
-            continue
-        suffix = label.removeprefix("calibration-")
-        try:
-            position, orientation = suffix.split("-", 1)
-        except ValueError as error:
-            raise ValueError(f"unrecognized calibration label: {label}") from error
-        if position not in ROWS or orientation not in COLUMNS:
-            raise ValueError(f"unsupported calibration matrix cell: {label}")
-        poses = anchor.get("representative_poses")
-        if not poses or any(name not in poses for name in ("head", "left", "right")):
-            raise ValueError(f"missing representative head/controller poses: {label}")
-        grid[(position, orientation)] = {"label": label, "poses": poses}
-    return grid
-
-
 def head_relative_pose(poses, side):
     head = poses["head"]
     hand = poses[side]
@@ -78,7 +59,7 @@ def head_relative_pose(poses, side):
     return position, orientation
 
 
-def retarget_robot_previews(grid, urdf_path: Path, mesh_dir: Path, *, max_iterations=80):
+def retarget_robot_previews(grid, urdf_path: Path, mesh_dir: Path, anchor_set: Path, *, max_iterations=80):
     """Fit static straight-arm observations and solve the native G1 Cartesian IK."""
 
     import numpy as np
@@ -86,30 +67,6 @@ def retarget_robot_previews(grid, urdf_path: Path, mesh_dir: Path, *, max_iterat
     from lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config
 
     reference_key = ("down", "inward")
-    if reference_key not in grid:
-        raise ValueError("retargeting preview requires calibration-down-inward")
-    if ("up", "inward") not in grid:
-        raise ValueError("reach estimation requires calibration-up-inward")
-    from scipy.spatial.transform import Rotation
-
-    # Fixed body heading from the reference headset, retaining gravity-up.
-    down = grid[reference_key]["poses"]
-    forward = -np.asarray(quaternion_matrix(down["head"]["quaternion_xyzw"]))[:, 2]
-    forward[1] = 0
-    if np.linalg.norm(forward) < 1e-6:
-        raise ValueError("Down/inward headset orientation lacks a horizontal heading")
-    forward /= np.linalg.norm(forward)
-    vertical = np.array([0., 1., 0.])
-    basis = np.stack([forward, np.cross(vertical, forward), vertical])
-    neutral = np.zeros(14)
-    neutral[[3, 10]] = np.pi / 2  # G1 forearms point forward at zero elbow.
-    sides = ("left", "right")
-
-    def position(poses, side):
-        return basis @ (np.array(poses[side]["position_m"]) - poses["head"]["position_m"])
-
-    def rotation(poses, side):
-        return basis @ Rotation.from_quat(poses[side]["quaternion_xyzw"]).as_matrix()
     robot = UnitreeG1(
         UnitreeG1Config(
             id="g1-29-calibration-preview",
@@ -137,63 +94,16 @@ def retarget_robot_previews(grid, urdf_path: Path, mesh_dir: Path, *, max_iterat
         if native is None:
             raise RuntimeError("native G1-29 simulation did not initialize")
         ik = native.ik
-        home = ik.fk(neutral)
-        up = grid[("up", "inward")]["poses"]
-        fits = {}
-        for i, side in enumerate(sides):
-            low, high = position(down, side), position(up, side)
-            shoulder = (low + high) / 2
-            span = np.linalg.norm(high - low)
-            if span < 0.25:
-                raise ValueError(f"Insufficient up/down separation for {side}")
-            data = ik.model.createData()
-            ik._pin.forwardKinematics(ik.model, data, ik._to_model(neutral))
-            joint = ik.model.getJointId(f"{side}_shoulder_pitch_joint")
-            reach = np.linalg.norm(home[i][:3, 3] - data.oMi[joint].translation)
-            inward = np.array([0., -1. if i == 0 else 1., 0.])
-            normals = dict(inward=inward, outward=-inward, up=[0,0,1], down=[0,0,-1],
-                           forward=[1,0,0], backward=[-1,0,0])
-            # Express each annotated normal in controller coordinates and average.
-            normal = np.mean([rotation(e["poses"], side).T @ normals[col]
-                              for (row, col), e in grid.items() if row in ("forward", "horizontal")], axis=0)
-            if not np.isfinite(normal).all() or np.linalg.norm(normal) < 0.2:
-                raise ValueError(f"Inconsistent palm orientation anchors for {side}")
-            fits[side] = shoulder, 2 * reach / span, normal / np.linalg.norm(normal)
-        report["fits"] = {s: {"shoulder_m": p.tolist(), "scale": float(k),
-                              "controller_palm_normal": n.tolist()} for s,(p,k,n) in fits.items()}
+        profile = load_profile(anchor_set, ik)
+        report["profile"] = profile.metadata()
+        report["fits"] = report["profile"]["fits"]
         for row in ROWS:
             for column in COLUMNS:
                 key = (row, column)
                 entry = grid.get(key)
                 if entry is None:
                     continue
-                targets = []
-                for i, side in enumerate(sides):
-                    target = home[i].copy()
-                    if key != reference_key:
-                        shoulder, scale, normal = fits[side]
-                        p = position(entry["poses"], side)
-                        target[:3, 3] += scale * (p - position(down, side))
-                        # Straight-arm protocol: fingers extend along the arm.
-                        x = p - shoulder
-                        if np.linalg.norm(x) < 1e-6:
-                            raise ValueError(f"Undefined straight-arm direction for {side} at {key}")
-                        x /= np.linalg.norm(x)
-                        y = rotation(entry["poses"], side) @ normal * (-1 if i == 0 else 1)
-                        y -= x * (x @ y)
-                        if np.linalg.norm(y) < 1e-6:
-                            raise ValueError(f"Ambiguous palm direction for {side} at {key}")
-                        y /= np.linalg.norm(y)
-                        target[:3, :3] = np.column_stack([x, y, np.cross(x, y)])
-                    targets.append(target)
-                previous = neutral.copy()
-                for iteration in range(1, max_iterations + 1):
-                    result = ik.solve(*targets, seed=previous)
-                    current = result.q
-                    stable = float(np.max(np.abs(current - previous))) < 1e-6
-                    previous = current
-                    if result.converged or stable:
-                        break
+                targets, result, iteration = solve_anchor(ik, profile, key, entry, max_iterations)
                 native.data.qpos[native.qadr] = result.q
                 native.data.qvel[:] = 0.0
                 native.target = native.data.qpos[native.qadr].copy()
@@ -204,6 +114,7 @@ def retarget_robot_previews(grid, urdf_path: Path, mesh_dir: Path, *, max_iterat
                 previews[key] = image_buffer.getvalue()
                 report["anchors"][entry["label"]] = {
                     "iterations": iteration,
+                    "targets": [t.tolist() for t in targets],
                     "action": ik.arm_action(result.q),
                     "diagnostics": {"ik_status": result.status, "converged": bool(result.converged),
                                     "position_error_m": result.position_error_m,
@@ -474,7 +385,7 @@ def main():
         raise SystemExit("--retarget-iterations must be positive")
     if args.urdf is not None:
         previews, report = retarget_robot_previews(
-            grid, args.urdf, args.mesh_dir, max_iterations=args.retarget_iterations
+            grid, args.urdf, args.mesh_dir, args.anchor_set, max_iterations=args.retarget_iterations
         )
         robot_width, robot_height, robot_primitives = build_robot_scene(
             grid, previews, report

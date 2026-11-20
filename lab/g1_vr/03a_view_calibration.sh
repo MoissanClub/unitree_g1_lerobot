@@ -6,7 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 usage() {
     echo "usage: $0 [--anchor-set PATH] [--output-svg PATH] [--output-retarget-svg PATH] [--output-retarget-report PATH] [--no-show]"
-    echo "       defaults to the current suite and opens recorded-XR and G1-retargeting tabs"
+    echo "       fits the shared G1 calibration from the current suite and opens recorded-XR and robot tabs"
 }
 
 anchor_set=""

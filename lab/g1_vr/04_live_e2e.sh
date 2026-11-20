@@ -37,6 +37,7 @@ fi
 
 require_precheck
 directory="$(session_dir)"
+anchor_set="$(current_anchor_set)"
 run_id="live-e2e-$(date +%Y%m%d-%H%M%S)"
 run_dir="${directory}/live/${run_id}"
 ready_file="${run_dir}/backend.ready"
@@ -58,6 +59,7 @@ trap 'cleanup; exit 130' INT TERM
 
 record_event "${run_id}: preparing MuJoCo viewer, XR input, and Quest video"
 PYTHONUNBUFFERED=1 "${PYTHON_BIN}" "${REPO_ROOT}/tools/run_supervised_g1_29_vr.py" \
+    --anchor-set "${anchor_set}" \
     --source xrobotoolkit \
     --urdf "${G1_URDF}" \
     --mesh-dir "${G1_MESH_DIR}" \
@@ -79,10 +81,11 @@ if ! wait_for_file "${ready_file}" "${backend_pid}" 120; then
     exit 1
 fi
 echo "MuJoCo viewer, XR input, and Quest video listener are ready and gated."
+echo "Face the same forward direction used in 02. If the Quest origin was recentered, collect a fresh suite first."
 confirm_headset_handoff
 
 if [[ "${guided}" == true ]]; then
-    voice_async "Live test starts now. Confirm the MuJoCo robot is visible. Hold only the right grip and move the right controller."
+    voice_async "Face calibration forward with both grips released. Live test starts now. Confirm the MuJoCo robot is visible. Hold only the right grip and move the right controller."
 else
     voice_async "Live end to end test starts now."
 fi

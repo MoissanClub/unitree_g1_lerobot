@@ -5,14 +5,14 @@ from __future__ import annotations
 import math
 import time
 from collections.abc import Callable, Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Protocol
 
 from lerobot_teleoperator_g1_vr import (
     G1Retargeter,
     XRInputSource,
     XRInteractionGuard,
-    XRTraceExhaustedError,
+    XRTraceExhaustedError, XRSourceState, XRSourceStatus,
 )
 
 
@@ -42,6 +42,10 @@ class G1VRTelemetry:
     ik_status: str | None
     seed_clipped: bool
     maximum_seed_limit_violation_rad: float
+    action: dict
+    measured: tuple
+    targets: list | None
+    captured_at_s: float
 
 
 class G1VRSimulationSupervisor:
@@ -53,6 +57,8 @@ class G1VRSimulationSupervisor:
         guard: XRInteractionGuard,
         retargeter: G1Retargeter,
         target: G1SimulationTarget,
+        profile=None,
+        check_heading=False,
     ) -> None:
         if retargeter.embodiment != "g1_29":
             raise ValueError("supervisor supports the g1_29 simulation embodiment only")
@@ -62,6 +68,8 @@ class G1VRSimulationSupervisor:
         self.guard = guard
         self.retargeter = retargeter
         self.target = target
+        self.profile = profile
+        self.check_heading = check_heading
 
     def _measured_arm_q(self) -> tuple[float, ...]:
         observation = self.target.get_observation()
@@ -100,6 +108,7 @@ class G1VRSimulationSupervisor:
             isinstance(rate_hz, bool) or not math.isfinite(rate_hz) or rate_hz <= 0
         ):
             raise ValueError("rate_hz must be a positive finite number or None")
+        heading_ready = not self.check_heading
         records: list[G1VRTelemetry] = []
         target_started = source_started = False
         self.guard.reset()
@@ -120,6 +129,17 @@ class G1VRSimulationSupervisor:
                     sample = self.source.sample()
                 except XRTraceExhaustedError:
                     break
+                if self.profile is not None:
+                    if self.check_heading and (not sample.head.tracked or sample.status.state != XRSourceState.READY):
+                        heading_ready = False
+                    if not heading_ready:
+                        heading_ready = (sample.status.state == XRSourceState.READY
+                                         and self.profile.heading_matches(sample)
+                                         and max(sample.left.squeeze, sample.right.squeeze) < 0.5)
+                        if not heading_ready:
+                            sample = replace(sample, status=XRSourceStatus(
+                                XRSourceState.STALE, "Face calibration-forward and release both grips"))
+                    sample = self.profile.map_sample(sample)
                 guarded = self.guard.process(sample)
                 measured = self._measured_arm_q()
                 result = self.retargeter.retarget(guarded, measured)
@@ -132,6 +152,9 @@ class G1VRSimulationSupervisor:
                 diagnostics = result.diagnostics
                 record = G1VRTelemetry(
                     sequence=sample.sequence,
+                    action=action, measured=measured, captured_at_s=sample.captured_at_s,
+                    targets=([t.tolist() for t in self.retargeter.control.targets]
+                             if self.profile is not None else None),
                     source_state=guarded.status.state.value,
                     left_engaged=diagnostics.left_engaged,
                     right_engaged=diagnostics.right_engaged,

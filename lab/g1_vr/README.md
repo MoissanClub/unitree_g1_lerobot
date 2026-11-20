@@ -251,3 +251,39 @@ testing another audited checkout:
 If a backend fails while the headset is on, voice still instructs the operator
 to release grips and remove the headset. Artifacts are retained; rerunning never
 reinterprets a failed or partial run as a pass.
+
+## Shared calibration and robot-side replay
+
+03a, 03b, 04 and the two 05 plan builders fit profile version 1 from the immutable
+02 anchor set and G1-29 URDF. The exported profile identifies both inputs by
+SHA-256. Each command runs independently. Suite replay verifies the selected
+motion attempt's anchor digest. An external trace can supply `--anchor-set PATH`
+to 03b; standalone synthetic traces without calibration retain the original mode.
+04 requires the current calibration and waits for calibration-forward heading
+(within 25 degrees) and released grips at startup and after tracking loss.
+Collect a fresh suite if the Quest tracking origin changes.
+
+Run these commands on the workstation to prepare offline plans:
+
+```bash
+./lab/g1_vr/05a_replay_postures.sh
+./lab/g1_vr/05b_replay_trajectories.sh
+```
+
+Use `--label` to prepare one segment. Plans under the session's `physical-plans/`
+include the profile, desired Cartesian poses and the joint targets from the same
+IK/replay code as 03. Motion plans also include the simulation starting state,
+recorded timing and clutch states. The plan hash covers all segments and timings.
+
+For separate physical execution, transfer the reviewed plan and exact URDF to
+the robot-side host. Set `G1_VR_PYTHON` and `G1_VR_LEROBOT_ROOT` to the robot
+environment and reviewed arm-only LeRobot checkout providing `g1_arm_sdk` and
+`examples/unitree_g1/validate_arm_sdk.py`. Supply its approved hardware contract
+with `replay_plan_sha256` set to the reviewed artifact digest. The executor
+accepts an optional `--stretch FACTOR` (at least 1) to slow the same trajectory. It checks the contract's bounds and timing and runs one named segment per invocation.
+An execution invocation starts with `--execute PLAN` and also requires
+`--urdf URDF --contract CONTRACT --label LABEL --output NEW_LOG.jsonl`.
+The robot-side executor approaches the first target from measured arm positions,
+requires a matched starting state for dynamic segments, streams commands through
+the bounded Arm SDK and records measured positions. Hardware tracking,
+collision clearance, stop and release require separate operator validation.

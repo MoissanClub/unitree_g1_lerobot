@@ -199,3 +199,14 @@ ensure_xrobotoolkit_pc_service() {
     echo "XRoboToolkit PC Service did not open both ports within 10 seconds." >&2
     return 1
 }
+
+current_anchor_set() {
+    local directory suite
+    directory="$(session_dir)" || return 1
+    suite="$(head -1 "${directory}/calibration-suites/current-suite")" || return 1
+    if [[ ! -s "${suite}/calibration/anchor-set.json" ]]; then
+        echo "Complete the four calibration units in 02 first." >&2
+        return 1
+    fi
+    echo "${suite}/calibration/anchor-set.json"
+}

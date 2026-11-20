@@ -5,10 +5,11 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 usage() {
-    echo "usage: $0 [--label LABEL | --trace PATH] [--expect EXPECTATION] [--validate-only] [--headless] [--rate-hz HZ]"
+    echo "usage: $0 [--label LABEL | --trace PATH] [--anchor-set PATH] [--expect EXPECTATION] [--validate-only] [--headless] [--rate-hz HZ]"
     echo "       no trace option validates and replays all six motion traces in the current suite"
 }
 
+anchor_set=""
 label=""
 trace_path=""
 expectation=""
@@ -17,6 +18,7 @@ headless=false
 rate_hz=60
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --anchor-set) anchor_set="${2:?--anchor-set requires a path}"; shift ;;
         --label) label="${2:?--label requires a value}"; shift ;;
         --trace) trace_path="${2:?--trace requires a path}"; shift ;;
         --expect) expectation="${2:?--expect requires a value}"; shift ;;
@@ -158,10 +160,20 @@ for index in "${!labels[@]}"; do
         continue
     fi
 
+    calibration_args=()
+    if [[ -z "${trace_path}" ]]; then
+        anchor_set="${anchor_set:-$(current_anchor_set)}"
+        "${PYTHON_BIN}" -m lerobot_teleoperator_g1_vr.calibration "${manifest}" "${current_label}" "${anchor_set}"
+    elif [[ -f "${current_trace}/../../../calibration/anchor-set.json" ]]; then
+        anchor_set="${anchor_set:-${current_trace}/../../../calibration/anchor-set.json}"
+        "${PYTHON_BIN}" -m lerobot_teleoperator_g1_vr.calibration "${current_trace}/../../../manifest.json" "$(basename "$(dirname "${current_trace}")")" "${anchor_set}" "${current_trace}"
+    fi
+    if [[ -n "${anchor_set}" ]]; then calibration_args=(--anchor-set "${anchor_set}"); fi
     telemetry="${directory}/telemetry/replay-${current_label}-$(date +%Y%m%d-%H%M%S).json"
     log="${telemetry%.json}.log"
     record_event "trajectory ${current_label}: native MuJoCo replay started"
     "${PYTHON_BIN}" "${REPO_ROOT}/tools/run_supervised_g1_29_vr.py" \
+        "${calibration_args[@]}" \
         --source trace \
         --trace "${current_trace}" \
         --urdf "${G1_URDF}" \

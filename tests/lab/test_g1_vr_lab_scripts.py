@@ -61,6 +61,8 @@ def test_operator_workflow_has_split_calibration_and_trajectory_scripts():
         "03a_view_calibration.sh",
         "03b_replay_trajectories.sh",
         "04_live_e2e.sh",
+        "05a_replay_postures.sh",
+        "05b_replay_trajectories.sh",
     ]
 
 
