@@ -293,8 +293,8 @@ Physical execution requires an interactive terminal. It gives a blocking English
 voice warning using `spd-say -l en`, waits five seconds, and repeats a voice alarm
 while arm authority or planned movement is active. Press `Q` to latch a pause;
 the executor freezes plan time and commands a hold near the latest measured pose.
-Press `R` to resume. `Ctrl+C` stops the executor and requests the normal three-packet
-weight-zero release. `Q` is a software hold with arm torque still active, not an
+Press `R` to resume. `Ctrl+C` stops the executor and requests the immediate
+three-packet weight-zero fallback. `Q` is a software hold with arm torque still active, not an
 independent emergency stop or verified physical stop.
 
 The default first-target approach is seven seconds (`--approach-duration-s 7`).
@@ -303,8 +303,9 @@ contract's velocity, acceleration, displacement, torque, tracking and model gate
 and lengthens the requested duration if those bounds require it. With the default
 `0.05 rad` displacement envelope, a seven-second cubic approach peaks near
 `0.011 rad/s`; the `0.1 rad/s` contract value remains a fault-prevention ceiling,
-not the intended approach speed. The two-second authority blend and one-second
-final hold are additional time.
+not the intended approach speed. Arm authority starts at full weight on a
+measured-pose target; bounded target motion, rather than a startup weight ramp,
+prevents an acquisition jump. The one-second final hold is additional time.
 
 ### Separately reviewed 05a initial positioning
 
@@ -320,12 +321,27 @@ to the selected posture:
 
 This does not command the waist, legs or hands. On the current robot the stock
 controller must retain lower-body ownership and self-balancing, including any
-waist motion it needs. Do not force the waist neutral to satisfy the reduced arm
-gravity model. That model is not dynamically waist-aware, so the current staging
-implementation requires a separately reviewed no-gravity-feedforward arm profile
-(`arm_sdk.gravity_urdf: null`). Begin physical validation with a supported,
-no-displacement authority hold and review tracking/torque/release before any
-staging motion. A future full-body gravity model may replace this limitation.
+waist motion it needs. Do not force the waist neutral. The Arm SDK evaluates gravity with the measured pelvis
+quaternion and all three live waist joints, so staging requires that reviewed
+live-waist model (`arm_sdk.gravity_urdf` must identify the reviewed URDF). Begin
+physical validation with a supported, no-displacement authority hold and review
+tracking, torque and release before any staging motion.
+
+The no-displacement gate uses the same reviewed posture plan and contract but
+does not approach its posture target:
+
+```bash
+./lab/g1_vr/05a_replay_postures.sh \
+  --execute postures.json --urdf g1_29.urdf \
+  --contract arm-contract.json --label calibration-down-inward \
+  --output physical-05a-authority.jsonl --authority-only --authority-hold-s 3
+```
+
+This acquires full arm weight at the measured pose, holds for the requested
+duration, returns to that acquisition pose, then fades weight from `1` to `0`.
+A fault or interrupt uses the immediate weight-zero fallback instead; that
+fallback is not a verified physical stop. Review the authority-only evidence and
+normal release before approving `--stage-from-current`.
 
 The option is not a way to bypass `max_displacement`: the reviewed Arm SDK
 contract must cover the complete measured start-to-target travel, and the
@@ -340,17 +356,17 @@ contract must add a staging review such as:
   "minimum_duration_s": 10.0,
   "path_and_clearance_reviewed": true,
   "lower_body_mode": "stock_balance",
-  "no_gravity_feedforward_reviewed": true
+  "live_waist_gravity_reviewed": true
 }
 ```
 
 These values are an example shape, not approval for a particular robot. The
 reviewer must deliberately set a bounded envelope from the live pose, inspect
 arm/hand clearance and support, and review the corresponding
-`arm_sdk.max_displacement`, PD gains, torque bounds and the decision to omit arm
-gravity feedforward while stock balance moves the waist. At runtime, the executor
-rejects a start outside either displacement bound, any other lower-body mode, or
-a non-null fixed-waist gravity model. The staging path uses the same English
+`arm_sdk.max_displacement`, PD gains, torque bounds and the live-waist gravity
+model while stock balance moves the waist. At runtime, the executor rejects a
+start outside either displacement bound, any other lower-body mode, or a missing
+gravity model. The staging path uses the same English
 warnings, `Q` pause, `R` resume, torque/tracking checks and release request as the
 normal approach. A 10-second request is lengthened automatically if the reviewed
 velocity or acceleration ceiling requires more time.

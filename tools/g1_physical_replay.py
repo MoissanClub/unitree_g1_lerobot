@@ -140,7 +140,7 @@ def validate_staging_contract(contract, args, distance, cfg):
     staging = contract.get("physical_replay_staging")
     if not isinstance(staging, dict):
         raise TypeError("--stage-from-current requires a reviewed physical_replay_staging contract")
-    for key in ("reviewed", "path_and_clearance_reviewed", "no_gravity_feedforward_reviewed"):
+    for key in ("reviewed", "path_and_clearance_reviewed", "live_waist_gravity_reviewed"):
         if staging.get(key) is not True:
             raise ValueError(f"Physical replay staging gate not approved: {key}")
     if not isinstance(staging.get("reviewer"), str) or not staging["reviewer"].strip():
@@ -149,10 +149,8 @@ def validate_staging_contract(contract, args, distance, cfg):
         raise ValueError("Physical replay staging approval does not match the selected label")
     if staging.get("lower_body_mode") != "stock_balance":
         raise ValueError("Physical replay staging requires lower_body_mode=stock_balance")
-    if cfg.gravity_urdf is not None:
-        raise ValueError(
-            "Stock-balance staging requires gravity_urdf=null until dynamic waist-aware gravity is implemented"
-        )
+    if cfg.gravity_urdf is None:
+        raise ValueError("Stock-balance staging requires the reviewed live-waist gravity model")
     maximum = staging.get("max_start_delta_rad")
     minimum_duration = staging.get("minimum_duration_s")
     if not isinstance(maximum, (int, float)) or not math.isfinite(maximum) or maximum <= 0:
@@ -247,7 +245,8 @@ def execute(args):
     checkout = Path(sdk.__file__).resolve().parents[4]
     validation = runpy.run_path(str(checkout / "examples/unitree_g1/validate_arm_sdk.py"))
     contract = json.loads(args.contract.read_text())
-    cfg = validation["validate_contract"](contract, args.urdf, True)
+    contract_phase = "hold" if args.authority_only else None
+    cfg = validation["validate_contract"](contract, args.urdf, True, phase=contract_phase)
     raw = args.execute.read_bytes()
     if contract.get("replay_plan_sha256") != hashlib.sha256(raw).hexdigest():
         raise ValueError("Contract must identify the reviewed replay plan by SHA256")
@@ -273,7 +272,13 @@ def execute(args):
             raise ValueError("Replay timing exceeds reviewed acceleration")
     robot = sdk.G1ArmSDK(cfg)
     voice = VoiceAlarm(args.tts_bin, args.tts_language, args.voice_rate)
-    phase_name = "initial positioning" if args.stage_from_current else "robot arm"
+    phase_name = (
+        "measured-pose authority hold"
+        if args.authority_only
+        else "initial positioning"
+        if args.stage_from_current
+        else "robot arm"
+    )
     with args.output.open("x", buffering=1) as log, KeyboardPause() as keyboard, voice:
         completed = False
         try:
@@ -283,15 +288,21 @@ def execute(args):
                                   "approach_duration_s": args.approach_duration_s,
                                   "stage_from_current": args.stage_from_current,
                                   "staging_duration_s": args.staging_duration_s,
+                                  "authority_only": args.authority_only,
+                                  "authority_hold_s": args.authority_hold_s,
                                   "tts_language": args.tts_language}) + "\n")
             robot.connect()
             measured = robot.observation()
             start = np.array([measured[k] for k in keys])
             distance = float(np.max(abs(points - start)))
-            requested_approach = validate_staging_contract(contract, args, distance, cfg)
-            if distance > cfg.max_displacement:
+            requested_approach = (
+                args.approach_duration_s
+                if args.authority_only
+                else validate_staging_contract(contract, args, distance, cfg)
+            )
+            if not args.authority_only and distance > cfg.max_displacement:
                 raise ValueError("Segment exceeds reviewed displacement from measured start")
-            if args.kind == "trajectories":
+            if args.kind == "trajectories" and not args.authority_only:
                 expected = np.asarray(rows[0]["measured"])
                 if np.max(abs(start - expected)) > cfg.max_tracking_error:
                     raise ValueError("Measured starting pose differs from simulation replay")
@@ -301,7 +312,8 @@ def execute(args):
             )
             if args.stage_from_current:
                 voice.announce(
-                    "The stock lower body balance controller remains active. Arm gravity feedforward is disabled."
+                    "The stock lower body balance controller remains active. "
+                    "Arm gravity feedforward follows the measured pelvis and waist."
                 )
                 print(
                     f"Reviewed initial positioning phase: {distance:.6f} rad maximum joint travel "
@@ -320,13 +332,18 @@ def execute(args):
                 )
             wait_for_warning(keyboard, voice, args.warning_seconds)
             robot.activate()
-            first_target_distance = float(np.max(abs(points[0] - start)))
-            approach = approach_duration(first_target_distance, cfg, requested_approach)
             begin = time.monotonic()
             pause = PauseState()
             hold = start.copy()
             last_measured = start.copy()
             next_voice = begin
+            if args.authority_only:
+                voice.announce(
+                    "Full arm authority is active at the measured pose. No arm displacement is planned."
+                )
+            else:
+                first_target_distance = float(np.max(abs(points[0] - start)))
+                approach = approach_duration(first_target_distance, cfg, requested_approach)
             while True:
                 now = time.monotonic()
                 change = pause.update(keyboard.poll(), now)
@@ -352,14 +369,15 @@ def execute(args):
                         )
                         + "\n"
                     )
-                u = np.clip((elapsed - cfg.blend_s) / approach, 0., 1.)
-                t = elapsed - cfg.blend_s - approach
-                if pause.paused:
+                if args.authority_only or pause.paused:
                     target = hold
-                elif t <= 0:
-                    target = start + (points[0] - start) * (u*u*(3-2*u))
                 else:
-                    target = [np.interp(t, times, col) for col in points.T]
+                    u = np.clip(elapsed / approach, 0., 1.)
+                    t = elapsed - approach
+                    if t <= 0:
+                        target = start + (points[0] - start) * (u*u*(3-2*u))
+                    else:
+                        target = [np.interp(t, times, col) for col in points.T]
                 command = dict(zip(keys, map(float, target), strict=True))
                 robot.send(command)
                 observation = robot.observation()
@@ -375,27 +393,44 @@ def execute(args):
                         )
                     else:
                         message = (
-                            "Warning. Initial positioning is moving the robot arms. Keep clear. Press Q to pause."
+                            "Full arm authority is holding the measured pose. No displacement is planned."
+                            if args.authority_only
+                            else "Warning. Initial positioning is moving the robot arms. Keep clear. Press Q to pause."
                             if args.stage_from_current
                             else "Warning. Robot arms are moving. Keep clear. Press Q to pause."
                         )
                         voice.announce(message)
                     next_voice = now + args.voice_interval_s
-                if not pause.paused and t >= times[-1] + 1.:
+                authority_done = args.authority_only and elapsed >= args.authority_hold_s
+                motion_done = (
+                    not args.authority_only and not pause.paused and t >= times[-1] + 1.0
+                )
+                if authority_done or motion_done:
                     if max(abs(observation[k] - command[k]) for k in keys) > cfg.max_tracking_error:
                         raise RuntimeError("Final posture outside reviewed tracking tolerance")
                     completed = True
                     break
                 time.sleep(cfg.period_s)
+            voice.announce(
+                "Returning the robot arms to the acquisition pose before releasing to stock control."
+            )
+            log.write(json.dumps({"event": "normal_release_started"}) + "\n")
+            robot.release_to_initial()
+            log.write(
+                json.dumps({"event": "normal_release_complete", "release": robot.release_context}) + "\n"
+            )
         finally:
             robot.close()
         if completed:
-            completion = (
-                "Initial positioning and posture validation are complete. "
-                "Release to stock control was requested."
-                if args.stage_from_current
-                else "Robot arm motion is complete. Release to stock control was requested."
-            )
+            if args.authority_only:
+                completion = "Measured-pose authority hold and normal release are complete."
+            elif args.stage_from_current:
+                completion = (
+                    "Initial positioning and posture validation are complete. "
+                    "Release to stock control was requested."
+                )
+            else:
+                completion = "Robot arm motion is complete. Release to stock control was requested."
             voice.announce(completion)
 
 
@@ -421,6 +456,17 @@ def main():
         help="run a separately reviewed 05a initial-positioning phase from the measured arm pose",
     )
     parser.add_argument(
+        "--authority-only",
+        action="store_true",
+        help="acquire full arm authority at the measured pose, hold, and perform normal release without 05a motion",
+    )
+    parser.add_argument(
+        "--authority-hold-s",
+        type=float,
+        default=3.0,
+        help="measured-pose full-authority hold duration for --authority-only (default: 3)",
+    )
+    parser.add_argument(
         "--staging-duration-s",
         type=float,
         default=10.0,
@@ -442,6 +488,8 @@ def main():
         parser.error("--warning-seconds must be finite and in [0, 30]")
     if not math.isfinite(args.voice_interval_s) or not 1 <= args.voice_interval_s <= 30:
         parser.error("--voice-interval-s must be finite and in [1, 30]")
+    if not math.isfinite(args.authority_hold_s) or not 1 <= args.authority_hold_s <= 30:
+        parser.error("--authority-hold-s must be finite and in [1, 30]")
     if not args.tts_language or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in args.tts_language):
         parser.error("--tts-language must be a language identifier such as en")
     if args.execute:
@@ -449,6 +497,10 @@ def main():
             parser.error("hardware execution requires --label, --contract and a new --output")
         if args.stage_from_current and args.kind != "postures":
             parser.error("--stage-from-current is only available for 05a posture execution")
+        if args.authority_only and args.kind != "postures":
+            parser.error("--authority-only is only available with the 05a posture executor")
+        if args.authority_only and args.stage_from_current:
+            parser.error("--authority-only cannot be combined with --stage-from-current")
         def stop(*_):
             raise KeyboardInterrupt
         signal.signal(signal.SIGTERM, stop)
