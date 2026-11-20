@@ -170,18 +170,13 @@ saved as SVG under the session `checks/` directory. Grip is intentionally not
 required because these are recorded XR observations, not teleoperation commands.
 
 The same window has a **G1 retargeting preview** tab. It uses
-`calibration-down-inward` as the clutch-relative reference, applies a virtual
-two-hand grip only inside this offline diagnostic, evaluates every available
-anchor through the production G1-29 retargeter/IK, and renders the resulting
-joint target with the native MuJoCo model. It saves a second SVG and a JSON
-report containing joint targets, IK status and residual errors. Live control and
-script 3b retain the real recorded grip behavior.
-
-This view checks that the requested posture/orientation observations were
-captured and are visibly distinct. It does not apply the still-unsolved
-human-to-robot transform or controller-to-palm offset. The robot tab deliberately
-shows what the current uncalibrated retargeter produces; red `bounded_best_effort`
-cells are diagnostic failures, not validated robot postures.
+`calibration-down-inward` as an arms-down G1 reference. Reference headset
+heading and gravity define the axes. Each side's up/down span sets its reach
+scale. Forward and horizontal annotations estimate the controller-local palm
+normal. For the straight-arm protocol, finger direction follows the estimated
+shoulder-to-controller vector. Native Cartesian IK solves the fitted targets.
+The SVG and JSON capture the robot preview and solver residuals. These are
+in-sample results from the offline static fit. Live control uses relative clutching.
 Use `--no-show` to generate and validate the SVG without opening the window.
 
 ## 3b. Validate and replay recorded trajectories

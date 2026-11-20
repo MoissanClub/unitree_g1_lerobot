@@ -10,7 +10,7 @@ import io
 import json
 import math
 import tkinter as tk
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from tkinter import ttk
 
@@ -78,48 +78,38 @@ def head_relative_pose(poses, side):
     return position, orientation
 
 
-def _tracked_pose(pose, *, controller=False):
-    from lerobot_teleoperator_g1_vr import XRController, XRPose, XRTrackedPose
-
-    xr_pose = XRPose(tuple(pose["position_m"]), tuple(pose["quaternion_xyzw"]))
-    if controller:
-        # Calibration anchors intentionally have released grips. Offline preview
-        # uses a virtual clutch so the production retargeter can evaluate them.
-        return XRController(True, xr_pose, squeeze=1.0)
-    return XRTrackedPose(True, xr_pose)
-
-
-def _sample_from_representative_poses(poses, sequence, captured_at_s):
-    from lerobot_teleoperator_g1_vr import XRSample, XRSourceState, XRSourceStatus
-
-    return XRSample(
-        sequence,
-        captured_at_s,
-        _tracked_pose(poses["left"], controller=True),
-        _tracked_pose(poses["right"], controller=True),
-        XRSourceStatus(XRSourceState.READY),
-        head=_tracked_pose(poses["head"]),
-    )
-
-
 def retarget_robot_previews(grid, urdf_path: Path, mesh_dir: Path, *, max_iterations=80):
-    """Evaluate static anchors through the real clutch-relative G1-29 pipeline."""
+    """Fit static straight-arm observations and solve the native G1 Cartesian IK."""
 
     import numpy as np
     from PIL import Image
     from lerobot.robots.unitree_g1 import UnitreeG1, UnitreeG1Config
-    from lerobot_teleoperator_g1_vr import (
-        DeterministicClock,
-        G1RetargeterConfig,
-        G129Retargeter,
-    )
 
     reference_key = ("down", "inward")
     if reference_key not in grid:
         raise ValueError("retargeting preview requires calibration-down-inward")
-    clock = DeterministicClock(10.0)
-    retargeter = G129Retargeter(G1RetargeterConfig(urdf_path), clock=clock)
-    action_keys = tuple(retargeter.action_features)
+    if ("up", "inward") not in grid:
+        raise ValueError("reach estimation requires calibration-up-inward")
+    from scipy.spatial.transform import Rotation
+
+    # Fixed body heading from the reference headset, retaining gravity-up.
+    down = grid[reference_key]["poses"]
+    forward = -np.asarray(quaternion_matrix(down["head"]["quaternion_xyzw"]))[:, 2]
+    forward[1] = 0
+    if np.linalg.norm(forward) < 1e-6:
+        raise ValueError("Down/inward headset orientation lacks a horizontal heading")
+    forward /= np.linalg.norm(forward)
+    vertical = np.array([0., 1., 0.])
+    basis = np.stack([forward, np.cross(vertical, forward), vertical])
+    neutral = np.zeros(14)
+    neutral[[3, 10]] = np.pi / 2  # G1 forearms point forward at zero elbow.
+    sides = ("left", "right")
+
+    def position(poses, side):
+        return basis @ (np.array(poses[side]["position_m"]) - poses["head"]["position_m"])
+
+    def rotation(poses, side):
+        return basis @ Rotation.from_quat(poses[side]["quaternion_xyzw"]).as_matrix()
     robot = UnitreeG1(
         UnitreeG1Config(
             id="g1-29-calibration-preview",
@@ -132,13 +122,12 @@ def retarget_robot_previews(grid, urdf_path: Path, mesh_dir: Path, *, max_iterat
     )
     previews = {}
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "reference_anchor": grid[reference_key]["label"],
-        "virtual_clutch_override": True,
-        "calibration_transform_status": "not_solved",
+        "virtual_clutch_override": False,
+        "calibration_transform_status": "offline_anchor_fit",
         "interpretation": (
-            "Offline clutch-relative G1-29 retargeting preview only; not a calibrated "
-            "human-to-robot pose validation."
+            "Static IK targets fitted from this operator's calibration observations."
         ),
         "anchors": {},
     }
@@ -147,34 +136,65 @@ def retarget_robot_previews(grid, urdf_path: Path, mesh_dir: Path, *, max_iterat
         native = robot._native
         if native is None:
             raise RuntimeError("native G1-29 simulation did not initialize")
-        reference = _sample_from_representative_poses(
-            grid[reference_key]["poses"], 0, clock.now()
-        )
+        ik = native.ik
+        home = ik.fk(neutral)
+        up = grid[("up", "inward")]["poses"]
+        fits = {}
+        for i, side in enumerate(sides):
+            low, high = position(down, side), position(up, side)
+            shoulder = (low + high) / 2
+            span = np.linalg.norm(high - low)
+            if span < 0.25:
+                raise ValueError(f"Insufficient up/down separation for {side}")
+            data = ik.model.createData()
+            ik._pin.forwardKinematics(ik.model, data, ik._to_model(neutral))
+            joint = ik.model.getJointId(f"{side}_shoulder_pitch_joint")
+            reach = np.linalg.norm(home[i][:3, 3] - data.oMi[joint].translation)
+            inward = np.array([0., -1. if i == 0 else 1., 0.])
+            normals = dict(inward=inward, outward=-inward, up=[0,0,1], down=[0,0,-1],
+                           forward=[1,0,0], backward=[-1,0,0])
+            # Express each annotated normal in controller coordinates and average.
+            normal = np.mean([rotation(e["poses"], side).T @ normals[col]
+                              for (row, col), e in grid.items() if row in ("forward", "horizontal")], axis=0)
+            if not np.isfinite(normal).all() or np.linalg.norm(normal) < 0.2:
+                raise ValueError(f"Inconsistent palm orientation anchors for {side}")
+            fits[side] = shoulder, 2 * reach / span, normal / np.linalg.norm(normal)
+        report["fits"] = {s: {"shoulder_m": p.tolist(), "scale": float(k),
+                              "controller_palm_normal": n.tolist()} for s,(p,k,n) in fits.items()}
         for row in ROWS:
             for column in COLUMNS:
                 key = (row, column)
                 entry = grid.get(key)
                 if entry is None:
                     continue
-                retargeter.reset()
-                measured = [0.0] * len(action_keys)
-                reference_result = retargeter.retarget(reference, measured)
-                measured = [reference_result.action[name] for name in action_keys]
-                target = _sample_from_representative_poses(
-                    entry["poses"], 1, clock.now()
-                )
-                previous = np.asarray(measured)
+                targets = []
+                for i, side in enumerate(sides):
+                    target = home[i].copy()
+                    if key != reference_key:
+                        shoulder, scale, normal = fits[side]
+                        p = position(entry["poses"], side)
+                        target[:3, 3] += scale * (p - position(down, side))
+                        # Straight-arm protocol: fingers extend along the arm.
+                        x = p - shoulder
+                        if np.linalg.norm(x) < 1e-6:
+                            raise ValueError(f"Undefined straight-arm direction for {side} at {key}")
+                        x /= np.linalg.norm(x)
+                        y = rotation(entry["poses"], side) @ normal * (-1 if i == 0 else 1)
+                        y -= x * (x @ y)
+                        if np.linalg.norm(y) < 1e-6:
+                            raise ValueError(f"Ambiguous palm direction for {side} at {key}")
+                        y /= np.linalg.norm(y)
+                        target[:3, :3] = np.column_stack([x, y, np.cross(x, y)])
+                    targets.append(target)
+                previous = neutral.copy()
                 for iteration in range(1, max_iterations + 1):
-                    result = retargeter.retarget(target, measured)
-                    measured = [result.action[name] for name in action_keys]
-                    current = np.asarray(measured)
+                    result = ik.solve(*targets, seed=previous)
+                    current = result.q
                     stable = float(np.max(np.abs(current - previous))) < 1e-6
                     previous = current
-                    if result.diagnostics.converged or stable:
+                    if result.converged or stable:
                         break
-                native.data.qpos[native.qadr] = [
-                    result.action[name] for name in native.keys
-                ]
+                native.data.qpos[native.qadr] = result.q
                 native.data.qvel[:] = 0.0
                 native.target = native.data.qpos[native.qadr].copy()
                 native.mj.mj_forward(native.model, native.data)
@@ -184,8 +204,10 @@ def retarget_robot_previews(grid, urdf_path: Path, mesh_dir: Path, *, max_iterat
                 previews[key] = image_buffer.getvalue()
                 report["anchors"][entry["label"]] = {
                     "iterations": iteration,
-                    "action": dict(result.action),
-                    "diagnostics": asdict(result.diagnostics),
+                    "action": ik.arm_action(result.q),
+                    "diagnostics": {"ik_status": result.status, "converged": bool(result.converged),
+                                    "position_error_m": result.position_error_m,
+                                    "orientation_error_rad": result.orientation_error_rad},
                 }
     finally:
         robot.disconnect()
@@ -292,7 +314,7 @@ def build_robot_scene(grid, previews, report):
     text(
         width / 2,
         52,
-        "Reference: arms down / palms inward. Virtual clutch enabled offline; human-to-robot calibration is not solved.",
+        "Arms-down robot reference, operator reach scaling and fitted controller palm normals.",
         size=12,
         fill="#7a4100",
     )
@@ -336,7 +358,7 @@ def build_robot_scene(grid, previews, report):
     text(
         left,
         height - 50,
-        "Red best-effort cells expose unreachable/mismapped targets; they are expected evidence until frame, scale, and palm offsets are solved.",
+        "Position error is the larger left/right IK residual for the fitted target.",
         size=11,
         fill="#7a260f",
         anchor="w",
