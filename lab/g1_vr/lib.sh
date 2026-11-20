@@ -16,6 +16,7 @@ G1_MESH_DIR="${G1_VR_MESH_DIR:-${ASSETS_ROOT}/meshes}"
 XRBT_WORKSPACE="${XRBT_WORKSPACE:-/home/dwei/meta_quest_xrobotoolkit}"
 XRBT_PC_SERVICE_DIR="${G1_VR_XRBT_PC_SERVICE_DIR:-}"
 VOICE_RATE="${G1_VR_VOICE_RATE:--35}"
+TTS_LANGUAGE="${G1_VR_TTS_LANGUAGE:-en}"
 DONNING_SECONDS="${G1_VR_DONNING_SECONDS:-10}"
 TTS_BIN="${G1_VR_TTS_BIN:-spd-say}"
 
@@ -81,14 +82,14 @@ voice() {
     local message="$1"
     echo "VOICE: ${message}"
     record_event "voice: ${message}"
-    "${TTS_BIN}" -w -r "${VOICE_RATE}" "${message}"
+    "${TTS_BIN}" -w -l "${TTS_LANGUAGE}" -r "${VOICE_RATE}" "${message}"
 }
 
 voice_async() {
     local message="$1"
     echo "VOICE: ${message}"
     record_event "voice: ${message}"
-    "${TTS_BIN}" -r "${VOICE_RATE}" "${message}"
+    "${TTS_BIN}" -l "${TTS_LANGUAGE}" -r "${VOICE_RATE}" "${message}"
 }
 
 validate_label() {

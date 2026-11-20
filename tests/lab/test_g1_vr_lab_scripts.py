@@ -6,16 +6,16 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tools.record_xrobotoolkit_calibration import (
+    _artifact_paths,
+    _palm_capture_prompt,
+)
 from tools.run_supervised_g1_29_vr import ViewerSimulationTarget
 from tools.view_xr_calibration_grid import (
     COLUMNS,
     ROWS,
     build_robot_scene,
     load_anchor_grid,
-)
-from tools.record_xrobotoolkit_calibration import (
-    _artifact_paths,
-    _palm_capture_prompt,
 )
 from unitree_g1_lerobot.diagnostics.xr.calibration import CALIBRATION_PLAN
 
@@ -133,6 +133,26 @@ def test_headset_removal_confirmation_can_run_without_real_audio(tmp_path):
 
     assert result.returncode == 0
     assert "Remove the headset" in result.stdout
+
+
+def test_shell_voice_selects_english_tts_language(tmp_path):
+    session = tmp_path / "session"
+    session.mkdir()
+    captured = tmp_path / "tts-arguments"
+    tts = tmp_path / "tts"
+    tts.write_text(f"#!/usr/bin/env bash\nprintf '%s\\n' \"$@\" > {captured}\n")
+    tts.chmod(0o755)
+    command = f"source {LAB / 'lib.sh'}; voice 'Robot arms are moving.'"
+    environment = {
+        **handoff_environment(tmp_path),
+        "G1_VR_TTS_BIN": str(tts),
+        "G1_VR_TTS_LANGUAGE": "en",
+    }
+
+    subprocess.run(["bash", "-c", command], check=True, env=environment)
+
+    arguments = captured.read_text().splitlines()
+    assert arguments[arguments.index("-l") + 1] == "en"
 
 
 def test_precheck_helper_starts_missing_xrobotoolkit_service(tmp_path):

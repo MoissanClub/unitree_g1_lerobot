@@ -246,6 +246,7 @@ testing another audited checkout:
 - `G1_VR_XRBT_PC_SERVICE_DIR`
 - `G1_VR_LAB_OUTPUT_ROOT`
 - `G1_VR_VOICE_RATE` (default `-35`)
+- `G1_VR_TTS_LANGUAGE` (default `en`)
 - `G1_VR_DONNING_SECONDS` (default `10`; shorten only in automated tests)
 
 If a backend fails while the headset is on, voice still instructs the operator
@@ -287,3 +288,20 @@ The robot-side executor approaches the first target from measured arm positions,
 requires a matched starting state for dynamic segments, streams commands through
 the bounded Arm SDK and records measured positions. Hardware tracking,
 collision clearance, stop and release require separate operator validation.
+
+Physical execution requires an interactive terminal. It gives a blocking English
+voice warning using `spd-say -l en`, waits five seconds, and repeats a voice alarm
+while arm authority or planned movement is active. Press `Q` to latch a pause;
+the executor freezes plan time and commands a hold near the latest measured pose.
+Press `R` to resume. `Ctrl+C` stops the executor and requests the normal three-packet
+weight-zero release. `Q` is a software hold with arm torque still active, not an
+independent emergency stop or verified physical stop.
+
+The default first-target approach is seven seconds (`--approach-duration-s 7`).
+This is separate from the reviewed Arm SDK ceilings: the executor retains the
+contract's velocity, acceleration, displacement, torque, tracking and model gates,
+and lengthens the requested duration if those bounds require it. With the default
+`0.05 rad` displacement envelope, a seven-second cubic approach peaks near
+`0.011 rad/s`; the `0.1 rad/s` contract value remains a fault-prevention ceiling,
+not the intended approach speed. The two-second authority blend and one-second
+final hold are additional time.
