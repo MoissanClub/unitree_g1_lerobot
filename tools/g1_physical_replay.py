@@ -133,6 +133,39 @@ def approach_duration(distance, cfg, requested):
     return max(requested, safety_minimum)
 
 
+def validate_staging_contract(contract, args, distance, cfg):
+    """Require an explicit, bounded review before a posture starts outside the normal gate."""
+    if not args.stage_from_current:
+        return args.approach_duration_s
+    staging = contract.get("physical_replay_staging")
+    if not isinstance(staging, dict):
+        raise TypeError("--stage-from-current requires a reviewed physical_replay_staging contract")
+    for key in ("reviewed", "path_and_clearance_reviewed"):
+        if staging.get(key) is not True:
+            raise ValueError(f"Physical replay staging gate not approved: {key}")
+    if not isinstance(staging.get("reviewer"), str) or not staging["reviewer"].strip():
+        raise ValueError("Physical replay staging requires a named reviewer")
+    if staging.get("label") != args.label:
+        raise ValueError("Physical replay staging approval does not match the selected label")
+    maximum = staging.get("max_start_delta_rad")
+    minimum_duration = staging.get("minimum_duration_s")
+    if not isinstance(maximum, (int, float)) or not math.isfinite(maximum) or maximum <= 0:
+        raise ValueError("Physical replay staging needs a positive finite max_start_delta_rad")
+    if (
+        not isinstance(minimum_duration, (int, float))
+        or not math.isfinite(minimum_duration)
+        or minimum_duration < 5
+    ):
+        raise ValueError("Physical replay staging minimum_duration_s must be finite and at least 5")
+    if distance > maximum:
+        raise ValueError("Measured start exceeds the reviewed staging envelope")
+    if distance > cfg.max_displacement:
+        raise ValueError("Arm SDK max_displacement does not cover the reviewed staging path")
+    if args.staging_duration_s < minimum_duration:
+        raise ValueError("Requested staging duration is shorter than the reviewed minimum")
+    return args.staging_duration_s
+
+
 def wait_for_warning(keyboard, voice, seconds):
     pause = PauseState()
     begin = time.monotonic()
@@ -234,10 +267,7 @@ def execute(args):
             raise ValueError("Replay timing exceeds reviewed acceleration")
     robot = sdk.G1ArmSDK(cfg)
     voice = VoiceAlarm(args.tts_bin, args.tts_language, args.voice_rate)
-    voice.speak(
-        f"Warning. Robot arm motion is planned. Keep clear. Motion will begin after a "
-        f"{args.warning_seconds:g} second warning. Press Q to pause, or Control C to stop."
-    )
+    phase_name = "initial positioning" if args.stage_from_current else "robot arm"
     with args.output.open("x", buffering=1) as log, KeyboardPause() as keyboard, voice:
         completed = False
         try:
@@ -245,20 +275,44 @@ def execute(args):
                                   "contract_sha256": digest(args.contract), "label": args.label,
                                   "stretch": args.stretch,
                                   "approach_duration_s": args.approach_duration_s,
+                                  "stage_from_current": args.stage_from_current,
+                                  "staging_duration_s": args.staging_duration_s,
                                   "tts_language": args.tts_language}) + "\n")
             robot.connect()
             measured = robot.observation()
             start = np.array([measured[k] for k in keys])
-            if np.max(abs(points - start)) > cfg.max_displacement:
+            distance = float(np.max(abs(points - start)))
+            requested_approach = validate_staging_contract(contract, args, distance, cfg)
+            if distance > cfg.max_displacement:
                 raise ValueError("Segment exceeds reviewed displacement from measured start")
             if args.kind == "trajectories":
                 expected = np.asarray(rows[0]["measured"])
                 if np.max(abs(start - expected)) > cfg.max_tracking_error:
                     raise ValueError("Measured starting pose differs from simulation replay")
+            voice.speak(
+                f"Warning. {phase_name.capitalize()} motion is planned. Keep clear. Motion will begin after a "
+                f"{args.warning_seconds:g} second warning. Press Q to pause, or Control C to stop."
+            )
+            if args.stage_from_current:
+                print(
+                    f"Reviewed initial positioning phase: {distance:.6f} rad maximum joint travel "
+                    f"over at least {args.staging_duration_s:.1f} seconds.",
+                    flush=True,
+                )
+                log.write(
+                    json.dumps(
+                        {
+                            "event": "initial_positioning_ready",
+                            "maximum_joint_travel_rad": distance,
+                            "requested_duration_s": args.staging_duration_s,
+                        }
+                    )
+                    + "\n"
+                )
             wait_for_warning(keyboard, voice, args.warning_seconds)
             robot.activate()
-            distance = np.max(abs(points[0] - start))
-            approach = approach_duration(distance, cfg, args.approach_duration_s)
+            first_target_distance = float(np.max(abs(points[0] - start)))
+            approach = approach_duration(first_target_distance, cfg, requested_approach)
             begin = time.monotonic()
             pause = PauseState()
             hold = start.copy()
@@ -311,7 +365,12 @@ def execute(args):
                             "Press R to resume, or Control C to stop and release."
                         )
                     else:
-                        voice.announce("Warning. Robot arms are moving. Keep clear. Press Q to pause.")
+                        message = (
+                            "Warning. Initial positioning is moving the robot arms. Keep clear. Press Q to pause."
+                            if args.stage_from_current
+                            else "Warning. Robot arms are moving. Keep clear. Press Q to pause."
+                        )
+                        voice.announce(message)
                     next_voice = now + args.voice_interval_s
                 if not pause.paused and t >= times[-1] + 1.:
                     if max(abs(observation[k] - command[k]) for k in keys) > cfg.max_tracking_error:
@@ -322,7 +381,13 @@ def execute(args):
         finally:
             robot.close()
         if completed:
-            voice.announce("Robot arm motion is complete. Release to stock control was requested.")
+            completion = (
+                "Initial positioning and posture validation are complete. "
+                "Release to stock control was requested."
+                if args.stage_from_current
+                else "Robot arm motion is complete. Release to stock control was requested."
+            )
+            voice.announce(completion)
 
 
 def main():
@@ -341,6 +406,17 @@ def main():
         default=7.0,
         help="planned first-target approach duration; safety limits may make it longer (default: 7)",
     )
+    parser.add_argument(
+        "--stage-from-current",
+        action="store_true",
+        help="run a separately reviewed 05a initial-positioning phase from the measured arm pose",
+    )
+    parser.add_argument(
+        "--staging-duration-s",
+        type=float,
+        default=10.0,
+        help="requested initial-positioning duration; safety limits may make it longer (default: 10)",
+    )
     parser.add_argument("--warning-seconds", type=float, default=5.0)
     parser.add_argument("--voice-interval-s", type=float, default=3.0)
     parser.add_argument("--tts-bin", default=os.environ.get("G1_VR_TTS_BIN", "spd-say"))
@@ -351,6 +427,8 @@ def main():
         parser.error("--stretch must be finite and at least 1")
     if not math.isfinite(args.approach_duration_s) or not 1 <= args.approach_duration_s <= 60:
         parser.error("--approach-duration-s must be finite and in [1, 60]")
+    if not math.isfinite(args.staging_duration_s) or not 5 <= args.staging_duration_s <= 60:
+        parser.error("--staging-duration-s must be finite and in [5, 60]")
     if not math.isfinite(args.warning_seconds) or not 0 <= args.warning_seconds <= 30:
         parser.error("--warning-seconds must be finite and in [0, 30]")
     if not math.isfinite(args.voice_interval_s) or not 1 <= args.voice_interval_s <= 30:
@@ -360,11 +438,15 @@ def main():
     if args.execute:
         if not (args.contract and args.label and args.output):
             parser.error("hardware execution requires --label, --contract and a new --output")
+        if args.stage_from_current and args.kind != "postures":
+            parser.error("--stage-from-current is only available for 05a posture execution")
         def stop(*_):
             raise KeyboardInterrupt
         signal.signal(signal.SIGTERM, stop)
         execute(args)
     elif args.suite:
+        if args.stage_from_current:
+            parser.error("--stage-from-current requires --execute")
         prepare(args)
     else:
         parser.error("offline preparation requires --suite")

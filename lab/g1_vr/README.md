@@ -305,3 +305,41 @@ and lengthens the requested duration if those bounds require it. With the defaul
 `0.011 rad/s`; the `0.1 rad/s` contract value remains a fault-prevention ceiling,
 not the intended approach speed. The two-second authority blend and one-second
 final hold are additional time.
+
+### Separately reviewed 05a initial positioning
+
+`05a` can optionally include one slow arm-only phase from the measured arm pose
+to the selected posture:
+
+```bash
+./lab/g1_vr/05a_replay_postures.sh \
+  --execute postures.json --urdf g1_29.urdf \
+  --contract arm-contract.json --label calibration-down-inward \
+  --output physical-05a.jsonl --stage-from-current --staging-duration-s 10
+```
+
+This does not move the waist, legs or hands. The operator must first use the stock
+controller to make the torso upright and all waist joints neutral. The option is
+not a way to bypass `max_displacement`: the reviewed Arm SDK contract must cover
+the complete measured start-to-target travel, and the contract must add a staging
+review such as:
+
+```json
+"physical_replay_staging": {
+  "reviewed": true,
+  "reviewer": "RESPONSIBLE_REVIEWER",
+  "label": "calibration-down-inward",
+  "max_start_delta_rad": 0.4,
+  "minimum_duration_s": 10.0,
+  "path_and_clearance_reviewed": true
+}
+```
+
+These values are an example shape, not approval for a particular robot. The
+reviewer must deliberately set a bounded envelope from the live pose, inspect
+arm/hand clearance and support, and review the corresponding
+`arm_sdk.max_displacement`. At runtime, the executor rejects a start outside
+either bound. The staging path uses the same English warnings, `Q` pause, `R`
+resume, torque/tracking checks and release request as the normal approach. A
+10-second request is lengthened automatically if the reviewed velocity or
+acceleration ceiling requires more time.

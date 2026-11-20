@@ -8,6 +8,7 @@ from tools.g1_physical_replay import (
     PauseState,
     VoiceAlarm,
     approach_duration,
+    validate_staging_contract,
 )
 
 
@@ -61,3 +62,38 @@ def test_requested_seven_second_approach_is_separate_from_velocity_ceiling():
 
     assert approach_duration(0.05, cfg, 7.0) == 7.0
     assert approach_duration(1.0, cfg, 7.0) == 20.0
+
+
+def test_initial_positioning_requires_matching_reviewed_staging_envelope():
+    args = SimpleNamespace(
+        stage_from_current=True,
+        label="calibration-down-inward",
+        staging_duration_s=10.0,
+        approach_duration_s=7.0,
+    )
+    cfg = SimpleNamespace(max_displacement=0.4)
+    contract = {
+        "physical_replay_staging": {
+            "reviewed": True,
+            "reviewer": "Lab reviewer",
+            "label": "calibration-down-inward",
+            "max_start_delta_rad": 0.4,
+            "minimum_duration_s": 10.0,
+            "path_and_clearance_reviewed": True,
+        }
+    }
+
+    assert validate_staging_contract(contract, args, 0.3634, cfg) == 10.0
+
+    cfg.max_displacement = 0.05
+    with pytest.raises(ValueError, match="max_displacement"):
+        validate_staging_contract(contract, args, 0.3634, cfg)
+
+
+def test_normal_05a_keeps_the_standard_approach_without_staging_review():
+    args = SimpleNamespace(
+        stage_from_current=False,
+        approach_duration_s=7.0,
+    )
+
+    assert validate_staging_contract({}, args, 0.01, SimpleNamespace()) == 7.0
