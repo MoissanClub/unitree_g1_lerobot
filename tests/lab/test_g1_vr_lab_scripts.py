@@ -7,7 +7,12 @@ import sys
 from pathlib import Path
 
 from tools.run_supervised_g1_29_vr import ViewerSimulationTarget
-from tools.view_xr_calibration_grid import COLUMNS, ROWS, load_anchor_grid
+from tools.view_xr_calibration_grid import (
+    COLUMNS,
+    ROWS,
+    build_robot_scene,
+    load_anchor_grid,
+)
 from tools.record_xrobotoolkit_calibration import (
     _artifact_paths,
     _palm_capture_prompt,
@@ -316,6 +321,53 @@ def test_calibration_grid_maps_available_anchors_and_leaves_other_cells_empty(tm
     assert ("down", "inward") in grid
     assert ("forward", "up") in grid
     assert ("down", "up") not in grid
+
+
+def test_robot_preview_grid_preserves_empty_cells_and_reports_ik_status(tmp_path):
+    anchor_set = tmp_path / "anchor-set.json"
+    pose = {
+        "position_m": [0.0, 0.0, 0.0],
+        "quaternion_xyzw": [0.0, 0.0, 0.0, 1.0],
+        "tracked_samples": 299,
+    }
+    anchor_set.write_text(
+        json.dumps(
+            {
+                "anchors": {
+                    "calibration-down-inward": {
+                        "representative_poses": {
+                            "head": pose,
+                            "left": pose,
+                            "right": pose,
+                        }
+                    }
+                }
+            }
+        )
+    )
+    grid = load_anchor_grid(anchor_set)
+    report = {
+        "anchors": {
+            "calibration-down-inward": {
+                "diagnostics": {
+                    "ik_status": "converged",
+                    "converged": True,
+                    "position_error_m": [0.0, 0.0],
+                }
+            }
+        }
+    }
+
+    width, height, primitives = build_robot_scene(
+        grid, {("down", "inward"): b"fixture-png"}, report
+    )
+
+    assert (width, height) == (1800, 1000)
+    assert sum(primitive.kind == "image" for primitive in primitives) == 1
+    assert any(
+        primitive.kind == "text" and "converged" in str(primitive.values)
+        for primitive in primitives
+    )
 
 
 def test_calibration_cli_lists_pending_without_connecting_to_headset(tmp_path):
